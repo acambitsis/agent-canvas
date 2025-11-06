@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPS Operating System</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * {
             margin: 0;
@@ -97,9 +98,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
             margin-right: 15px;
             color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .group-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke-width: 2.5;
         }
 
         .group-title {
@@ -195,7 +202,13 @@
             color: white;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+        }
+
+        .tool-chip svg {
+            width: 14px;
+            height: 14px;
+            stroke-width: 2.5;
         }
 
         .tool-forms { background: #17a2b8; }
@@ -584,6 +597,15 @@
 
         .metric-icon {
             font-size: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke-width: 2;
         }
 
         .metric-header h3 {
@@ -854,32 +876,32 @@
             <div class="flow-diagram" id="flowDiagram" style="display: block;">
                 <div class="flow-content">
                     <div class="flow-box" style="background: #e74c3c;" data-group="sales">
-                        💼<br>Sales
+                        <i data-lucide="briefcase" style="margin-bottom: 4px;"></i><br>Sales
                     </div>
                     <div class="flow-arrow">→</div>
                     <div class="flow-box" style="background: #0a3d4d;" data-group="aspiration">
-                        🎯<br>Aspiration
+                        <i data-lucide="target" style="margin-bottom: 4px;"></i><br>Aspiration
                     </div>
                     <div class="flow-arrow">→</div>
                     <div class="flow-box" style="background: #1a5f73;" data-group="value">
-                        🔍<br>Value Analysis
+                        <i data-lucide="search" style="margin-bottom: 4px;"></i><br>Value Analysis
                     </div>
                     <div class="flow-arrow">→</div>
                     <div class="flow-box" style="background: #2a7f93;" data-group="working">
-                        ⚙️<br>New Ways
+                        <i data-lucide="settings" style="margin-bottom: 4px;"></i><br>New Ways
                     </div>
                     <div class="flow-arrow">→</div>
                     <div class="flow-box" style="background: #3a9fb3;" data-group="installation">
-                        🚀<br>Installation
+                        <i data-lucide="rocket" style="margin-bottom: 4px;"></i><br>Installation
                     </div>
                     <div class="flow-arrow">→</div>
                     <div class="flow-box" style="background: #4abfd3;" data-group="sustain">
-                        ♻️<br>Sustain
+                        <i data-lucide="refresh-cw" style="margin-bottom: 4px;"></i><br>Sustain
                     </div>
                 </div>
                 <div class="flow-support">
                     <div class="flow-support-box" data-group="support">
-                        🛠️ Support Agents (Available Throughout All Phases)
+                        <i data-lucide="wrench"></i> Support Agents (Available Throughout All Phases)
                     </div>
                 </div>
             </div>
@@ -890,7 +912,7 @@
             <!-- Sales & Pre-Engagement -->
             <div class="agent-group sales-group">
                 <div class="group-header">
-                    <div class="group-icon">💼</div>
+                    <div class="group-icon"><i data-lucide="briefcase"></i></div>
                     <div class="group-title">
                         <h2>Sales & Pre-Engagement</h2>
                         <span class="phase-tag" style="background: #e74c3c;">Pre-Phase</span>
@@ -908,10 +930,10 @@
                         <div class="agent-objective">Objective: Qualify prospects and size potential value</div>
                         <div class="agent-description">Engages prospects to understand pain points, assess fit for TPS methodology, and estimate ROI potential</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-web">🌐 Web Search</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-web"><i data-lucide="globe"></i> Web Search</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -933,10 +955,10 @@
                         <div class="agent-objective">Objective: Generate customized proposals with financial projections</div>
                         <div class="agent-description">Creates tailored proposals incorporating client data, industry benchmarks, and TPS track record</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -953,7 +975,7 @@
             <!-- Phase 1: Aspiration -->
             <div class="agent-group aspiration-group">
                 <div class="group-header">
-                    <div class="group-icon">🎯</div>
+                    <div class="group-icon"><i data-lucide="target"></i></div>
                     <div class="group-title">
                         <h2>Phase 1: Aspiration</h2>
                         <span class="phase-tag phase-1">Executive Alignment</span>
@@ -970,9 +992,9 @@
                         <div class="agent-objective">Objective: Guide leadership alignment sessions and capture strategic objectives</div>
                         <div class="agent-description">Structures executive workshops, captures goals, identifies improvement opportunities, and creates alignment documentation</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -994,10 +1016,10 @@
                         <div class="agent-objective">Objective: Quantify improvement potential across operations</div>
                         <div class="agent-description">Analyzes baseline performance data to estimate potential gains in throughput, costs, working capital, and revenue</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1014,7 +1036,7 @@
             <!-- Phase 2: Value Analysis -->
             <div class="agent-group value-group">
                 <div class="group-header">
-                    <div class="group-icon">🔍</div>
+                    <div class="group-icon"><i data-lucide="search"></i></div>
                     <div class="group-title">
                         <h2>Phase 2: Value Analysis</h2>
                         <span class="phase-tag phase-2">Aerial Mapping</span>
@@ -1031,10 +1053,10 @@
                         <div class="agent-objective">Objective: Coordinate comprehensive operational assessment</div>
                         <div class="agent-description">Guides mapping of processes, interfaces, technology, behaviors, and root causes across the organization</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1057,10 +1079,10 @@
                         <div class="agent-objective">Objective: Assess effectiveness of existing management operating system</div>
                         <div class="agent-description">Evaluates current planning, scheduling, execution, reporting, and improvement processes against TPS standards</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1082,10 +1104,10 @@
                         <div class="agent-objective">Objective: Design future state operating model and implementation roadmap</div>
                         <div class="agent-description">Creates detailed TOM including processes, structure, interfaces, KPIs, and RACI aligned to client objectives</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1102,7 +1124,7 @@
             <!-- Phase 3: New Ways of Working -->
             <div class="agent-group working-group">
                 <div class="group-header">
-                    <div class="group-icon">⚙️</div>
+                    <div class="group-icon"><i data-lucide="settings"></i></div>
                     <div class="group-title">
                         <h2>Phase 3: New Ways of Working</h2>
                         <span class="phase-tag phase-3">MOS & Perfect Day</span>
@@ -1120,10 +1142,10 @@
                         <div class="agent-objective">Objective: Design customized Perfect Day routines for client operations</div>
                         <div class="agent-description">Creates detailed Perfect Day models integrating MOS cycles and 8 AMBs tailored to client context</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1145,10 +1167,10 @@
                         <div class="agent-objective">Objective: Generate training materials and coaching plans for Active Management Behaviors</div>
                         <div class="agent-description">Creates customized training content, coaching scripts, and assessment tools for 8 AMBs deployment</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1170,10 +1192,10 @@
                         <div class="agent-objective">Objective: Design performance measurement systems aligned to TPS methodology</div>
                         <div class="agent-description">Defines KPIs, creates visual management boards, and designs reporting cadences for all organizational levels</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1190,7 +1212,7 @@
             <!-- Phase 4: Installation -->
             <div class="agent-group installation-group">
                 <div class="group-header">
-                    <div class="group-icon">🚀</div>
+                    <div class="group-icon"><i data-lucide="rocket"></i></div>
                     <div class="group-title">
                         <h2>Phase 4: Installation</h2>
                         <span class="phase-tag phase-4">Lighthouse & Rollout</span>
@@ -1207,9 +1229,9 @@
                         <div class="agent-objective">Objective: Create detailed implementation plans for pilot locations</div>
                         <div class="agent-description">Develops phased rollout plans, resource allocation, risk mitigation, and success criteria for lighthouse sites</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1232,10 +1254,10 @@
                         <div class="agent-objective">Objective: Guide organizational change and stakeholder engagement</div>
                         <div class="agent-description">Creates communication plans, stakeholder maps, resistance management strategies, and engagement activities</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1257,10 +1279,10 @@
                         <div class="agent-objective">Objective: Track, validate, and report implementation benefits</div>
                         <div class="agent-description">Monitors KPIs, validates benefit realization, calculates ROI, and generates progress reports</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1278,7 +1300,7 @@
             <!-- Phase 5: Sustain -->
             <div class="agent-group sustain-group">
                 <div class="group-header">
-                    <div class="group-icon">♻️</div>
+                    <div class="group-icon"><i data-lucide="refresh-cw"></i></div>
                     <div class="group-title">
                         <h2>Phase 5: Sustain</h2>
                         <span class="phase-tag phase-5">Continuous Improvement</span>
@@ -1295,9 +1317,9 @@
                         <div class="agent-objective">Objective: Plan enterprise-wide rollout from lighthouse to full organization</div>
                         <div class="agent-description">Creates phased expansion plans, replication strategies, and resource scaling approaches</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1320,10 +1342,10 @@
                         <div class="agent-objective">Objective: Enable client self-sufficiency in continuous improvement</div>
                         <div class="agent-description">Guides problem-solving, Kaizen events, root cause analysis, and improvement prioritization</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1346,10 +1368,10 @@
                         <div class="agent-objective">Objective: Assess MOS adherence and identify improvement opportunities</div>
                         <div class="agent-description">Conducts periodic audits of MOS execution, AMB deployment, and Perfect Day adherence</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1367,7 +1389,7 @@
             <!-- Cross-Cutting Support -->
             <div class="agent-group support-group">
                 <div class="group-header">
-                    <div class="group-icon">🛠️</div>
+                    <div class="group-icon"><i data-lucide="wrench"></i></div>
                     <div class="group-title">
                         <h2>Cross-Cutting Support</h2>
                         <span class="phase-tag" style="background: #95a5a6;">All Phases</span>
@@ -1384,9 +1406,9 @@
                         <div class="agent-objective">Objective: Provide on-demand access to TPS methodology and best practices</div>
                         <div class="agent-description">Answers questions about TPS concepts, provides examples, retrieves relevant case studies and tools</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-rag">📄 RAG</span>
-                            <span class="tool-chip tool-web">🌐 Web Search</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
+                            <span class="tool-chip tool-web"><i data-lucide="globe"></i> Web Search</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1408,10 +1430,10 @@
                         <div class="agent-objective">Objective: Provide industry benchmarks and comparative analytics</div>
                         <div class="agent-description">Delivers industry-specific performance benchmarks, competitive insights, and trend analysis</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-web">🌐 Web Search</span>
-                            <span class="tool-chip tool-research">🔬 Deep Research</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-web"><i data-lucide="globe"></i> Web Search</span>
+                            <span class="tool-chip tool-research"><i data-lucide="microscope"></i> Deep Research</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1433,10 +1455,10 @@
                         <div class="agent-objective">Objective: Produce professional TPS deliverables and client reports</div>
                         <div class="agent-description">Creates formatted reports, presentations, and documentation following TPS templates and branding</div>
                         <div class="tools-container">
-                            <span class="tool-chip tool-forms">📋 Forms</span>
-                            <span class="tool-chip tool-python">🐍 Python</span>
-                            <span class="tool-chip tool-context">📚 Context</span>
-                            <span class="tool-chip tool-rag">📄 RAG</span>
+                            <span class="tool-chip tool-forms"><i data-lucide="clipboard-list"></i> Forms</span>
+                            <span class="tool-chip tool-python"><i data-lucide="code-2"></i> Python</span>
+                            <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
+                            <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
                         <div class="journey-label">💡 Hover to see user journey</div>
                         <div class="journey-tooltip">
@@ -1463,7 +1485,7 @@
                 <!-- Sales & Pre-Engagement -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">💼</span>
+                        <span class="metric-icon"><i data-lucide="briefcase"></i></span>
                         <h3>Sales & Pre-Engagement</h3>
                     </div>
                     <div class="metric-bars">
@@ -1494,7 +1516,7 @@
                 <!-- Aspiration -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🎯</span>
+                        <span class="metric-icon"><i data-lucide="target"></i></span>
                         <h3>Aspiration</h3>
                     </div>
                     <div class="metric-bars">
@@ -1525,7 +1547,7 @@
                 <!-- Value Analysis -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🔍</span>
+                        <span class="metric-icon"><i data-lucide="search"></i></span>
                         <h3>Value Analysis</h3>
                     </div>
                     <div class="metric-bars">
@@ -1556,7 +1578,7 @@
                 <!-- New Ways of Working -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">⚙️</span>
+                        <span class="metric-icon"><i data-lucide="settings"></i></span>
                         <h3>New Ways of Working</h3>
                     </div>
                     <div class="metric-bars">
@@ -1587,7 +1609,7 @@
                 <!-- Installation -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🚀</span>
+                        <span class="metric-icon"><i data-lucide="rocket"></i></span>
                         <h3>Installation</h3>
                     </div>
                     <div class="metric-bars">
@@ -1618,7 +1640,7 @@
                 <!-- Sustain -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">♻️</span>
+                        <span class="metric-icon"><i data-lucide="refresh-cw"></i></span>
                         <h3>Sustain</h3>
                     </div>
                     <div class="metric-bars">
@@ -1649,7 +1671,7 @@
                 <!-- Support -->
                 <div class="metric-card">
                     <div class="metric-header">
-                        <span class="metric-icon">🛠️</span>
+                        <span class="metric-icon"><i data-lucide="wrench"></i></span>
                         <h3>Support</h3>
                     </div>
                     <div class="metric-bars">
@@ -1926,6 +1948,9 @@
                 fadeObserver.observe(el);
             });
         });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
     </script>
 </body>
 </html>

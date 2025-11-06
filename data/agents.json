@@ -3,7 +3,7 @@
     {
       "id": "sales",
       "name": "Sales & Pre-Engagement",
-      "icon": "💼",
+      "icon": "briefcase",
       "color": "#e74c3c",
       "phase": "Pre-Phase",
       "phaseTag": "Pre-Phase",
@@ -36,7 +36,7 @@
     {
       "id": "aspiration",
       "name": "Phase 1: Aspiration",
-      "icon": "🎯",
+      "icon": "target",
       "color": "#0a3d4d",
       "phase": "Phase 1",
       "phaseTag": "Executive Alignment",
@@ -68,7 +68,7 @@
     {
       "id": "value",
       "name": "Phase 2: Value Analysis",
-      "icon": "🔍",
+      "icon": "search",
       "color": "#1a5f73",
       "phase": "Phase 2",
       "phaseTag": "Aerial Mapping",
@@ -111,7 +111,7 @@
     {
       "id": "working",
       "name": "Phase 3: New Ways of Working",
-      "icon": "⚙️",
+      "icon": "settings",
       "color": "#2a7f93",
       "phase": "Phase 3",
       "phaseTag": "MOS & Perfect Day",
@@ -155,7 +155,7 @@
     {
       "id": "installation",
       "name": "Phase 4: Installation",
-      "icon": "🚀",
+      "icon": "rocket",
       "color": "#3a9fb3",
       "phase": "Phase 4",
       "phaseTag": "Lighthouse & Rollout",
@@ -198,7 +198,7 @@
     {
       "id": "sustain",
       "name": "Phase 5: Sustain",
-      "icon": "♻️",
+      "icon": "refresh-cw",
       "color": "#4abfd3",
       "phase": "Phase 5",
       "phaseTag": "Continuous Improvement",
@@ -243,7 +243,7 @@
     {
       "id": "support",
       "name": "Cross-Cutting Support",
-      "icon": "🛠️",
+      "icon": "wrench",
       "color": "#95a5a6",
       "phase": "Support",
       "phaseTag": "All Phases",
@@ -285,12 +285,12 @@
     }
   ],
   "toolMapping": {
-    "Forms": { "class": "tool-forms", "icon": "📋", "color": "#17a2b8" },
-    "Python": { "class": "tool-python", "icon": "🐍", "color": "#3776ab" },
-    "RAG": { "class": "tool-rag", "icon": "📄", "color": "#e67e22" },
-    "Web Search": { "class": "tool-web", "icon": "🌐", "color": "#27ae60" },
-    "Deep Research": { "class": "tool-research", "icon": "🔬", "color": "#8e44ad" },
-    "Context": { "class": "tool-context", "icon": "📚", "color": "#c0392b" }
+    "Forms": { "class": "tool-forms", "icon": "clipboard-list", "color": "#17a2b8" },
+    "Python": { "class": "tool-python", "icon": "code-2", "color": "#3776ab" },
+    "RAG": { "class": "tool-rag", "icon": "file-text", "color": "#e67e22" },
+    "Web Search": { "class": "tool-web", "icon": "globe", "color": "#27ae60" },
+    "Deep Research": { "class": "tool-research", "icon": "microscope", "color": "#8e44ad" },
+    "Context": { "class": "tool-context", "icon": "book-open", "color": "#c0392b" }
   },
   "statusMapping": {
     "active": { "class": "status-active", "label": "Agent is operational" },

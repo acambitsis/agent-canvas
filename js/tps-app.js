@@ -43,6 +43,11 @@ class TPSApp {
             : groups;
 
         container.innerHTML = filteredGroups.map(group => this.createGroupHTML(group)).join('');
+
+        // Re-initialize Lucide icons after rendering
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     createGroupHTML(group) {
@@ -50,7 +55,7 @@ class TPSApp {
         return `
             <div class="agent-group ${groupClass}" data-group-id="${group.id}">
                 <div class="group-header">
-                    <div class="group-icon" style="background: ${group.color};">${group.icon}</div>
+                    <div class="group-icon" style="background: ${group.color};"><i data-lucide="${group.icon}"></i></div>
                     <div class="group-title">
                         <h2>${group.name}</h2>
                         <span class="phase-tag" style="background: ${group.color};">${group.phaseTag}</span>
@@ -98,7 +103,7 @@ class TPSApp {
     createToolChip(toolName) {
         const tool = this.agentsData.toolMapping[toolName];
         if (!tool) return '';
-        return `<span class="tool-chip ${tool.class}">${tool.icon} ${toolName}</span>`;
+        return `<span class="tool-chip ${tool.class}"><i data-lucide="${tool.icon}"></i> ${toolName}</span>`;
     }
 
     renderMetricsDashboard() {
@@ -110,6 +115,12 @@ class TPSApp {
             : this.metricsData.metrics;
 
         container.innerHTML = filteredMetrics.map(metric => this.createMetricCardHTML(metric)).join('');
+
+        // Re-initialize Lucide icons after rendering
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
         this.observeMetrics();
     }
 
@@ -117,7 +128,7 @@ class TPSApp {
         return `
             <div class="metric-card">
                 <div class="metric-header">
-                    <span class="metric-icon">${metric.icon}</span>
+                    <span class="metric-icon"><i data-lucide="${metric.icon}"></i></span>
                     <h3>${metric.groupName}</h3>
                 </div>
                 <div class="metric-bars">

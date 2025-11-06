@@ -3,7 +3,7 @@
     {
       "groupId": "sales",
       "groupName": "Sales & Pre-Engagement",
-      "icon": "💼",
+      "icon": "briefcase",
       "timeSaved": 60,
       "roiContribution": 85,
       "roiLabel": "High",
@@ -13,7 +13,7 @@
     {
       "groupId": "aspiration",
       "groupName": "Aspiration",
-      "icon": "🎯",
+      "icon": "target",
       "timeSaved": 45,
       "roiContribution": 95,
       "roiLabel": "Very High",
@@ -23,7 +23,7 @@
     {
       "groupId": "value",
       "groupName": "Value Analysis",
-      "icon": "🔍",
+      "icon": "search",
       "timeSaved": 70,
       "roiContribution": 90,
       "roiLabel": "Very High",
@@ -33,7 +33,7 @@
     {
       "groupId": "working",
       "groupName": "New Ways of Working",
-      "icon": "⚙️",
+      "icon": "settings",
       "timeSaved": 55,
       "roiContribution": 80,
       "roiLabel": "High",
@@ -43,7 +43,7 @@
     {
       "groupId": "installation",
       "groupName": "Installation",
-      "icon": "🚀",
+      "icon": "rocket",
       "timeSaved": 50,
       "roiContribution": 95,
       "roiLabel": "Very High",
@@ -53,7 +53,7 @@
     {
       "groupId": "sustain",
       "groupName": "Sustain",
-      "icon": "♻️",
+      "icon": "refresh-cw",
       "timeSaved": 65,
       "roiContribution": 60,
       "roiLabel": "Medium",
@@ -63,7 +63,7 @@
     {
       "groupId": "support",
       "groupName": "Support",
-      "icon": "🛠️",
+      "icon": "wrench",
       "timeSaved": 80,
       "roiContribution": 65,
       "roiLabel": "Medium",
