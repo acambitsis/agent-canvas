@@ -1,0 +1,300 @@
+{
+  "agentGroups": [
+    {
+      "id": "sales",
+      "name": "Sales & Pre-Engagement",
+      "icon": "💼",
+      "color": "#e74c3c",
+      "phase": "Pre-Phase",
+      "phaseTag": "Pre-Phase",
+      "agents": [
+        {
+          "id": 1,
+          "title": "TPS Opportunity Qualifier",
+          "objective": "Qualify prospects and size potential value",
+          "description": "Engages prospects to understand pain points, assess fit for TPS methodology, and estimate ROI potential",
+          "tools": ["Forms", "Web Search", "Python", "Context"],
+          "journey": "→ Structured questionnaire<br>→ Pain point analysis<br>→ Preliminary value sizing<br>→ Qualification score",
+          "status": "active",
+          "usageCount": 47,
+          "hasDemo": true,
+          "demoUrl": "https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546"
+        },
+        {
+          "id": 2,
+          "title": "Proposal & Business Case Builder",
+          "objective": "Generate customized proposals with financial projections",
+          "description": "Creates tailored proposals incorporating client data, industry benchmarks, and TPS track record",
+          "tools": ["Forms", "RAG", "Python", "Context"],
+          "journey": "→ Input client data<br>→ Select service type<br>→ Generate ROI model<br>→ Produce proposal document",
+          "status": "active",
+          "usageCount": 23,
+          "hasDemo": false
+        }
+      ]
+    },
+    {
+      "id": "aspiration",
+      "name": "Phase 1: Aspiration",
+      "icon": "🎯",
+      "color": "#0a3d4d",
+      "phase": "Phase 1",
+      "phaseTag": "Executive Alignment",
+      "agents": [
+        {
+          "id": 3,
+          "title": "Executive Alignment Facilitator",
+          "objective": "Guide leadership alignment sessions and capture strategic objectives",
+          "description": "Structures executive workshops, captures goals, identifies improvement opportunities, and creates alignment documentation",
+          "tools": ["Forms", "Context", "Python"],
+          "journey": "→ Pre-session prep<br>→ Facilitation guide<br>→ Capture outputs<br>→ Generate alignment report",
+          "status": "active",
+          "usageCount": 31,
+          "hasDemo": false
+        },
+        {
+          "id": 4,
+          "title": "Opportunity Sizing Analyst",
+          "objective": "Quantify improvement potential across operations",
+          "description": "Analyzes baseline performance data to estimate potential gains in throughput, costs, working capital, and revenue",
+          "tools": ["Forms", "Python", "RAG", "Context"],
+          "journey": "→ Data collection<br>→ Benchmark comparison<br>→ Gap analysis<br>→ Opportunity quantification report",
+          "status": "active",
+          "usageCount": 28,
+          "hasDemo": false
+        }
+      ]
+    },
+    {
+      "id": "value",
+      "name": "Phase 2: Value Analysis",
+      "icon": "🔍",
+      "color": "#1a5f73",
+      "phase": "Phase 2",
+      "phaseTag": "Aerial Mapping",
+      "agents": [
+        {
+          "id": 5,
+          "title": "Aerial Mapping Orchestrator",
+          "objective": "Coordinate comprehensive operational assessment",
+          "description": "Guides mapping of processes, interfaces, technology, behaviors, and root causes across the organization",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Scope definition<br>→ Data gathering<br>→ Mapping execution<br>→ Insights synthesis<br>→ Assessment report",
+          "status": "active",
+          "usageCount": 19,
+          "hasDemo": false
+        },
+        {
+          "id": 6,
+          "title": "Current State MOS Evaluator",
+          "objective": "Assess effectiveness of existing management operating system",
+          "description": "Evaluates current planning, scheduling, execution, reporting, and improvement processes against TPS standards",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Assessment questionnaire<br>→ Scoring<br>→ Gap identification<br>→ Improvement roadmap",
+          "status": "active",
+          "usageCount": 22,
+          "hasDemo": false
+        },
+        {
+          "id": 7,
+          "title": "Target Operating Model Designer",
+          "objective": "Design future state operating model and implementation roadmap",
+          "description": "Creates detailed TOM including processes, structure, interfaces, KPIs, and RACI aligned to client objectives",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Requirements gathering<br>→ Design workshops<br>→ TOM documentation<br>→ Roadmap creation",
+          "status": "active",
+          "usageCount": 15,
+          "hasDemo": false
+        }
+      ]
+    },
+    {
+      "id": "working",
+      "name": "Phase 3: New Ways of Working",
+      "icon": "⚙️",
+      "color": "#2a7f93",
+      "phase": "Phase 3",
+      "phaseTag": "MOS & Perfect Day",
+      "agents": [
+        {
+          "id": 8,
+          "title": "Perfect Day Architect",
+          "objective": "Design customized Perfect Day routines for client operations",
+          "description": "Creates detailed Perfect Day models integrating MOS cycles and 8 AMBs tailored to client context",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Context gathering<br>→ Activity mapping<br>→ Perfect Day design<br>→ Implementation guide",
+          "status": "active",
+          "usageCount": 34,
+          "hasDemo": true,
+          "demoUrl": "https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546"
+        },
+        {
+          "id": 9,
+          "title": "AMB Training & Coaching Guide",
+          "objective": "Generate training materials and coaching plans for Active Management Behaviors",
+          "description": "Creates customized training content, coaching scripts, and assessment tools for 8 AMBs deployment",
+          "tools": ["Forms", "RAG", "Context", "Python"],
+          "journey": "→ Audience definition<br>→ Content customization<br>→ Training package generation<br>→ Coaching plan",
+          "status": "active",
+          "usageCount": 29,
+          "hasDemo": false
+        },
+        {
+          "id": 10,
+          "title": "KPI & Metrics Dashboard Designer",
+          "objective": "Design performance measurement systems aligned to TPS methodology",
+          "description": "Defines KPIs, creates visual management boards, and designs reporting cadences for all organizational levels",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Metric selection<br>→ Dashboard design<br>→ Reporting cadence definition<br>→ Implementation specs",
+          "status": "active",
+          "usageCount": 26,
+          "hasDemo": false
+        }
+      ]
+    },
+    {
+      "id": "installation",
+      "name": "Phase 4: Installation",
+      "icon": "🚀",
+      "color": "#3a9fb3",
+      "phase": "Phase 4",
+      "phaseTag": "Lighthouse & Rollout",
+      "agents": [
+        {
+          "id": 11,
+          "title": "Lighthouse Implementation Planner",
+          "objective": "Create detailed implementation plans for pilot locations",
+          "description": "Develops phased rollout plans, resource allocation, risk mitigation, and success criteria for lighthouse sites",
+          "tools": ["Forms", "Python", "Context"],
+          "journey": "→ Site assessment<br>→ Plan development<br>→ Resource allocation<br>→ Risk planning<br>→ Implementation package",
+          "status": "active",
+          "usageCount": 18,
+          "hasDemo": false
+        },
+        {
+          "id": 12,
+          "title": "Change Management Orchestrator",
+          "objective": "Guide organizational change and stakeholder engagement",
+          "description": "Creates communication plans, stakeholder maps, resistance management strategies, and engagement activities",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Stakeholder mapping<br>→ Resistance assessment<br>→ Communication planning<br>→ Engagement strategy",
+          "status": "active",
+          "usageCount": 21,
+          "hasDemo": false
+        },
+        {
+          "id": 13,
+          "title": "Benefit Tracking & Validation Engine",
+          "objective": "Track, validate, and report implementation benefits",
+          "description": "Monitors KPIs, validates benefit realization, calculates ROI, and generates progress reports",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Baseline capture<br>→ Ongoing data collection<br>→ Benefit calculation<br>→ Variance analysis<br>→ Reporting",
+          "status": "active",
+          "usageCount": 38,
+          "hasDemo": false
+        }
+      ]
+    },
+    {
+      "id": "sustain",
+      "name": "Phase 5: Sustain",
+      "icon": "♻️",
+      "color": "#4abfd3",
+      "phase": "Phase 5",
+      "phaseTag": "Continuous Improvement",
+      "agents": [
+        {
+          "id": 14,
+          "title": "Scale-Up Rollout Planner",
+          "objective": "Plan enterprise-wide rollout from lighthouse to full organization",
+          "description": "Creates phased expansion plans, replication strategies, and resource scaling approaches",
+          "tools": ["Forms", "Python", "Context"],
+          "journey": "→ Lighthouse review<br>→ Expansion strategy<br>→ Phased planning<br>→ Resource scaling<br>→ Rollout roadmap",
+          "status": "limited",
+          "usageCount": 12,
+          "hasDemo": false
+        },
+        {
+          "id": 15,
+          "title": "Continuous Improvement Coach",
+          "objective": "Enable client self-sufficiency in continuous improvement",
+          "description": "Guides problem-solving, Kaizen events, root cause analysis, and improvement prioritization",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Problem identification<br>→ Root cause analysis<br>→ Solution generation<br>→ Action planning<br>→ Tracking",
+          "status": "limited",
+          "usageCount": 8,
+          "hasDemo": false,
+          "handover": true
+        },
+        {
+          "id": 16,
+          "title": "MOS Sustainability Auditor",
+          "objective": "Assess MOS adherence and identify improvement opportunities",
+          "description": "Conducts periodic audits of MOS execution, AMB deployment, and Perfect Day adherence",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Audit execution<br>→ Scoring<br>→ Gap identification<br>→ Recommendation generation<br>→ Action planning",
+          "status": "limited",
+          "usageCount": 6,
+          "hasDemo": false,
+          "handover": true
+        }
+      ]
+    },
+    {
+      "id": "support",
+      "name": "Cross-Cutting Support",
+      "icon": "🛠️",
+      "color": "#95a5a6",
+      "phase": "Support",
+      "phaseTag": "All Phases",
+      "agents": [
+        {
+          "id": 17,
+          "title": "TPS Knowledge Assistant",
+          "objective": "Provide on-demand access to TPS methodology and best practices",
+          "description": "Answers questions about TPS concepts, provides examples, retrieves relevant case studies and tools",
+          "tools": ["RAG", "Web Search", "Context"],
+          "journey": "→ Question input<br>→ Knowledge retrieval<br>→ Contextualized answer<br>→ Related resources",
+          "status": "active",
+          "usageCount": 52,
+          "hasDemo": false
+        },
+        {
+          "id": 18,
+          "title": "Client Insights & Benchmarking Engine",
+          "objective": "Provide industry benchmarks and comparative analytics",
+          "description": "Delivers industry-specific performance benchmarks, competitive insights, and trend analysis",
+          "tools": ["Web Search", "Deep Research", "Python", "RAG"],
+          "journey": "→ Industry/metric selection<br>→ Data gathering<br>→ Benchmark analysis<br>→ Insights report",
+          "status": "active",
+          "usageCount": 31,
+          "hasDemo": false
+        },
+        {
+          "id": 19,
+          "title": "Document & Report Generator",
+          "objective": "Produce professional TPS deliverables and client reports",
+          "description": "Creates formatted reports, presentations, and documentation following TPS templates and branding",
+          "tools": ["Forms", "Python", "Context", "RAG"],
+          "journey": "→ Template selection<br>→ Content input<br>→ Formatting<br>→ Document generation<br>→ Export",
+          "status": "active",
+          "usageCount": 44,
+          "hasDemo": false
+        }
+      ]
+    }
+  ],
+  "toolMapping": {
+    "Forms": { "class": "tool-forms", "icon": "📋", "color": "#17a2b8" },
+    "Python": { "class": "tool-python", "icon": "🐍", "color": "#3776ab" },
+    "RAG": { "class": "tool-rag", "icon": "📄", "color": "#e67e22" },
+    "Web Search": { "class": "tool-web", "icon": "🌐", "color": "#27ae60" },
+    "Deep Research": { "class": "tool-research", "icon": "🔬", "color": "#8e44ad" },
+    "Context": { "class": "tool-context", "icon": "📚", "color": "#c0392b" }
+  },
+  "statusMapping": {
+    "active": { "class": "status-active", "label": "Agent is operational" },
+    "limited": { "class": "status-limited", "label": "Client handover in progress" },
+    "inactive": { "class": "status-inactive", "label": "Agent is inactive" }
+  }
+}
