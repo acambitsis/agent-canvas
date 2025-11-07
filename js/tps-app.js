@@ -103,10 +103,10 @@ class TPSApp {
                         <i data-lucide="video"></i>
                     </a>
                     <div class="icon-panel-item metrics-icon" data-agent-id="${agent.id}">
-                        <i data-lucide="bar-chart-2"></i>
+                        <i data-lucide="trending-up"></i>
                         <div class="metrics-tooltip">
                             <div class="metrics-tooltip-header">
-                                <h4>${agent.title}</h4>
+                                <h4><i data-lucide="trending-up" style="display: inline-block; width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;"></i>${agent.title}</h4>
                             </div>
                             <div class="metrics-tooltip-content">
                                 <div class="metric-row">
@@ -258,7 +258,10 @@ class TPSApp {
 
             const avatar = document.createElement('div');
             avatar.className = 'message-avatar';
-            avatar.textContent = message.type === 'user' ? '👤' : '🤖';
+            // Create Lucide icon instead of emoji
+            const iconEl = document.createElement('i');
+            iconEl.setAttribute('data-lucide', message.type === 'user' ? 'user' : 'bot');
+            avatar.appendChild(iconEl);
 
             const content = document.createElement('div');
             content.className = 'message-content';
@@ -267,6 +270,11 @@ class TPSApp {
             messageDiv.appendChild(avatar);
             messageDiv.appendChild(content);
             chatContainer.appendChild(messageDiv);
+
+            // Re-initialize Lucide icons for the new avatar icon
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
 
             chatContainer.scrollTop = chatContainer.scrollHeight;
             this.currentMessageIndex++;
@@ -467,6 +475,11 @@ class TPSApp {
         tooltip.style.top = `${top}px`;
         tooltip.style.left = `${left}px`;
         tooltip.style.visibility = 'visible';
+
+        // Re-initialize Lucide icons in the tooltip
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
 
         console.log('Tooltip should be visible now');
     }
