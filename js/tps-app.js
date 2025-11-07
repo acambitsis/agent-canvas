@@ -7,7 +7,6 @@ class TPSApp {
     constructor() {
         this.agentsData = null;
         this.metricsData = null;
-        this.usageMetricsVisible = false;
         this.activeFilter = null; // Will store phase filter when implemented
         this.init();
     }
@@ -17,7 +16,6 @@ class TPSApp {
         this.renderAgentGroups();
         this.renderMetricsDashboard();
         this.setupEventListeners();
-        this.hideUsageStatsOnLoad();
     }
 
     async loadData() {
@@ -48,6 +46,9 @@ class TPSApp {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+
+        // Setup tooltip positioning for newly rendered elements
+        this.setupTooltipPositioning();
     }
 
     createGroupHTML(group) {
@@ -70,31 +71,72 @@ class TPSApp {
 
     createAgentHTML(agent) {
         const statusInfo = this.agentsData.statusMapping[agent.status];
-        const demoButton = agent.hasDemo
-            ? `<a href="${agent.demoUrl}" target="_blank" class="demo-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">💬 Try Demo</a>`
-            : '';
         const handoverBadge = agent.handover
             ? '<span class="handover-badge">CLIENT HANDOVER</span>'
             : '';
 
+        // Use demo URL if available, otherwise use agent URL
+        const externalLinkUrl = agent.hasDemo ? agent.demoUrl : agent.agentUrl;
+        const externalLinkTitle = agent.hasDemo ? 'Try Demo' : 'Go to agent';
+
         return `
             <div class="agent-card" data-agent-id="${agent.id}">
-                <div class="agent-status">
-                    <div class="status-indicator ${statusInfo.class}" title="${statusInfo.label}"></div>
-                    <span class="usage-stats">${agent.usageCount} uses this week</span>
-                </div>
                 <div class="agent-number">${agent.id}</div>
-                ${demoButton}
                 <h3>${agent.title}${handoverBadge}</h3>
                 <div class="agent-objective">Objective: ${agent.objective}</div>
                 <div class="agent-description">${agent.description}</div>
                 <div class="tools-container">
                     ${agent.tools.map(tool => this.createToolChip(tool)).join('')}
                 </div>
-                <div class="journey-label">💡 Hover to see user journey</div>
-                <div class="journey-tooltip">
-                    <strong>User Journey:</strong><br>
-                    ${agent.journey}
+                <div class="icon-panel">
+                    <div class="icon-panel-item journey-icon" data-agent-id="${agent.id}">
+                        <i data-lucide="map"></i>
+                        <div class="journey-tooltip">
+                            <strong>User Journey:</strong><br>
+                            ${agent.journey}
+                        </div>
+                    </div>
+                    <a href="${externalLinkUrl}" target="_blank" class="icon-panel-item agent-link-icon" title="${externalLinkTitle}">
+                        <i data-lucide="external-link"></i>
+                    </a>
+                    <a href="${agent.videoUrl}" class="icon-panel-item video-icon" title="Watch video overview">
+                        <i data-lucide="video"></i>
+                    </a>
+                    <div class="icon-panel-item metrics-icon" data-agent-id="${agent.id}">
+                        <i data-lucide="bar-chart-2"></i>
+                        <div class="metrics-tooltip">
+                            <div class="metrics-tooltip-header">
+                                <h4>${agent.title}</h4>
+                            </div>
+                            <div class="metrics-tooltip-content">
+                                <div class="metric-row">
+                                    <span class="metric-label">Usage This Week</span>
+                                    <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">${agent.usageCount} uses</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Time Saved</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill time-saved" style="width: ${agent.metrics.timeSaved}%;"></div>
+                                    </div>
+                                    <span class="metric-value">${agent.metrics.timeSaved}%</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">ROI Contribution</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill roi-contribution" style="width: ${agent.metrics.roiContributionValue}%;"></div>
+                                    </div>
+                                    <span class="metric-value">${agent.metrics.roiContribution}</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Adoption Complexity</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill adoption-complexity" style="width: ${agent.metrics.adoptionComplexityValue}%;"></div>
+                                    </div>
+                                    <span class="metric-value">${agent.metrics.adoptionComplexity}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -188,31 +230,6 @@ class TPSApp {
             diagram.style.display = 'none';
             btn.innerHTML = '<span class="toggle-icon">▼</span> Show Flow Diagram';
         }
-    }
-
-    toggleUsageMetrics(event) {
-        const btn = event.target.closest('button');
-        const allUsageStats = document.querySelectorAll('.usage-stats');
-
-        this.usageMetricsVisible = !this.usageMetricsVisible;
-
-        allUsageStats.forEach(stat => {
-            if (this.usageMetricsVisible) {
-                stat.classList.remove('hidden');
-            } else {
-                stat.classList.add('hidden');
-            }
-        });
-
-        btn.innerHTML = this.usageMetricsVisible
-            ? '<span id="usageIcon">📊</span> Hide Usage Stats'
-            : '<span id="usageIcon">📊</span> Show Usage Stats';
-    }
-
-    hideUsageStatsOnLoad() {
-        document.querySelectorAll('.usage-stats').forEach(stat => {
-            stat.classList.add('hidden');
-        });
     }
 
     // Simulator Functions
@@ -357,6 +374,105 @@ class TPSApp {
 
         // Observe for fade-in animations
         this.observeFadeIn();
+
+        // Setup tooltip positioning for hardcoded cards in HTML
+        this.setupTooltipPositioning();
+    }
+
+    setupTooltipPositioning() {
+        // Handle journey tooltips
+        const journeyIcons = document.querySelectorAll('.journey-icon');
+        console.log('Found journey icons:', journeyIcons.length);
+
+        journeyIcons.forEach(icon => {
+            const tooltip = icon.querySelector('.journey-tooltip');
+            if (!tooltip) {
+                console.log('No tooltip found for journey icon');
+                return;
+            }
+
+            icon.addEventListener('mouseenter', () => {
+                console.log('Journey icon hovered');
+                this.showTooltip(icon, tooltip);
+            });
+
+            icon.addEventListener('mouseleave', () => {
+                this.hideTooltip(tooltip);
+            });
+        });
+
+        // Handle metrics tooltips
+        const metricsIcons = document.querySelectorAll('.metrics-icon');
+        console.log('Found metrics icons:', metricsIcons.length);
+
+        metricsIcons.forEach(icon => {
+            const tooltip = icon.querySelector('.metrics-tooltip');
+            if (!tooltip) {
+                console.log('No tooltip found for metrics icon');
+                return;
+            }
+
+            icon.addEventListener('mouseenter', () => {
+                console.log('Metrics icon hovered');
+                this.showTooltip(icon, tooltip);
+            });
+
+            icon.addEventListener('mouseleave', () => {
+                this.hideTooltip(tooltip);
+            });
+        });
+    }
+
+    showTooltip(icon, tooltip) {
+        console.log('showTooltip called');
+
+        // First, make it visible but off-screen to measure it
+        tooltip.style.display = 'block';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.left = '-9999px';
+        tooltip.style.top = '0px';
+
+        // Force a reflow to get accurate measurements
+        tooltip.offsetHeight;
+
+        const iconRect = icon.getBoundingClientRect();
+        const tooltipWidth = tooltip.offsetWidth;
+        const tooltipHeight = tooltip.offsetHeight;
+
+        console.log('Icon rect:', iconRect);
+        console.log('Tooltip size:', tooltipWidth, 'x', tooltipHeight);
+
+        // Calculate position - default is above the icon
+        let top = iconRect.top - tooltipHeight - 10;
+        let left = iconRect.left + (iconRect.width / 2) - (tooltipWidth / 2);
+
+        // Check if tooltip goes off the left edge
+        if (left < 10) {
+            left = 10;
+        }
+
+        // Check if tooltip goes off the right edge
+        if (left + tooltipWidth > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipWidth - 10;
+        }
+
+        // Check if tooltip goes off the top edge, if so position below
+        if (top < 10) {
+            top = iconRect.bottom + 10;
+        }
+
+        console.log('Final position:', top, left);
+
+        // Apply final position and make visible
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+        tooltip.style.visibility = 'visible';
+
+        console.log('Tooltip should be visible now');
+    }
+
+    hideTooltip(tooltip) {
+        tooltip.style.display = 'none';
     }
 
     // Simulator conversations data
@@ -393,10 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Expose functions to global scope for onclick handlers
 function toggleFlowDiagram(event) {
     if (tpsApp) tpsApp.toggleFlowDiagram(event);
-}
-
-function toggleUsageMetrics(event) {
-    if (tpsApp) tpsApp.toggleUsageMetrics(event);
 }
 
 function openSimulator(agentNumber) {

@@ -18,7 +18,16 @@
           "status": "active",
           "usageCount": 47,
           "hasDemo": true,
-          "demoUrl": "https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546"
+          "demoUrl": "https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546",
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 60,
+            "roiContribution": "High",
+            "roiContributionValue": 85,
+            "adoptionComplexity": "Low",
+            "adoptionComplexityValue": 30
+          }
         },
         {
           "id": 2,
@@ -29,7 +38,16 @@
           "journey": "→ Input client data<br>→ Select service type<br>→ Generate ROI model<br>→ Produce proposal document",
           "status": "active",
           "usageCount": 23,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 65,
+            "roiContribution": "High",
+            "roiContributionValue": 85,
+            "adoptionComplexity": "Low",
+            "adoptionComplexityValue": 25
+          }
         }
       ]
     },
@@ -50,7 +68,16 @@
           "journey": "→ Pre-session prep<br>→ Facilitation guide<br>→ Capture outputs<br>→ Generate alignment report",
           "status": "active",
           "usageCount": 31,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 45,
+            "roiContribution": "Very High",
+            "roiContributionValue": 95,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 50
+          }
         },
         {
           "id": 4,
@@ -61,7 +88,16 @@
           "journey": "→ Data collection<br>→ Benchmark comparison<br>→ Gap analysis<br>→ Opportunity quantification report",
           "status": "active",
           "usageCount": 28,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 50,
+            "roiContribution": "Very High",
+            "roiContributionValue": 90,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 45
+          }
         }
       ]
     },
@@ -82,7 +118,16 @@
           "journey": "→ Scope definition<br>→ Data gathering<br>→ Mapping execution<br>→ Insights synthesis<br>→ Assessment report",
           "status": "active",
           "usageCount": 19,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 70,
+            "roiContribution": "Very High",
+            "roiContributionValue": 90,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 55
+          }
         },
         {
           "id": 6,
@@ -93,7 +138,16 @@
           "journey": "→ Assessment questionnaire<br>→ Scoring<br>→ Gap identification<br>→ Improvement roadmap",
           "status": "active",
           "usageCount": 22,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 68,
+            "roiContribution": "Very High",
+            "roiContributionValue": 88,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 52
+          }
         },
         {
           "id": 7,
@@ -104,7 +158,16 @@
           "journey": "→ Requirements gathering<br>→ Design workshops<br>→ TOM documentation<br>→ Roadmap creation",
           "status": "active",
           "usageCount": 15,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 72,
+            "roiContribution": "Very High",
+            "roiContributionValue": 92,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 58
+          }
         }
       ]
     },
@@ -126,7 +189,16 @@
           "status": "active",
           "usageCount": 34,
           "hasDemo": true,
-          "demoUrl": "https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546"
+          "demoUrl": "https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546",
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 55,
+            "roiContribution": "High",
+            "roiContributionValue": 80,
+            "adoptionComplexity": "High",
+            "adoptionComplexityValue": 70
+          }
         },
         {
           "id": 9,
@@ -137,7 +209,16 @@
           "journey": "→ Audience definition<br>→ Content customization<br>→ Training package generation<br>→ Coaching plan",
           "status": "active",
           "usageCount": 29,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 52,
+            "roiContribution": "High",
+            "roiContributionValue": 78,
+            "adoptionComplexity": "High",
+            "adoptionComplexityValue": 68
+          }
         },
         {
           "id": 10,
@@ -148,7 +229,16 @@
           "journey": "→ Metric selection<br>→ Dashboard design<br>→ Reporting cadence definition<br>→ Implementation specs",
           "status": "active",
           "usageCount": 26,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 58,
+            "roiContribution": "High",
+            "roiContributionValue": 82,
+            "adoptionComplexity": "High",
+            "adoptionComplexityValue": 72
+          }
         }
       ]
     },
@@ -169,7 +259,16 @@
           "journey": "→ Site assessment<br>→ Plan development<br>→ Resource allocation<br>→ Risk planning<br>→ Implementation package",
           "status": "active",
           "usageCount": 18,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 50,
+            "roiContribution": "Very High",
+            "roiContributionValue": 95,
+            "adoptionComplexity": "High",
+            "adoptionComplexityValue": 75
+          }
         },
         {
           "id": 12,
@@ -180,7 +279,16 @@
           "journey": "→ Stakeholder mapping<br>→ Resistance assessment<br>→ Communication planning<br>→ Engagement strategy",
           "status": "active",
           "usageCount": 21,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 48,
+            "roiContribution": "Very High",
+            "roiContributionValue": 93,
+            "adoptionComplexity": "High",
+            "adoptionComplexityValue": 73
+          }
         },
         {
           "id": 13,
@@ -191,7 +299,16 @@
           "journey": "→ Baseline capture<br>→ Ongoing data collection<br>→ Benefit calculation<br>→ Variance analysis<br>→ Reporting",
           "status": "active",
           "usageCount": 38,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 53,
+            "roiContribution": "Very High",
+            "roiContributionValue": 97,
+            "adoptionComplexity": "High",
+            "adoptionComplexityValue": 78
+          }
         }
       ]
     },
@@ -212,7 +329,16 @@
           "journey": "→ Lighthouse review<br>→ Expansion strategy<br>→ Phased planning<br>→ Resource scaling<br>→ Rollout roadmap",
           "status": "limited",
           "usageCount": 12,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 65,
+            "roiContribution": "Medium",
+            "roiContributionValue": 60,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 45
+          }
         },
         {
           "id": 15,
@@ -224,7 +350,16 @@
           "status": "limited",
           "usageCount": 8,
           "hasDemo": false,
-          "handover": true
+          "handover": true,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 62,
+            "roiContribution": "Medium",
+            "roiContributionValue": 58,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 42
+          }
         },
         {
           "id": 16,
@@ -236,7 +371,16 @@
           "status": "limited",
           "usageCount": 6,
           "hasDemo": false,
-          "handover": true
+          "handover": true,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 68,
+            "roiContribution": "Medium",
+            "roiContributionValue": 62,
+            "adoptionComplexity": "Medium",
+            "adoptionComplexityValue": 48
+          }
         }
       ]
     },
@@ -257,7 +401,16 @@
           "journey": "→ Question input<br>→ Knowledge retrieval<br>→ Contextualized answer<br>→ Related resources",
           "status": "active",
           "usageCount": 52,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 80,
+            "roiContribution": "Medium",
+            "roiContributionValue": 65,
+            "adoptionComplexity": "Low",
+            "adoptionComplexityValue": 25
+          }
         },
         {
           "id": 18,
@@ -268,7 +421,16 @@
           "journey": "→ Industry/metric selection<br>→ Data gathering<br>→ Benchmark analysis<br>→ Insights report",
           "status": "active",
           "usageCount": 31,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 75,
+            "roiContribution": "Medium",
+            "roiContributionValue": 62,
+            "adoptionComplexity": "Low",
+            "adoptionComplexityValue": 22
+          }
         },
         {
           "id": 19,
@@ -279,7 +441,16 @@
           "journey": "→ Template selection<br>→ Content input<br>→ Formatting<br>→ Document generation<br>→ Export",
           "status": "active",
           "usageCount": 44,
-          "hasDemo": false
+          "hasDemo": false,
+          "agentUrl": "#",
+          "videoUrl": "#",
+          "metrics": {
+            "timeSaved": 85,
+            "roiContribution": "Medium",
+            "roiContributionValue": 68,
+            "adoptionComplexity": "Low",
+            "adoptionComplexityValue": 28
+          }
         }
       ]
     }

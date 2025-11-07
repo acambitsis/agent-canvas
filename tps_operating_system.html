@@ -234,46 +234,170 @@
         .tool-research { background: #8e44ad; }
         .tool-context { background: #c0392b; }
 
+        /* Icon Panel Styles */
+        .icon-panel {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            justify-content: flex-start;
+        }
+
+        .icon-panel-item {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #555;
+        }
+
+        .icon-panel-item:hover {
+            background: #17a2b8;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .icon-panel-item svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2;
+        }
+
+        /* Journey Tooltip Styles */
         .journey-tooltip {
             display: none;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
+            position: fixed;
             background: #2c3e50;
             color: white;
             padding: 15px;
             border-radius: 8px;
-            width: 350px;
-            margin-bottom: 10px;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            width: 300px;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
             font-size: 0.85em;
             line-height: 1.6;
+            white-space: normal;
+            pointer-events: none;
         }
 
         .journey-tooltip::after {
             content: '';
             position: absolute;
-            top: 100%;
+            bottom: 100%;
+            left: 18px;
+            border: 8px solid transparent;
+            border-bottom-color: #2c3e50;
+        }
+
+        /* Tooltip display controlled by JavaScript */
+
+        /* Metrics Tooltip Styles */
+        .metrics-tooltip {
+            display: none;
+            position: fixed;
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 12px;
+            width: 320px;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            font-size: 0.9em;
+            pointer-events: none;
+        }
+
+        .metrics-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
             border: 8px solid transparent;
-            border-top-color: #2c3e50;
+            border-bottom-color: white;
         }
 
-        .agent-card:hover .journey-tooltip {
-            display: block;
+        /* Tooltip display controlled by JavaScript */
+
+        .metrics-tooltip-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
         }
 
-        .journey-label {
-            font-weight: bold;
-            color: #17a2b8;
-            margin-top: 10px;
-            font-size: 0.85em;
+        .metrics-tooltip-header h4 {
+            margin: 0;
+            font-size: 1.1em;
+            color: #0a3d4d;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+        }
+
+        .metrics-tooltip-header h4::before {
+            content: '📊';
+            font-size: 1.2em;
+        }
+
+        .metrics-tooltip-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .metrics-tooltip .metric-row {
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .metrics-tooltip .metric-label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .metrics-tooltip .progress-bar {
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .metrics-tooltip .progress-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.5s ease-out;
+        }
+
+        .metrics-tooltip .progress-fill.time-saved {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+
+        .metrics-tooltip .progress-fill.roi-contribution {
+            background: linear-gradient(90deg, #17a2b8, #20c9e0);
+        }
+
+        .metrics-tooltip .progress-fill.adoption-complexity {
+            background: linear-gradient(90deg, #e67e22, #f39c12);
+        }
+
+        .metrics-tooltip .metric-value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #666;
         }
 
         .handover-badge {
@@ -538,28 +662,6 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
-        .demo-btn {
-            position: absolute;
-            top: 15px;
-            right: 60px;
-            background: linear-gradient(135deg, #17a2b8, #138496);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-            z-index: 10;
-        }
-
-        .demo-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
         /* Metrics Dashboard Styles */
         .metrics-dashboard {
             background: white;
@@ -675,65 +777,11 @@
             color: #666;
         }
 
-        /* Status Indicator Styles */
-        .agent-status {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.95);
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            z-index: 5;
-        }
-
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        .status-active {
-            background: #27ae60;
-            box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);
-        }
-
-        .status-limited {
-            background: #f39c12;
-            box-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
-        }
-
-        .status-inactive {
-            background: #e74c3c;
-            box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .usage-stats {
-            color: #555;
-            font-weight: 600;
-            transition: opacity 0.3s ease;
-        }
-
-        .usage-stats.hidden {
-            display: none;
-        }
-
         /* Animated Transitions */
         .agent-card,
         .agent-group,
         .phase-indicator,
-        .tool-chip,
-        .demo-btn {
+        .tool-chip {
             transition: all 0.3s ease;
         }
 
@@ -755,10 +803,6 @@
         @keyframes subtle-pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
-        }
-
-        .demo-btn:hover {
-            animation: subtle-pulse 1.5s infinite;
         }
 
         @keyframes fadeInUp {
@@ -884,9 +928,6 @@
                     <button onclick="toggleFocusMode()" class="toggle-flow-btn" id="focusModeBtn">
                         <span id="focusIcon">👁️</span> Focus Mode
                     </button>
-                    <button onclick="toggleUsageMetrics()" class="toggle-flow-btn">
-                        <span id="usageIcon">📊</span> Show Usage Stats
-                    </button>
                     <button class="toggle-flow-btn" onclick="toggleFlowDiagram()">
                         <span class="toggle-icon">▲</span> Hide Flow Diagram
                     </button>
@@ -939,12 +980,7 @@
                 </div>
                 <div class="agents-grid">
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">47 uses this week</span>
-                        </div>
                         <div class="agent-number">1</div>
-                        <a href="https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546" target="_blank" class="demo-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">💬 Try Demo</a>
                         <h3>TPS Opportunity Qualifier</h3>
                         <div class="agent-objective">Objective: Qualify prospects and size potential value</div>
                         <div class="agent-description">Engages prospects to understand pain points, assess fit for TPS methodology, and estimate ROI potential</div>
@@ -954,21 +990,62 @@
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Structured questionnaire<br>
-                            → Pain point analysis<br>
-                            → Preliminary value sizing<br>
-                            → Qualification score
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Structured questionnaire<br>
+                                    → Pain point analysis<br>
+                                    → Preliminary value sizing<br>
+                                    → Qualification score
+                                </div>
+                            </div>
+                            <a href="https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546" target="_blank" class="icon-panel-item agent-link-icon" title="Try Demo">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>TPS Opportunity Qualifier</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">47 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 60%;"></div>
+                                            </div>
+                                            <span class="metric-value">60%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 85%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 30%;"></div>
+                                            </div>
+                                            <span class="metric-value">Low</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">23 uses this week</span>
-                        </div>
                         <div class="agent-number">2</div>
                         <h3>Proposal & Business Case Builder</h3>
                         <div class="agent-objective">Objective: Generate customized proposals with financial projections</div>
@@ -979,13 +1056,58 @@
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Input client data<br>
-                            → Select service type<br>
-                            → Generate ROI model<br>
-                            → Produce proposal document
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Input client data<br>
+                                    → Select service type<br>
+                                    → Generate ROI model<br>
+                                    → Produce proposal document
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Proposal & Business Case Builder</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">23 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 65%;"></div>
+                                            </div>
+                                            <span class="metric-value">65%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 85%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 25%;"></div>
+                                            </div>
+                                            <span class="metric-value">Low</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1001,11 +1123,8 @@
                     </div>
                 </div>
                 <div class="agents-grid">
+                    
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">31 uses this week</span>
-                        </div>
                         <div class="agent-number">3</div>
                         <h3>Executive Alignment Facilitator</h3>
                         <div class="agent-objective">Objective: Guide leadership alignment sessions and capture strategic objectives</div>
@@ -1015,21 +1134,62 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Pre-session prep<br>
-                            → Facilitation guide<br>
-                            → Capture outputs<br>
-                            → Generate alignment report
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Pre-session prep<br>
+                                    → Facilitation guide<br>
+                                    → Capture outputs<br>
+                                    → Generate alignment report
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Executive Alignment Facilitator</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">31 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 45%;"></div>
+                                            </div>
+                                            <span class="metric-value">45%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 95%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 50%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">28 uses this week</span>
-                        </div>
                         <div class="agent-number">4</div>
                         <h3>Opportunity Sizing Analyst</h3>
                         <div class="agent-objective">Objective: Quantify improvement potential across operations</div>
@@ -1040,13 +1200,58 @@
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Data collection<br>
-                            → Benchmark comparison<br>
-                            → Gap analysis<br>
-                            → Opportunity quantification report
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Data collection<br>
+                                    → Benchmark comparison<br>
+                                    → Gap analysis<br>
+                                    → Opportunity quantification report
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Opportunity Sizing Analyst</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">28 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 50%;"></div>
+                                            </div>
+                                            <span class="metric-value">50%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 90%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 45%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1062,11 +1267,8 @@
                     </div>
                 </div>
                 <div class="agents-grid">
+                    
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">19 uses this week</span>
-                        </div>
                         <div class="agent-number">5</div>
                         <h3>Aerial Mapping Orchestrator</h3>
                         <div class="agent-objective">Objective: Coordinate comprehensive operational assessment</div>
@@ -1077,22 +1279,63 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Scope definition<br>
-                            → Data gathering<br>
-                            → Mapping execution<br>
-                            → Insights synthesis<br>
-                            → Assessment report
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Scope definition<br>
+                                    → Data gathering<br>
+                                    → Mapping execution<br>
+                                    → Insights synthesis<br>
+                                    → Assessment report
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Aerial Mapping Orchestrator</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">19 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 70%;"></div>
+                                            </div>
+                                            <span class="metric-value">70%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 90%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 55%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">22 uses this week</span>
-                        </div>
                         <div class="agent-number">6</div>
                         <h3>Current State MOS Evaluator</h3>
                         <div class="agent-objective">Objective: Assess effectiveness of existing management operating system</div>
@@ -1103,21 +1346,62 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Assessment questionnaire<br>
-                            → Scoring<br>
-                            → Gap identification<br>
-                            → Improvement roadmap
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Assessment questionnaire<br>
+                                    → Scoring<br>
+                                    → Gap identification<br>
+                                    → Improvement roadmap
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Current State MOS Evaluator</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">22 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 68%;"></div>
+                                            </div>
+                                            <span class="metric-value">68%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 88%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 52%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">15 uses this week</span>
-                        </div>
                         <div class="agent-number">7</div>
                         <h3>Target Operating Model Designer</h3>
                         <div class="agent-objective">Objective: Design future state operating model and implementation roadmap</div>
@@ -1128,13 +1412,58 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Requirements gathering<br>
-                            → Design workshops<br>
-                            → TOM documentation<br>
-                            → Roadmap creation
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Requirements gathering<br>
+                                    → Design workshops<br>
+                                    → TOM documentation<br>
+                                    → Roadmap creation
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Target Operating Model Designer</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">15 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 72%;"></div>
+                                            </div>
+                                            <span class="metric-value">72%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 92%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 58%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1150,13 +1479,9 @@
                     </div>
                 </div>
                 <div class="agents-grid">
+                    
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">34 uses this week</span>
-                        </div>
                         <div class="agent-number">8</div>
-                        <a href="https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546" target="_blank" class="demo-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">💬 Try Demo</a>
                         <h3>Perfect Day Architect</h3>
                         <div class="agent-objective">Objective: Design customized Perfect Day routines for client operations</div>
                         <div class="agent-description">Creates detailed Perfect Day models integrating MOS cycles and 8 AMBs tailored to client context</div>
@@ -1166,21 +1491,62 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Context gathering<br>
-                            → Activity mapping<br>
-                            → Perfect Day design<br>
-                            → Implementation guide
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Context gathering<br>
+                                    → Activity mapping<br>
+                                    → Perfect Day design<br>
+                                    → Implementation guide
+                                </div>
+                            </div>
+                            <a href="https://bsc.amplify360.ai/6cc53a36-0291-4045-82a1-0ad4711f3546" target="_blank" class="icon-panel-item agent-link-icon" title="Try Demo">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Perfect Day Architect</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">34 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 55%;"></div>
+                                            </div>
+                                            <span class="metric-value">55%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 80%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 70%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">29 uses this week</span>
-                        </div>
                         <div class="agent-number">9</div>
                         <h3>AMB Training & Coaching Guide</h3>
                         <div class="agent-objective">Objective: Generate training materials and coaching plans for Active Management Behaviors</div>
@@ -1191,21 +1557,62 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Audience definition<br>
-                            → Content customization<br>
-                            → Training package generation<br>
-                            → Coaching plan
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Audience definition<br>
+                                    → Content customization<br>
+                                    → Training package generation<br>
+                                    → Coaching plan
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>AMB Training & Coaching Guide</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">29 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 52%;"></div>
+                                            </div>
+                                            <span class="metric-value">52%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 78%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 68%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">26 uses this week</span>
-                        </div>
                         <div class="agent-number">10</div>
                         <h3>KPI & Metrics Dashboard Designer</h3>
                         <div class="agent-objective">Objective: Design performance measurement systems aligned to TPS methodology</div>
@@ -1216,13 +1623,58 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Metric selection<br>
-                            → Dashboard design<br>
-                            → Reporting cadence definition<br>
-                            → Implementation specs
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Metric selection<br>
+                                    → Dashboard design<br>
+                                    → Reporting cadence definition<br>
+                                    → Implementation specs
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>KPI & Metrics Dashboard Designer</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">26 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 58%;"></div>
+                                            </div>
+                                            <span class="metric-value">58%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 82%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 72%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1238,11 +1690,8 @@
                     </div>
                 </div>
                 <div class="agents-grid">
+                    
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">18 uses this week</span>
-                        </div>
                         <div class="agent-number">11</div>
                         <h3>Lighthouse Implementation Planner</h3>
                         <div class="agent-objective">Objective: Create detailed implementation plans for pilot locations</div>
@@ -1252,22 +1701,63 @@
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Site assessment<br>
-                            → Plan development<br>
-                            → Resource allocation<br>
-                            → Risk planning<br>
-                            → Implementation package
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Site assessment<br>
+                                    → Plan development<br>
+                                    → Resource allocation<br>
+                                    → Risk planning<br>
+                                    → Implementation package
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Lighthouse Implementation Planner</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">18 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 50%;"></div>
+                                            </div>
+                                            <span class="metric-value">50%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 95%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 75%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">21 uses this week</span>
-                        </div>
                         <div class="agent-number">12</div>
                         <h3>Change Management Orchestrator</h3>
                         <div class="agent-objective">Objective: Guide organizational change and stakeholder engagement</div>
@@ -1278,21 +1768,62 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Stakeholder mapping<br>
-                            → Resistance assessment<br>
-                            → Communication planning<br>
-                            → Engagement strategy
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Stakeholder mapping<br>
+                                    → Resistance assessment<br>
+                                    → Communication planning<br>
+                                    → Engagement strategy
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Change Management Orchestrator</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">21 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 48%;"></div>
+                                            </div>
+                                            <span class="metric-value">48%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 93%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 73%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">38 uses this week</span>
-                        </div>
                         <div class="agent-number">13</div>
                         <h3>Benefit Tracking & Validation Engine</h3>
                         <div class="agent-objective">Objective: Track, validate, and report implementation benefits</div>
@@ -1303,14 +1834,59 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Baseline capture<br>
-                            → Ongoing data collection<br>
-                            → Benefit calculation<br>
-                            → Variance analysis<br>
-                            → Reporting
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Baseline capture<br>
+                                    → Ongoing data collection<br>
+                                    → Benefit calculation<br>
+                                    → Variance analysis<br>
+                                    → Reporting
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Benefit Tracking & Validation Engine</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">38 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 53%;"></div>
+                                            </div>
+                                            <span class="metric-value">53%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 97%;"></div>
+                                            </div>
+                                            <span class="metric-value">Very High</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 78%;"></div>
+                                            </div>
+                                            <span class="metric-value">High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1326,11 +1902,8 @@
                     </div>
                 </div>
                 <div class="agents-grid">
+                    
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-limited" title="Client handover in progress"></div>
-                            <span class="usage-stats">12 uses this week</span>
-                        </div>
                         <div class="agent-number">14</div>
                         <h3>Scale-Up Rollout Planner</h3>
                         <div class="agent-objective">Objective: Plan enterprise-wide rollout from lighthouse to full organization</div>
@@ -1340,22 +1913,63 @@
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Lighthouse review<br>
-                            → Expansion strategy<br>
-                            → Phased planning<br>
-                            → Resource scaling<br>
-                            → Rollout roadmap
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Lighthouse review<br>
+                                    → Expansion strategy<br>
+                                    → Phased planning<br>
+                                    → Resource scaling<br>
+                                    → Rollout roadmap
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Scale-Up Rollout Planner</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">12 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 65%;"></div>
+                                            </div>
+                                            <span class="metric-value">65%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 60%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 45%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-limited" title="Client handover in progress"></div>
-                            <span class="usage-stats">8 uses this week</span>
-                        </div>
                         <div class="agent-number">15</div>
                         <h3>Continuous Improvement Coach<span class="handover-badge">CLIENT HANDOVER</span></h3>
                         <div class="agent-objective">Objective: Enable client self-sufficiency in continuous improvement</div>
@@ -1366,22 +1980,63 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Problem identification<br>
-                            → Root cause analysis<br>
-                            → Solution generation<br>
-                            → Action planning<br>
-                            → Tracking
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Problem identification<br>
+                                    → Root cause analysis<br>
+                                    → Solution generation<br>
+                                    → Action planning<br>
+                                    → Tracking
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Continuous Improvement Coach</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">8 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 62%;"></div>
+                                            </div>
+                                            <span class="metric-value">62%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 58%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 42%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-limited" title="Client handover in progress"></div>
-                            <span class="usage-stats">6 uses this week</span>
-                        </div>
                         <div class="agent-number">16</div>
                         <h3>MOS Sustainability Auditor<span class="handover-badge">CLIENT HANDOVER</span></h3>
                         <div class="agent-objective">Objective: Assess MOS adherence and identify improvement opportunities</div>
@@ -1392,14 +2047,59 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Audit execution<br>
-                            → Scoring<br>
-                            → Gap identification<br>
-                            → Recommendation generation<br>
-                            → Action planning
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Audit execution<br>
+                                    → Scoring<br>
+                                    → Gap identification<br>
+                                    → Recommendation generation<br>
+                                    → Action planning
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>MOS Sustainability Auditor</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">6 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 68%;"></div>
+                                            </div>
+                                            <span class="metric-value">68%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 62%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 48%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1415,11 +2115,8 @@
                     </div>
                 </div>
                 <div class="agents-grid">
+                    
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">52 uses this week</span>
-                        </div>
                         <div class="agent-number">17</div>
                         <h3>TPS Knowledge Assistant</h3>
                         <div class="agent-objective">Objective: Provide on-demand access to TPS methodology and best practices</div>
@@ -1429,21 +2126,62 @@
                             <span class="tool-chip tool-web"><i data-lucide="globe"></i> Web Search</span>
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Question input<br>
-                            → Knowledge retrieval<br>
-                            → Contextualized answer<br>
-                            → Related resources
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Question input<br>
+                                    → Knowledge retrieval<br>
+                                    → Contextualized answer<br>
+                                    → Related resources
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>TPS Knowledge Assistant</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">52 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 80%;"></div>
+                                            </div>
+                                            <span class="metric-value">80%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 65%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 25%;"></div>
+                                            </div>
+                                            <span class="metric-value">Low</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">31 uses this week</span>
-                        </div>
                         <div class="agent-number">18</div>
                         <h3>Client Insights & Benchmarking Engine</h3>
                         <div class="agent-objective">Objective: Provide industry benchmarks and comparative analytics</div>
@@ -1454,21 +2192,62 @@
                             <span class="tool-chip tool-code"><i data-lucide="code-2"></i> Code</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Industry/metric selection<br>
-                            → Data gathering<br>
-                            → Benchmark analysis<br>
-                            → Insights report
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Industry/metric selection<br>
+                                    → Data gathering<br>
+                                    → Benchmark analysis<br>
+                                    → Insights report
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Client Insights & Benchmarking Engine</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">31 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 75%;"></div>
+                                            </div>
+                                            <span class="metric-value">75%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 62%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 22%;"></div>
+                                            </div>
+                                            <span class="metric-value">Low</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="agent-card">
-                        <div class="agent-status">
-                            <div class="status-indicator status-active" title="Agent is operational"></div>
-                            <span class="usage-stats">44 uses this week</span>
-                        </div>
                         <div class="agent-number">19</div>
                         <h3>Document & Report Generator</h3>
                         <div class="agent-objective">Objective: Produce professional TPS deliverables and client reports</div>
@@ -1479,14 +2258,59 @@
                             <span class="tool-chip tool-context"><i data-lucide="book-open"></i> Context</span>
                             <span class="tool-chip tool-rag"><i data-lucide="file-text"></i> RAG</span>
                         </div>
-                        <div class="journey-label">💡 Hover to see user journey</div>
-                        <div class="journey-tooltip">
-                            <strong>User Journey:</strong><br>
-                            → Template selection<br>
-                            → Content input<br>
-                            → Formatting<br>
-                            → Document generation<br>
-                            → Export
+                        <div class="icon-panel">
+                            <div class="icon-panel-item journey-icon">
+                                <i data-lucide="map"></i>
+                                <div class="journey-tooltip">
+                                    <strong>User Journey:</strong><br>
+                                    → Template selection<br>
+                                    → Content input<br>
+                                    → Formatting<br>
+                                    → Document generation<br>
+                                    → Export
+                                </div>
+                            </div>
+                            <a href="#" class="icon-panel-item agent-link-icon" title="Go to agent">
+                                <i data-lucide="external-link"></i>
+                            </a>
+                            <a href="#" class="icon-panel-item video-icon" title="Watch video overview">
+                                <i data-lucide="video"></i>
+                            </a>
+                            <div class="icon-panel-item metrics-icon">
+                                <i data-lucide="bar-chart-2"></i>
+                                <div class="metrics-tooltip">
+                                    <div class="metrics-tooltip-header">
+                                        <h4>Document & Report Generator</h4>
+                                    </div>
+                                    <div class="metrics-tooltip-content">
+                                        <div class="metric-row">
+                                            <span class="metric-label">Usage This Week</span>
+                                            <span class="metric-value" style="margin-left: auto; font-size: 1.1em;">44 uses</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Time Saved</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill time-saved" style="width: 85%;"></div>
+                                            </div>
+                                            <span class="metric-value">85%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">ROI Contribution</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill roi-contribution" style="width: 68%;"></div>
+                                            </div>
+                                            <span class="metric-value">Medium</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="metric-label">Adoption Complexity</span>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill adoption-complexity" style="width: 28%;"></div>
+                                            </div>
+                                            <span class="metric-value">Low</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1901,39 +2725,8 @@
             threshold: 0.1
         });
 
-        // Usage Metrics Toggle Feature
-        let usageMetricsVisible = false;
-
-        function toggleUsageMetrics() {
-            const btn = event.target.closest('button');
-            const icon = document.getElementById('usageIcon');
-            const allUsageStats = document.querySelectorAll('.usage-stats');
-
-            usageMetricsVisible = !usageMetricsVisible;
-
-            allUsageStats.forEach(stat => {
-                if (usageMetricsVisible) {
-                    stat.classList.remove('hidden');
-                } else {
-                    stat.classList.add('hidden');
-                }
-            });
-
-            if (usageMetricsVisible) {
-                btn.innerHTML = '<span id="usageIcon">📊</span> Hide Usage Stats';
-            } else {
-                btn.innerHTML = '<span id="usageIcon">📊</span> Show Usage Stats';
-            }
-        }
-
         // Flow Box Highlighting
         document.addEventListener('DOMContentLoaded', function() {
-            // Hide usage stats by default
-            document.querySelectorAll('.usage-stats').forEach(stat => {
-                stat.classList.add('hidden');
-            });
-
-
             const flowBoxes = document.querySelectorAll('.flow-box, .flow-support-box');
             const agentGroups = document.querySelectorAll('.agent-group');
 
@@ -1979,6 +2772,96 @@
             // Observe all agent groups and cards
             document.querySelectorAll('.agent-group, .agent-card').forEach(el => {
                 fadeObserver.observe(el);
+            });
+        });
+
+        // Tooltip positioning for fixed tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            const journeyIcons = document.querySelectorAll('.journey-icon');
+            const metricsIcons = document.querySelectorAll('.metrics-icon');
+
+            journeyIcons.forEach(icon => {
+                icon.addEventListener('mouseenter', function(e) {                    const tooltip = this.querySelector('.journey-tooltip');
+                    if (tooltip) {                        // Move tooltip to body to escape overflow:hidden and transform
+                        document.body.appendChild(tooltip);
+
+                        // Show off-screen first to measure
+                        tooltip.style.display = 'block';
+                        tooltip.style.visibility = 'hidden';
+                        tooltip.style.left = '-9999px';
+
+                        const rect = this.getBoundingClientRect();
+                        const tooltipWidth = tooltip.offsetWidth;
+                        const tooltipHeight = tooltip.offsetHeight;                        // Position above icon (fixed position, no scroll offset needed)
+                        let top = rect.top - tooltipHeight - 10;
+                        let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+
+                        // Keep within bounds
+                        if (left < 10) left = 10;
+                        if (left + tooltipWidth > window.innerWidth - 10) {
+                            left = window.innerWidth - tooltipWidth - 10;
+                        }
+                        if (top < 10) top = rect.bottom + 10;                        tooltip.style.top = top + 'px';
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.visibility = 'visible';                        // Store reference for cleanup
+                        icon._activeTooltip = tooltip;
+                        icon._originalParent = this;
+                    } else {                    }
+                });
+
+                icon.addEventListener('mouseleave', function(e) {
+                    if (this._activeTooltip) {
+                        this._activeTooltip.style.display = 'none';
+                        // Move back to original parent
+                        this._originalParent.appendChild(this._activeTooltip);
+                        this._activeTooltip = null;
+                    }
+                });
+            });
+
+            metricsIcons.forEach(icon => {
+                icon.addEventListener('mouseenter', function(e) {                    const tooltip = this.querySelector('.metrics-tooltip');
+                    if (tooltip) {                        // Move tooltip to body to escape overflow:hidden and transform
+                        document.body.appendChild(tooltip);
+
+                        // Show off-screen first to measure
+                        tooltip.style.display = 'block';
+                        tooltip.style.visibility = 'hidden';
+                        tooltip.style.left = '-9999px';
+
+                        const rect = this.getBoundingClientRect();
+                        const tooltipWidth = tooltip.offsetWidth;
+                        const tooltipHeight = tooltip.offsetHeight;
+
+                        // Position above icon (fixed position, no scroll offset needed)
+                        let top = rect.top - tooltipHeight - 10;
+                        let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+
+                        // Keep within bounds
+                        if (left < 10) left = 10;
+                        if (left + tooltipWidth > window.innerWidth - 10) {
+                            left = window.innerWidth - tooltipWidth - 10;
+                        }
+                        if (top < 10) top = rect.bottom + 10;
+
+                        tooltip.style.top = top + 'px';
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.visibility = 'visible';
+
+                        // Store reference for cleanup
+                        icon._activeTooltip = tooltip;
+                        icon._originalParent = this;
+                    }
+                });
+
+                icon.addEventListener('mouseleave', function(e) {
+                    if (this._activeTooltip) {
+                        this._activeTooltip.style.display = 'none';
+                        // Move back to original parent
+                        this._originalParent.appendChild(this._activeTooltip);
+                        this._activeTooltip = null;
+                    }
+                });
             });
         });
 
