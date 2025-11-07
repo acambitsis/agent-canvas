@@ -286,7 +286,7 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
-            z-index: 1000;
+            z-index: 10000;
             pointer-events: none;
         }
 
@@ -518,6 +518,9 @@
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 40px;
+            margin-top: 250px; /* Add space for image overlays to appear above */
+            position: relative;
+            overflow: visible;
         }
 
         .flow-header {
@@ -575,7 +578,8 @@
             padding: 30px;
             background: white;
             border-radius: 8px;
-            overflow-x: auto;
+            overflow: visible;
+            position: relative;
         }
 
         .flow-content {
@@ -584,6 +588,8 @@
             gap: 20px;
             min-width: 1200px;
             position: relative;
+            overflow: visible;
+            padding-top: 10px; /* Add some top padding to prevent clipping */
         }
 
         .flow-box {
@@ -619,7 +625,7 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
-            z-index: 1000;
+            z-index: 10000;
             pointer-events: none;
         }
 
