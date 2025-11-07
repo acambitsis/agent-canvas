@@ -73,6 +73,7 @@
         .agent-groups {
             display: grid;
             gap: 30px;
+            padding-top: 20px; /* Space for group icon overlays */
         }
 
         .agent-group {
@@ -80,12 +81,15 @@
             border-radius: 12px;
             padding: 30px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: visible;
         }
 
         .group-header {
             display: flex;
             align-items: center;
             margin-bottom: 25px;
+            margin-top: 10px; /* Space for overlay above */
             padding-bottom: 15px;
             border-bottom: 3px solid;
         }
@@ -100,12 +104,63 @@
             margin-right: 15px;
             color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .group-icon:hover {
+            transform: scale(1.1);
         }
 
         .group-icon svg {
             width: 28px;
             height: 28px;
             stroke-width: 2.5;
+        }
+
+        /* Group icon hover image overlay */
+        .group-icon-overlay {
+            position: absolute;
+            top: -220px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            height: 200px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 10px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 10000;
+            pointer-events: none;
+        }
+
+        .group-icon:hover .group-icon-overlay {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .group-icon-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .group-icon-overlay::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid white;
         }
 
         .group-title {
@@ -721,7 +776,7 @@
         }
 
         .agent-group {
-            overflow: hidden;
+            overflow: visible;
             max-height: 5000px;
             transition: max-height 0.5s ease, opacity 0.3s ease;
         }
@@ -1457,10 +1512,20 @@
             const phaseColor = group.phaseTagColor || '';
             const phaseStyle = phaseColor ? `style="background: ${phaseColor};"` : '';
 
+            // Create group icon overlay HTML if phase image exists
+            const groupIconOverlay = phaseImage ? `
+                <div class="group-icon-overlay">
+                    <img src="${phaseImage}" alt="${group.groupName} Diagram">
+                </div>
+            ` : '';
+
             return `
                 <div class="agent-group ${group.groupClass}">
                     <div class="group-header">
-                        <div class="group-icon"><i data-lucide="${group.iconType}"></i></div>
+                        <div class="group-icon">
+                            <i data-lucide="${group.iconType}"></i>
+                            ${groupIconOverlay}
+                        </div>
                         <div class="group-title">
                             <h2>${group.groupName}</h2>
                             <span class="phase-tag" ${phaseStyle}>${group.phaseTag}</span>
