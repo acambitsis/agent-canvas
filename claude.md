@@ -296,18 +296,80 @@ const phaseImages = {
 
 ```
 tps-agent-ecosystem/
+├── data/
+│   └── config.yaml          # Main configuration file (YAML)
 ├── img/
 │   ├── aspiration.png
 │   ├── value-analysis.png
 │   ├── new-ways-of-working.png
 │   ├── installation.png
 │   └── sustain.png
-├── js/
-│   └── tps-app.js
-├── tps_operating_system.html
-├── agents_data.json
-└── claude.md (this file)
+├── index.html               # Main application (includes all JS)
+└── claude.md                # This style guide
 ```
+
+## Configuration-Driven Architecture
+
+The application is **fully data-driven** from `data/config.yaml`. All content, styling, and behavior is configured through this single YAML file:
+
+### YAML Configuration Structure
+
+```yaml
+# Tool definitions
+toolsConfig:
+  Forms:
+    icon: clipboard-list
+    class: tool-forms
+    color: '#17a2b8'
+  # ... more tools
+
+# Agent groups and phases
+agentGroups:
+  - groupNumber: 0
+    groupName: Sales & Pre-Engagement
+    groupId: sales
+    color: '#e74c3c'
+    phaseImage: null
+    showInFlow: true
+    isSupport: false
+    flowDisplayName: Sales
+    agents:
+      - agentNumber: 1
+        name: TPS Opportunity Qualifier
+        # ... agent details
+```
+
+### Dynamic Elements Generated from Config
+
+1. **Flow Diagram** - Automatically generated from `agentGroups` with `showInFlow: true`
+2. **Group Colors** - CSS dynamically injected from `color` field in each group
+3. **Tool Chips** - Icons and colors from `toolsConfig` section
+4. **Phase Images** - Loaded from `phaseImage` field
+5. **Agent Cards** - All content from agent objects
+
+### Adding New Content
+
+To add a new agent or modify existing ones, simply edit `data/config.yaml`:
+
+```yaml
+# Add a new agent to any group
+agents:
+  - agentNumber: 20
+    name: New Agent Name
+    objective: What it does
+    description: Detailed description
+    tools:
+      - Forms
+      - Code
+    journeySteps:
+      - Step 1
+      - Step 2
+    metrics:
+      usageThisWeek: 10 uses
+      timeSaved: 50%
+```
+
+No code changes required - the application automatically renders everything from the config.
 
 ---
 
