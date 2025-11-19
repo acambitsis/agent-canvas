@@ -26,9 +26,16 @@
         }
 
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 50px;
             color: white;
+        }
+
+        .header > div {
+            text-align: center;
+            flex: 1;
         }
 
         .header h1 {
@@ -557,6 +564,294 @@
             color: inherit;
         }
 
+        /* Edit Mode Styles */
+        .edit-mode-btn {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .edit-mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .edit-mode-btn svg {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 6px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .edit-mode-btn.active {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        /* Inline edit buttons */
+        .inline-edit-btn {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            color: #555;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .inline-edit-btn:hover {
+            background: #17a2b8;
+            color: white;
+            border-color: #17a2b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .inline-edit-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .edit-controls {
+            display: none;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .edit-mode-active .edit-controls {
+            display: flex;
+        }
+
+        .group-header-edit {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #0a3d4d;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #555;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #e74c3c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #17a2b8;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 4px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .tool-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tool-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tool-checkbox-label:hover {
+            border-color: #17a2b8;
+            background: #f0f9fb;
+        }
+
+        .tool-checkbox-label input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .array-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .array-input-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .array-input-item input {
+            flex: 1;
+        }
+
+        .array-input-item button {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-array-item-btn {
+            margin-top: 8px;
+        }
+
         .flow-diagram {
             padding: 30px;
             background: white;
@@ -736,8 +1031,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>TPS Operating System</h1>
-            <p id="agent-count">Loading...</p>
+            <div>
+                <h1>TPS Operating System</h1>
+                <p id="agent-count">Loading...</p>
+            </div>
+            <button id="editModeBtn" class="edit-mode-btn" onclick="toggleEditMode()" style="display: none;">
+                <i data-lucide="edit" id="editIcon"></i> <span id="editModeText">Enable Edit Mode</span>
+            </button>
         </div>
 
         <!-- Flow Diagram Section - Will be populated dynamically -->
@@ -762,6 +1062,159 @@
         <div class="agent-groups" id="agentGroupsContainer"></div>
     </div>
 
+    <!-- Edit Agent Modal -->
+    <div id="agentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalAgentTitle">Edit Agent</h2>
+                <button class="modal-close" onclick="closeAgentModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="agentForm">
+                <div class="form-group">
+                    <label for="agentName">Agent Name</label>
+                    <input type="text" id="agentName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="agentObjective">Objective</label>
+                    <input type="text" id="agentObjective" required>
+                    <small>Brief summary of what this agent does</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="agentDescription">Description</label>
+                    <textarea id="agentDescription" rows="4" required></textarea>
+                    <small>Detailed description of the agent's capabilities</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Tools</label>
+                    <div id="agentTools" class="tool-checkbox-group"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="journeySteps">Journey Steps</label>
+                    <div id="journeyStepsContainer" class="array-input-group"></div>
+                    <button type="button" class="btn btn-secondary add-array-item-btn" onclick="addArrayInputField('journeySteps')">
+                        <i data-lucide="plus"></i> Add Step
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label for="metricsUsage">Usage This Week</label>
+                    <input type="text" id="metricsUsage" placeholder="e.g., 25 uses">
+                </div>
+
+                <div class="form-group">
+                    <label for="metricsTimeSaved">Time Saved</label>
+                    <input type="text" id="metricsTimeSaved" placeholder="e.g., 60%">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteAgent()" id="deleteAgentBtn">
+                        <i data-lucide="trash-2"></i> Delete
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAgentModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAgent()">
+                        <i data-lucide="save"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Group Modal -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalGroupTitle">Edit Section</h2>
+                <button class="modal-close" onclick="closeGroupModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="groupForm">
+                <div class="form-group">
+                    <label for="groupName">Section Name</label>
+                    <input type="text" id="groupName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupId">Section ID</label>
+                    <input type="text" id="groupId" required>
+                    <small>Unique identifier (lowercase, no spaces)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupClass">CSS Class</label>
+                    <input type="text" id="groupClass" required>
+                    <small>CSS class name for styling</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupIconType">Icon Type</label>
+                    <input type="text" id="groupIconType" placeholder="e.g., briefcase, target, search">
+                    <small>Lucide icon name for group header</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupPhaseTag">Phase Tag</label>
+                    <input type="text" id="groupPhaseTag" placeholder="e.g., Pre-Phase, Phase 1">
+                    <small>Tag displayed next to section name</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupColor">Color</label>
+                    <input type="color" id="groupColor" required>
+                    <small>Main color for this section</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupPhaseTagColor">Phase Tag Color (Optional)</label>
+                    <input type="color" id="groupPhaseTagColor">
+                    <small>Leave blank to use main color</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupPhaseImage">Phase Image Path</label>
+                    <input type="text" id="groupPhaseImage" placeholder="img/phase-name.png">
+                    <small>Optional: path to phase image</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupFlowDisplayName">Flow Display Name</label>
+                    <input type="text" id="groupFlowDisplayName">
+                    <small>Name shown in flow diagram</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="groupShowInFlow">
+                        Show in Flow Diagram
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="groupIsSupport">
+                        Is Support Phase
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteGroup()" id="deleteGroupBtn">
+                        <i data-lucide="trash-2"></i> Delete Section
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeGroupModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveGroup()">
+                        <i data-lucide="save"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Global configuration data
         let configData = null;
@@ -770,10 +1223,11 @@
         // Load YAML configuration file
         async function loadConfig() {
             try {
-                const response = await fetch('data/config.yaml');
+                const response = await fetch('/api/config');
                 const yamlText = await response.text();
                 configData = jsyaml.load(yamlText);
-                console.log('Config loaded:', configData);
+                const configSource = response.headers.get('X-Config-Source') || 'unknown';
+                console.log('Config loaded from:', configSource, configData);
                 return configData;
             } catch (error) {
                 console.error('Error loading config:', error);
@@ -924,7 +1378,7 @@
                 </div>`;
         }
 
-        function createAgentCard(agent, phaseImage, config) {
+        function createAgentCard(agent, phaseImage, config, groupIndex, agentIndex) {
             const toolsHTML = agent.tools.map(tool => createToolChip(tool, config)).join('');
             const journeyHTML = createJourneyTooltip(agent.journeySteps);
             const metricsHTML = createMetricsTooltip(agent);
@@ -963,11 +1417,18 @@
                             ${metricsHTML}
                         </div>
                     </div>
+                    <div class="edit-controls">
+                        <button class="inline-edit-btn" onclick="openEditAgentModal(${groupIndex}, ${agentIndex})">
+                            <i data-lucide="edit"></i> Edit
+                        </button>
+                    </div>
                 </div>`;
         }
 
-        function createAgentGroup(group, config) {
-            const agentsHTML = group.agents.map(agent => createAgentCard(agent, group.phaseImage, config)).join('');
+        function createAgentGroup(group, config, groupIndex) {
+            const agentsHTML = group.agents.map((agent, agentIndex) =>
+                createAgentCard(agent, group.phaseImage, config, groupIndex, agentIndex)
+            ).join('');
             const phaseStyle = group.phaseTagColor ? `style="background: ${group.phaseTagColor};"` : `style="background: ${group.color};"`;
 
             const groupIconOverlay = group.phaseImage ? `
@@ -977,19 +1438,68 @@
             ` : '';
 
             return `
-                <div class="agent-group ${group.groupClass}" data-group-id="${group.groupId}" data-group-index="${group.groupNumber}">
+                <div class="agent-group ${group.groupClass}" data-group-id="${group.groupId}" data-group-index="${groupIndex}">
                     <div class="group-header">
-                        <div class="group-icon">
-                            <i data-lucide="${group.iconType}"></i>
-                            ${groupIconOverlay}
-                        </div>
-                        <div class="group-title">
-                            <h2>${group.groupName}</h2>
-                            <span class="phase-tag" ${phaseStyle}>${group.phaseTag}</span>
+                        <div class="group-header-edit">
+                            <div style="display: flex; align-items: center;">
+                                <div class="group-icon">
+                                    <i data-lucide="${group.iconType}"></i>
+                                    ${groupIconOverlay}
+                                </div>
+                                <div class="group-title">
+                                    <h2>${group.groupName}</h2>
+                                    <span class="phase-tag" ${phaseStyle}>${group.phaseTag}</span>
+                                </div>
+                            </div>
+                            <div class="edit-controls">
+                                <button class="inline-edit-btn" onclick="openEditGroupModal(${groupIndex})">
+                                    <i data-lucide="edit"></i> Edit Section
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="agents-grid">${agentsHTML}</div>
+                    <div class="edit-controls" style="margin-top: 20px;">
+                        <button class="inline-edit-btn" onclick="openAddAgentModal(${groupIndex})">
+                            <i data-lucide="plus"></i> Add Agent
+                        </button>
+                    </div>
                 </div>`;
+        }
+
+        // Render agent groups (can be called to re-render after edits)
+        function renderAgentGroups() {
+            if (!configData) return;
+
+            // Update agent count
+            const totalAgents = configData.agentGroups.reduce((sum, group) => sum + group.agents.length, 0);
+            document.getElementById('agent-count').textContent =
+                `${totalAgents} AI Agents Supporting The Proudfoot System`;
+
+            // Render all agent groups
+            const container = document.getElementById('agentGroupsContainer');
+            const groupsHTML = configData.agentGroups.map((group, index) =>
+                createAgentGroup(group, configData, index)
+            ).join('');
+
+            const addSectionButton = `
+                <div class="edit-controls" style="text-align: center; margin-top: 40px;">
+                    <button class="inline-edit-btn" onclick="openAddSectionModal()" style="padding: 12px 24px; font-size: 1.1em;">
+                        <i data-lucide="plus"></i> Add New Section
+                    </button>
+                </div>
+            `;
+
+            container.innerHTML = groupsHTML + addSectionButton;
+
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Setup interactions
+            setupTooltips();
+            setupFlowBoxes();
         }
 
         // Load and render agents
@@ -1003,21 +1513,11 @@
                 // Generate flow diagram
                 generateFlowDiagram(config);
 
-                // Update agent count
-                const totalAgents = config.agentGroups.reduce((sum, group) => sum + group.agents.length, 0);
-                document.getElementById('agent-count').textContent =
-                    `${totalAgents} AI Agents Supporting The Proudfoot System`;
+                // Render agent groups
+                renderAgentGroups();
 
-                // Render all agent groups
-                const container = document.getElementById('agentGroupsContainer');
-                container.innerHTML = config.agentGroups.map(group => createAgentGroup(group, config)).join('');
-
-                // Initialize Lucide icons
-                lucide.createIcons();
-
-                // Setup interactions
-                setupTooltips();
-                setupFlowBoxes();
+                // Show edit mode button (since user is authenticated)
+                showEditModeButton();
 
             } catch (error) {
                 console.error('Error loading agents:', error);
@@ -1151,6 +1651,357 @@
                     }
                 });
             });
+        }
+
+        // =================
+        // EDIT MODE FUNCTIONALITY
+        // =================
+
+        let editModeActive = false;
+
+        // Toggle edit mode
+        function toggleEditMode() {
+            editModeActive = !editModeActive;
+            const btn = document.getElementById('editModeBtn');
+            const text = document.getElementById('editModeText');
+            const icon = document.getElementById('editIcon');
+
+            if (editModeActive) {
+                btn.classList.add('active');
+                text.textContent = 'Exit Edit Mode';
+                document.body.classList.add('edit-mode-active');
+            } else {
+                btn.classList.remove('active');
+                text.textContent = 'Enable Edit Mode';
+                document.body.classList.remove('edit-mode-active');
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        // Show edit mode button after page loads (when authenticated)
+        function showEditModeButton() {
+            const btn = document.getElementById('editModeBtn');
+            if (btn) {
+                btn.style.display = 'block';
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        // Save config to API
+        async function saveConfig() {
+            try {
+                const yamlText = jsyaml.dump(configData);
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/yaml'
+                    },
+                    body: yamlText
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save configuration');
+                }
+
+                const result = await response.json();
+                console.log('Config saved:', result);
+                return true;
+            } catch (error) {
+                console.error('Error saving config:', error);
+                alert('Failed to save configuration: ' + error.message);
+                return false;
+            }
+        }
+
+        // Edit agent modal functions
+        function openEditAgentModal(groupIndex, agentIndex) {
+            const group = configData.agentGroups[groupIndex];
+            const agent = group.agents[agentIndex];
+
+            showAgentModal(agent, groupIndex, agentIndex);
+        }
+
+        function openAddAgentModal(groupIndex) {
+            const newAgent = {
+                agentNumber: configData.agentGroups[groupIndex].agents.length + 1,
+                name: '',
+                objective: '',
+                description: '',
+                tools: [],
+                journeySteps: [],
+                metrics: {
+                    usageThisWeek: '',
+                    timeSaved: ''
+                }
+            };
+
+            showAgentModal(newAgent, groupIndex, -1);
+        }
+
+        function showAgentModal(agent, groupIndex, agentIndex) {
+            const isNew = agentIndex === -1;
+            const modal = document.getElementById('agentModal');
+            const form = document.getElementById('agentForm');
+
+            document.getElementById('modalAgentTitle').textContent = isNew ? 'Add Agent' : 'Edit Agent';
+            document.getElementById('agentName').value = agent.name || '';
+            document.getElementById('agentObjective').value = agent.objective || '';
+            document.getElementById('agentDescription').value = agent.description || '';
+
+            // Set tool checkboxes
+            const toolsContainer = document.getElementById('agentTools');
+            toolsContainer.innerHTML = '';
+            Object.keys(configData.toolsConfig).forEach(toolName => {
+                const checked = (agent.tools || []).includes(toolName) ? 'checked' : '';
+                toolsContainer.innerHTML += `
+                    <label class="tool-checkbox-label">
+                        <input type="checkbox" name="tools" value="${toolName}" ${checked}>
+                        ${toolName}
+                    </label>
+                `;
+            });
+
+            // Set journey steps
+            renderArrayInput('journeySteps', agent.journeySteps || []);
+
+            // Set metrics
+            document.getElementById('metricsUsage').value = agent.metrics?.usageThisWeek || '';
+            document.getElementById('metricsTimeSaved').value = agent.metrics?.timeSaved || '';
+
+            // Show/hide delete button
+            const deleteBtn = document.getElementById('deleteAgentBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = isNew ? 'none' : 'inline-flex';
+            }
+
+            // Store context for save
+            form.dataset.groupIndex = groupIndex;
+            form.dataset.agentIndex = agentIndex;
+
+            modal.classList.add('show');
+        }
+
+        function closeAgentModal() {
+            document.getElementById('agentModal').classList.remove('show');
+        }
+
+        function saveAgent() {
+            const form = document.getElementById('agentForm');
+            const groupIndex = parseInt(form.dataset.groupIndex);
+            const agentIndex = parseInt(form.dataset.agentIndex);
+            const isNew = agentIndex === -1;
+
+            const agent = {
+                agentNumber: isNew ? configData.agentGroups[groupIndex].agents.length + 1 : configData.agentGroups[groupIndex].agents[agentIndex].agentNumber,
+                name: document.getElementById('agentName').value,
+                objective: document.getElementById('agentObjective').value,
+                description: document.getElementById('agentDescription').value,
+                tools: Array.from(document.querySelectorAll('#agentTools input:checked')).map(cb => cb.value),
+                journeySteps: getArrayInputValues('journeySteps'),
+                metrics: {
+                    usageThisWeek: document.getElementById('metricsUsage').value,
+                    timeSaved: document.getElementById('metricsTimeSaved').value
+                }
+            };
+
+            if (isNew) {
+                configData.agentGroups[groupIndex].agents.push(agent);
+            } else {
+                configData.agentGroups[groupIndex].agents[agentIndex] = agent;
+            }
+
+            saveConfig().then(success => {
+                if (success) {
+                    closeAgentModal();
+                    // Re-render the page with updated data
+                    renderAgentGroups();
+                    generateFlowDiagram(configData);
+                }
+            });
+        }
+
+        function deleteAgent() {
+            if (!confirm('Are you sure you want to delete this agent?')) {
+                return;
+            }
+
+            const form = document.getElementById('agentForm');
+            const groupIndex = parseInt(form.dataset.groupIndex);
+            const agentIndex = parseInt(form.dataset.agentIndex);
+
+            configData.agentGroups[groupIndex].agents.splice(agentIndex, 1);
+
+            saveConfig().then(success => {
+                if (success) {
+                    closeAgentModal();
+                    renderAgentGroups();
+                    generateFlowDiagram(configData);
+                }
+            });
+        }
+
+        // Edit group modal functions
+        function openEditGroupModal(groupIndex) {
+            const group = configData.agentGroups[groupIndex];
+            showGroupModal(group, groupIndex);
+        }
+
+        function openAddSectionModal() {
+            const newGroup = {
+                groupNumber: configData.agentGroups.length,
+                groupName: '',
+                groupId: '',
+                groupClass: '',
+                color: '#17a2b8',
+                phaseImage: null,
+                showInFlow: true,
+                isSupport: false,
+                flowDisplayName: '',
+                agents: []
+            };
+
+            showGroupModal(newGroup, -1);
+        }
+
+        function showGroupModal(group, groupIndex) {
+            const isNew = groupIndex === -1;
+            const modal = document.getElementById('groupModal');
+            const form = document.getElementById('groupForm');
+
+            document.getElementById('modalGroupTitle').textContent = isNew ? 'Add Section' : 'Edit Section';
+            document.getElementById('groupName').value = group.groupName || '';
+            document.getElementById('groupId').value = group.groupId || '';
+            document.getElementById('groupClass').value = group.groupClass || '';
+            document.getElementById('groupIconType').value = group.iconType || '';
+            document.getElementById('groupPhaseTag').value = group.phaseTag || '';
+            document.getElementById('groupColor').value = group.color || '#17a2b8';
+            document.getElementById('groupPhaseTagColor').value = group.phaseTagColor || '';
+            document.getElementById('groupPhaseImage').value = group.phaseImage || '';
+            document.getElementById('groupShowInFlow').checked = group.showInFlow !== false;
+            document.getElementById('groupIsSupport').checked = group.isSupport === true;
+            document.getElementById('groupFlowDisplayName').value = group.flowDisplayName || '';
+
+            // Show/hide delete button
+            const deleteBtn = document.getElementById('deleteGroupBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = isNew ? 'none' : 'inline-flex';
+            }
+
+            form.dataset.groupIndex = groupIndex;
+
+            modal.classList.add('show');
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').classList.remove('show');
+        }
+
+        function saveGroup() {
+            const form = document.getElementById('groupForm');
+            const groupIndex = parseInt(form.dataset.groupIndex);
+            const isNew = groupIndex === -1;
+
+            const phaseTagColor = document.getElementById('groupPhaseTagColor').value;
+
+            const group = {
+                groupNumber: isNew ? configData.agentGroups.length : configData.agentGroups[groupIndex].groupNumber,
+                groupName: document.getElementById('groupName').value,
+                groupId: document.getElementById('groupId').value,
+                groupClass: document.getElementById('groupClass').value,
+                iconType: document.getElementById('groupIconType').value,
+                phaseTag: document.getElementById('groupPhaseTag').value,
+                color: document.getElementById('groupColor').value,
+                phaseTagColor: phaseTagColor || null,
+                phaseImage: document.getElementById('groupPhaseImage').value || null,
+                showInFlow: document.getElementById('groupShowInFlow').checked,
+                isSupport: document.getElementById('groupIsSupport').checked,
+                flowDisplayName: document.getElementById('groupFlowDisplayName').value,
+                agents: isNew ? [] : configData.agentGroups[groupIndex].agents
+            };
+
+            if (isNew) {
+                configData.agentGroups.push(group);
+            } else {
+                configData.agentGroups[groupIndex] = group;
+            }
+
+            saveConfig().then(success => {
+                if (success) {
+                    closeGroupModal();
+                    renderAgentGroups();
+                    generateFlowDiagram(configData);
+                    generateDynamicCSS(configData);
+                }
+            });
+        }
+
+        function deleteGroup() {
+            if (!confirm('Are you sure you want to delete this entire section and all its agents?')) {
+                return;
+            }
+
+            const form = document.getElementById('groupForm');
+            const groupIndex = parseInt(form.dataset.groupIndex);
+
+            configData.agentGroups.splice(groupIndex, 1);
+
+            saveConfig().then(success => {
+                if (success) {
+                    closeGroupModal();
+                    renderAgentGroups();
+                    generateFlowDiagram(configData);
+                }
+            });
+        }
+
+        // Helper functions for array inputs
+        function renderArrayInput(fieldName, values) {
+            const container = document.getElementById(fieldName + 'Container');
+            container.innerHTML = '';
+
+            values.forEach((value, index) => {
+                addArrayInputField(fieldName, value);
+            });
+
+            // Always have at least one empty field
+            if (values.length === 0) {
+                addArrayInputField(fieldName, '');
+            }
+        }
+
+        function addArrayInputField(fieldName, value = '') {
+            const container = document.getElementById(fieldName + 'Container');
+            const index = container.children.length;
+
+            const div = document.createElement('div');
+            div.className = 'array-input-item';
+            div.innerHTML = `
+                <input type="text" value="${value}" data-field="${fieldName}" data-index="${index}">
+                <button type="button" class="btn btn-danger" onclick="removeArrayInputField(this)">
+                    <i data-lucide="x"></i>
+                </button>
+            `;
+
+            container.appendChild(div);
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function removeArrayInputField(button) {
+            button.parentElement.remove();
+        }
+
+        function getArrayInputValues(fieldName) {
+            return Array.from(document.querySelectorAll(`input[data-field="${fieldName}"]`))
+                .map(input => input.value)
+                .filter(val => val.trim() !== '');
         }
 
         // Initialize on page load
