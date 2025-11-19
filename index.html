@@ -1153,33 +1153,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="groupIconType">Icon Type</label>
-                    <input type="text" id="groupIconType" placeholder="e.g., briefcase, target, search">
-                    <small>Lucide icon name for group header</small>
-                </div>
-
-                <div class="form-group">
                     <label for="groupPhaseTag">Phase Tag</label>
                     <input type="text" id="groupPhaseTag" placeholder="e.g., Pre-Phase, Phase 1">
                     <small>Tag displayed next to section name</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="groupColor">Color</label>
-                    <input type="color" id="groupColor" required>
-                    <small>Main color for this section</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="groupPhaseTagColor">Phase Tag Color (Optional)</label>
-                    <input type="color" id="groupPhaseTagColor">
-                    <small>Leave blank to use main color</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="groupPhaseImage">Phase Image Path</label>
-                    <input type="text" id="groupPhaseImage" placeholder="img/phase-name.png">
-                    <small>Optional: path to phase image</small>
                 </div>
 
                 <div class="form-group">
@@ -1188,18 +1164,47 @@
                     <small>Name shown in flow diagram</small>
                 </div>
 
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="groupShowInFlow">
-                        Show in Flow Diagram
-                    </label>
-                </div>
+                <!-- Advanced formatting fields - only shown when editing -->
+                <div id="advancedGroupFields" style="display: none;">
+                    <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 1em; color: #555;">Advanced Formatting</h3>
 
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="groupIsSupport">
-                        Is Support Phase
-                    </label>
+                    <div class="form-group">
+                        <label for="groupIconType">Icon Type</label>
+                        <input type="text" id="groupIconType" placeholder="e.g., briefcase, target, search">
+                        <small>Lucide icon name for group header</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="groupColor">Color</label>
+                        <input type="color" id="groupColor">
+                        <small>Main color for this section</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="groupPhaseTagColor">Phase Tag Color (Optional)</label>
+                        <input type="color" id="groupPhaseTagColor">
+                        <small>Leave blank to use main color</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="groupPhaseImage">Phase Image Path</label>
+                        <input type="text" id="groupPhaseImage" placeholder="img/phase-name.png">
+                        <small>Optional: path to phase image</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="groupShowInFlow">
+                            Show in Flow Diagram
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="groupIsSupport">
+                            Is Support Phase
+                        </label>
+                    </div>
                 </div>
 
                 <div class="modal-actions">
@@ -1886,6 +1891,12 @@
             document.getElementById('groupIsSupport').checked = group.isSupport === true;
             document.getElementById('groupFlowDisplayName').value = group.flowDisplayName || '';
 
+            // Show/hide advanced formatting fields (only for editing)
+            const advancedFields = document.getElementById('advancedGroupFields');
+            if (advancedFields) {
+                advancedFields.style.display = isNew ? 'none' : 'block';
+            }
+
             // Show/hide delete button
             const deleteBtn = document.getElementById('deleteGroupBtn');
             if (deleteBtn) {
@@ -1906,6 +1917,16 @@
             const groupIndex = parseInt(form.dataset.groupIndex);
             const isNew = groupIndex === -1;
 
+            // Get defaults from config
+            const defaults = configData.sectionDefaults || {
+                color: '#1a5f73',
+                iconType: 'target',
+                phaseTagColor: null,
+                phaseImage: null,
+                showInFlow: true,
+                isSupport: false
+            };
+
             const phaseTagColor = document.getElementById('groupPhaseTagColor').value;
 
             const group = {
@@ -1913,16 +1934,27 @@
                 groupName: document.getElementById('groupName').value,
                 groupId: document.getElementById('groupId').value,
                 groupClass: document.getElementById('groupClass').value,
-                iconType: document.getElementById('groupIconType').value,
                 phaseTag: document.getElementById('groupPhaseTag').value,
-                color: document.getElementById('groupColor').value,
-                phaseTagColor: phaseTagColor || null,
-                phaseImage: document.getElementById('groupPhaseImage').value || null,
-                showInFlow: document.getElementById('groupShowInFlow').checked,
-                isSupport: document.getElementById('groupIsSupport').checked,
                 flowDisplayName: document.getElementById('groupFlowDisplayName').value,
                 agents: isNew ? [] : configData.agentGroups[groupIndex].agents
             };
+
+            // For new sections, use defaults; for editing, use form values
+            if (isNew) {
+                group.iconType = defaults.iconType;
+                group.color = defaults.color;
+                group.phaseTagColor = defaults.phaseTagColor;
+                group.phaseImage = defaults.phaseImage;
+                group.showInFlow = defaults.showInFlow;
+                group.isSupport = defaults.isSupport;
+            } else {
+                group.iconType = document.getElementById('groupIconType').value;
+                group.color = document.getElementById('groupColor').value;
+                group.phaseTagColor = phaseTagColor || null;
+                group.phaseImage = document.getElementById('groupPhaseImage').value || null;
+                group.showInFlow = document.getElementById('groupShowInFlow').checked;
+                group.isSupport = document.getElementById('groupIsSupport').checked;
+            }
 
             if (isNew) {
                 configData.agentGroups.push(group);

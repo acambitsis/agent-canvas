@@ -28,6 +28,15 @@ toolsConfig:
     class: tool-context
     color: '#c0392b'
 
+# Global defaults for new sections
+sectionDefaults:
+  color: '#1a5f73'              # Default section color (Medium Teal)
+  iconType: target              # Default Lucide icon
+  phaseTagColor: null           # null = use main color
+  phaseImage: null              # No image by default
+  showInFlow: true              # Show in flow diagram by default
+  isSupport: false              # Not a support phase by default
+
 # Agent Groups organized by phases
 agentGroups:
   - groupNumber: 0
