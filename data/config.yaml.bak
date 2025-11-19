@@ -6,24 +6,36 @@ toolsConfig:
   Forms:
     icon: clipboard-list
     class: tool-forms
+    color: '#17a2b8'
   Code:
     icon: code-2
     class: tool-code
+    color: '#3776ab'
   RAG:
     icon: file-text
     class: tool-rag
+    color: '#e67e22'
   Web Search:
     icon: globe
     class: tool-web
+    color: '#27ae60'
   Deep Research:
     icon: search
     class: tool-research
+    color: '#8e44ad'
   Context:
     icon: book-open
     class: tool-context
+    color: '#c0392b'
 
 # Global defaults for new sections
 sectionDefaults:
+  color: '#1a5f73'              # Default section color (Medium Teal)
+  iconType: target              # Default Lucide icon
+  phaseTagColor: null           # null = use main color
+  phaseImage: null              # No image by default
+  showInFlow: true              # Show in flow diagram by default
+  isSupport: false              # Not a support phase by default
 
 # Agent Groups organized by phases
 agentGroups:
@@ -31,7 +43,13 @@ agentGroups:
     groupName: Sales & Pre-Engagement
     groupClass: sales-group
     groupId: sales
+    color: '#e74c3c'
     phaseTag: Pre-Phase
+    phaseTagColor: '#e74c3c'
+    iconType: briefcase
+    phaseImage: null  # No image for sales phase
+    showInFlow: true
+    isSupport: false
     flowDisplayName: Sales  # Short name for flow diagram
     agents:
       - agentNumber: 1
@@ -82,7 +100,13 @@ agentGroups:
     groupName: 'Phase 1: Aspiration'
     groupClass: aspiration-group
     groupId: aspiration
+    color: '#0a3d4d'
     phaseTag: Executive Alignment
+    phaseTagColor: null
+    iconType: target
+    phaseImage: img/aspiration.png
+    showInFlow: true
+    isSupport: false
     flowDisplayName: Aspiration
     agents:
       - agentNumber: 3
@@ -132,7 +156,13 @@ agentGroups:
     groupName: 'Phase 2: Value Analysis'
     groupClass: value-group
     groupId: value
+    color: '#1a5f73'
     phaseTag: Aerial Mapping
+    phaseTagColor: null
+    iconType: search
+    phaseImage: img/value-analysis.png
+    showInFlow: true
+    isSupport: false
     flowDisplayName: Value Analysis
     agents:
       - agentNumber: 5
@@ -206,7 +236,13 @@ agentGroups:
     groupName: 'Phase 3: New Ways of Working'
     groupClass: working-group
     groupId: working
+    color: '#2a7f93'
     phaseTag: MOS & Perfect Day
+    phaseTagColor: null
+    iconType: settings
+    phaseImage: img/new-ways-of-working.png
+    showInFlow: true
+    isSupport: false
     flowDisplayName: New Ways
     agents:
       - agentNumber: 8
@@ -279,7 +315,13 @@ agentGroups:
     groupName: 'Phase 4: Installation'
     groupClass: installation-group
     groupId: installation
+    color: '#3a9fb3'
     phaseTag: Lighthouse & Rollout
+    phaseTagColor: null
+    iconType: activity
+    phaseImage: img/installation.png
+    showInFlow: true
+    isSupport: false
     flowDisplayName: Installation
     agents:
       - agentNumber: 11
@@ -353,7 +395,13 @@ agentGroups:
     groupName: 'Phase 5: Sustain'
     groupClass: sustain-group
     groupId: sustain
+    color: '#4abfd3'
     phaseTag: Continuous Improvement
+    phaseTagColor: null
+    iconType: refresh-cw
+    phaseImage: img/sustain.png
+    showInFlow: true
+    isSupport: false
     flowDisplayName: Sustain
     agents:
       - agentNumber: 14
@@ -430,7 +478,13 @@ agentGroups:
     groupName: Cross-Cutting Support
     groupClass: support-group
     groupId: support
+    color: '#95a5a6'
     phaseTag: All Phases
+    phaseTagColor: '#95a5a6'
+    iconType: wrench
+    phaseImage: null
+    showInFlow: true
+    isSupport: true
     flowDisplayName: Support Agents (Available Throughout All Phases)
     agents:
       - agentNumber: 17
