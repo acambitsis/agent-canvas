@@ -40,6 +40,145 @@ body {
     opacity: 0.9;
 }
 
+.document-controls {
+    margin-top: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 999px;
+    padding: 12px 18px;
+    position: relative;
+}
+
+.document-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.document-select-group label {
+    font-weight: 600;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.document-select-group select {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95em;
+    min-width: 220px;
+}
+
+.doc-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.doc-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.doc-menu-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.document-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 220px;
+    background: #0b2230;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    display: none;
+    z-index: 2000;
+}
+
+.document-menu.open {
+    display: block;
+}
+
+.document-menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.document-menu button {
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.document-menu button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.document-menu button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.document-menu button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.menu-label {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
+}
+
+.document-menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 10px 0;
+}
+
+.document-meta,
+.document-status {
+    margin-top: 12px;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.document-status[data-state="error"] {
+    color: #ffb3b3;
+}
+
+.document-status[data-state="success"] {
+    color: #b3ffd5;
+}
+
 .agent-groups {
     display: grid;
     gap: 30px;
@@ -731,6 +870,66 @@ body {
 .modal-header h2 {
     margin: 0;
     color: #0a3d4d;
+}
+
+.modal-view-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.view-toggle-btn {
+    flex: 1;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.view-toggle-btn.active {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    border-color: #17a2b8;
+    box-shadow: 0 4px 10px rgba(23, 162, 184, 0.3);
+}
+
+.yaml-editor {
+    display: none;
+}
+
+.yaml-editor textarea {
+    width: 100%;
+    min-height: 300px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    background: #0b2230;
+    color: #f2f7fb;
+    border-radius: 8px;
+    padding: 12px;
+    border: 2px solid #142f3c;
+    resize: vertical;
+    line-height: 1.4;
+}
+
+.yaml-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.yaml-status {
+    font-size: 0.9em;
+    color: #b3ffd5;
+}
+
+.yaml-error {
+    margin-top: 8px;
+    color: #ffb3b3;
+    font-size: 0.9em;
+    min-height: 1em;
 }
 
 .modal-close {

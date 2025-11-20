@@ -1,6 +1,28 @@
 // ----- State and utility helpers -----
 let configData = null;
 let dynamicStyleElement = null;
+let currentDocumentName = null;
+let availableDocuments = [];
+let documentListLoaded = false;
+let agentModalViewMode = 'form';
+let groupModalViewMode = 'form';
+let agentModalOriginal = null;
+let groupModalOriginal = null;
+let documentMenuBound = false;
+
+const DEFAULT_DOCUMENT_NAME = 'config.yaml';
+const DOCUMENT_STORAGE_KEY = 'tps-active-config-doc';
+const BLANK_DOCUMENT_TEMPLATE = [
+    '# TPS Agent Ecosystem configuration',
+    'sectionDefaults:',
+    '  color: "#1a5f73"',
+    '  iconType: target',
+    '  showInFlow: true',
+    '  isSupport: false',
+    'toolsConfig: {}',
+    'agentGroups: []',
+    ''
+].join('\n');
 const defaultAgentMetrics = {
     usageThisWeek: '0',
     timeSaved: '0',
@@ -28,15 +50,796 @@ function getGroupFormatting(group, field) {
     return group[field] !== undefined ? group[field] : defaults[field];
 }
 
-// ----- Config load/save -----
-async function loadConfig() {
+function deepClone(value) {
+    if (value === null || value === undefined) {
+        return value;
+    }
     try {
-        const response = await fetch('/api/config');
+        return structuredClone(value);
+    } catch {
+        return JSON.parse(JSON.stringify(value));
+    }
+}
+
+// ----- Document management helpers -----
+function getStoredDocumentPreference() {
+    try {
+        return localStorage.getItem(DOCUMENT_STORAGE_KEY);
+    } catch (error) {
+        console.warn('Unable to read document preference:', error);
+        return null;
+    }
+}
+
+function persistDocumentPreference(name) {
+    try {
+        if (name) {
+            localStorage.setItem(DOCUMENT_STORAGE_KEY, name);
+        } else {
+            localStorage.removeItem(DOCUMENT_STORAGE_KEY);
+        }
+    } catch (error) {
+        console.warn('Unable to persist document preference:', error);
+    }
+}
+
+function setActiveDocumentName(name, options = {}) {
+    currentDocumentName = name || null;
+
+    if (!options.skipPersist) {
+        persistDocumentPreference(currentDocumentName);
+    }
+
+    updateDocumentControlsUI();
+}
+
+function getDocumentSelectElement() {
+    return document.getElementById('documentSelect');
+}
+
+function getDocumentMetaElement() {
+    return document.getElementById('documentMeta');
+}
+
+function getDocumentStatusElement() {
+    return document.getElementById('documentStatusMessage');
+}
+
+function getDocumentMenuElement() {
+    return document.getElementById('documentMenu');
+}
+
+function closeDocumentMenu() {
+    const menu = getDocumentMenuElement();
+    const button = document.getElementById('documentMenuBtn');
+    if (menu) {
+        menu.classList.remove('open');
+    }
+    if (button) {
+        button.setAttribute('aria-expanded', 'false');
+    }
+}
+
+function toggleDocumentMenu(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const menu = getDocumentMenuElement();
+    const button = document.getElementById('documentMenuBtn');
+    if (!menu || !button) return;
+    const willOpen = !menu.classList.contains('open');
+    if (willOpen) {
+        menu.classList.add('open');
+        button.setAttribute('aria-expanded', 'true');
+    } else {
+        closeDocumentMenu();
+    }
+}
+
+function bindDocumentMenuEvents() {
+    if (documentMenuBound) return;
+    const menu = getDocumentMenuElement();
+    const button = document.getElementById('documentMenuBtn');
+    if (!menu || !button) return;
+
+    button.addEventListener('click', toggleDocumentMenu);
+    menu.addEventListener('click', event => {
+        const actionButton = event.target.closest('button[data-action]');
+        if (!actionButton) return;
+        event.preventDefault();
+        const action = actionButton.dataset.action;
+        closeDocumentMenu();
+        handleDocumentMenuAction(action);
+    });
+
+    document.addEventListener('click', event => {
+        const menuEl = getDocumentMenuElement();
+        const toggleBtn = document.getElementById('documentMenuBtn');
+        if (!menuEl || !menuEl.classList.contains('open')) return;
+        if (menuEl.contains(event.target) || toggleBtn.contains(event.target)) {
+            return;
+        }
+        closeDocumentMenu();
+    });
+
+    documentMenuBound = true;
+}
+
+function handleDocumentMenuAction(action) {
+    switch (action) {
+        case 'upload':
+            triggerDocumentUpload();
+            break;
+        case 'blank':
+            createBlankDocument();
+            break;
+        case 'rename':
+            renameCurrentDocument();
+            break;
+        case 'download':
+            downloadCurrentDocument();
+            break;
+        default:
+            break;
+    }
+}
+
+async function createBlankDocument() {
+    const defaultName = `document-${availableDocuments.length + 1}.yaml`;
+    const userInput = prompt('Name for the new document (.yaml will be appended if missing):', defaultName);
+    if (userInput === null) {
+        return;
+    }
+
+    let docName;
+    try {
+        docName = sanitizeDocumentNameForClient(userInput);
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
+
+    if (availableDocuments.some(doc => doc.name === docName)) {
+        if (!confirm(`"${docName}" already exists. Overwrite it with a blank document?`)) {
+            return;
+        }
+    }
+
+    try {
+        setDocumentStatusMessage(`Creating "${docName}"...`);
+        await uploadDocumentFromContents(docName, BLANK_DOCUMENT_TEMPLATE);
+        setDocumentStatusMessage(`Document "${docName}" created.`, 'success');
+    } catch (error) {
+        console.error('Blank document creation failed:', error);
+        setDocumentStatusMessage('Failed to create document.', 'error');
+    }
+}
+
+async function renameCurrentDocument() {
+    if (!currentDocumentName) {
+        alert('Select a document before renaming.');
+        return;
+    }
+
+    const userInput = prompt('Enter a new name (.yaml will be appended if missing):', currentDocumentName);
+    if (userInput === null) {
+        return;
+    }
+
+    let newDocName;
+    try {
+        newDocName = sanitizeDocumentNameForClient(userInput);
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
+
+    if (newDocName === currentDocumentName) {
+        setDocumentStatusMessage('Document name unchanged.');
+        return;
+    }
+
+    if (availableDocuments.some(doc => doc.name === newDocName)) {
+        alert(`A document named "${newDocName}" already exists. Choose a different name.`);
+        return;
+    }
+
+    try {
+        setDocumentStatusMessage(`Renaming to "${newDocName}"...`);
+        const response = await fetch(
+            `/api/config?doc=${encodeURIComponent(currentDocumentName)}&newDoc=${encodeURIComponent(newDocName)}`,
+            { method: 'PUT' }
+        );
+
+        if (!response.ok) {
+            throw new Error('Rename failed');
+        }
+
+        await refreshDocumentList(newDocName);
+        await loadAgents(newDocName);
+        setDocumentStatusMessage(`Renamed to "${newDocName}".`, 'success');
+    } catch (error) {
+        console.error('Rename failed:', error);
+        alert('Failed to rename document: ' + (error.message || 'Unknown error'));
+        setDocumentStatusMessage('Rename failed.', 'error');
+    }
+}
+
+function updateDocumentControlsUI() {
+    const select = getDocumentSelectElement();
+    const meta = getDocumentMetaElement();
+    const menu = getDocumentMenuElement();
+
+    if (select) {
+        select.innerHTML = '';
+
+        if (!documentListLoaded) {
+            const option = document.createElement('option');
+            option.textContent = 'Loading...';
+            option.value = '';
+            select.appendChild(option);
+            select.disabled = true;
+        } else if (!availableDocuments.length) {
+            const option = document.createElement('option');
+            option.textContent = 'No documents available';
+            option.value = '';
+            select.appendChild(option);
+            select.disabled = true;
+        } else {
+            availableDocuments.forEach(doc => {
+                const option = document.createElement('option');
+                option.textContent = doc.name;
+                option.value = doc.name;
+                select.appendChild(option);
+            });
+            select.disabled = false;
+            if (currentDocumentName && availableDocuments.some(doc => doc.name === currentDocumentName)) {
+                select.value = currentDocumentName;
+            } else {
+                select.value = availableDocuments[0].name;
+            }
+        }
+    }
+
+    if (meta) {
+        if (!documentListLoaded) {
+            meta.textContent = 'Loading documents...';
+        } else if (!availableDocuments.length) {
+            meta.textContent = 'No YAML documents found. Upload one to get started.';
+        } else if (currentDocumentName) {
+            const doc = availableDocuments.find(d => d.name === currentDocumentName);
+            const sizeText = doc ? formatBytes(doc.size) : '';
+            const updatedText = doc && doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : '';
+            const details = [currentDocumentName, sizeText && `• ${sizeText}`, updatedText && `• Updated ${updatedText}`]
+                .filter(Boolean)
+                .join(' ');
+            meta.textContent = details;
+        } else {
+            meta.textContent = 'No document selected.';
+        }
+    }
+
+    if (menu) {
+        const renameBtn = menu.querySelector('button[data-action="rename"]');
+        const downloadMenuBtn = menu.querySelector('button[data-action="download"]');
+        const divider = menu.querySelector('[data-role="menu-divider"]');
+        const hasDocument = Boolean(currentDocumentName);
+
+        if (renameBtn) {
+            renameBtn.disabled = !hasDocument;
+        }
+        if (downloadMenuBtn) {
+            downloadMenuBtn.disabled = !hasDocument;
+        }
+        if (divider) {
+            divider.style.display = hasDocument ? 'block' : 'none';
+        }
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function formatBytes(bytes = 0) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+}
+
+function setDocumentStatusMessage(message, type = 'info') {
+    const statusEl = getDocumentStatusElement();
+    if (!statusEl) return;
+    statusEl.textContent = message || '';
+    statusEl.dataset.state = type;
+}
+
+function sanitizeDocumentNameForClient(name) {
+    if (!name) {
+        throw new Error('Document name is required.');
+    }
+    let normalized = name.trim();
+    if (!normalized.endsWith('.yaml')) {
+        normalized += '.yaml';
+    }
+    const isValid = /^[A-Za-z0-9._-]+\.yaml$/.test(normalized);
+    if (!isValid) {
+        throw new Error('Invalid document name. Use letters, numbers, dots, dashes, or underscores.');
+    }
+    return normalized;
+}
+
+async function refreshDocumentList(preferredDocName) {
+    try {
+        setDocumentStatusMessage('Loading documents...');
+        const response = await fetch('/api/config?list=1', {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch document list');
+        }
+
+        const data = await response.json();
+        availableDocuments = Array.isArray(data.documents) ? data.documents : [];
+        documentListLoaded = true;
+
+        const docNames = availableDocuments.map(doc => doc.name);
+        let nextDoc = preferredDocName || currentDocumentName || getStoredDocumentPreference();
+
+        if (!nextDoc && docNames.length) {
+            nextDoc = docNames.includes(DEFAULT_DOCUMENT_NAME) ? DEFAULT_DOCUMENT_NAME : docNames[0];
+        }
+
+        if (nextDoc && !docNames.includes(nextDoc) && docNames.length) {
+            nextDoc = docNames[0];
+        }
+
+        setActiveDocumentName(nextDoc, { skipPersist: false });
+        setDocumentStatusMessage('');
+    } catch (error) {
+        console.error('Error listing documents:', error);
+        availableDocuments = [];
+        documentListLoaded = true;
+        setActiveDocumentName(null, { skipPersist: true });
+        setDocumentStatusMessage('Unable to load documents. Upload a YAML file to create one.', 'error');
+    } finally {
+        updateDocumentControlsUI();
+    }
+}
+
+async function initializeDocumentControls() {
+    const fileInput = document.getElementById('documentFileInput');
+    if (fileInput && !fileInput.dataset.bound) {
+        fileInput.addEventListener('change', handleDocumentFileSelected);
+        fileInput.dataset.bound = 'true';
+    }
+
+    bindDocumentMenuEvents();
+    await refreshDocumentList();
+}
+
+async function handleDocumentSelection(event) {
+    const selectedDoc = event.target.value;
+    if (!selectedDoc || selectedDoc === currentDocumentName) {
+        return;
+    }
+
+    setActiveDocumentName(selectedDoc);
+    setDocumentStatusMessage(`Loaded document "${selectedDoc}".`, 'success');
+    await loadAgents(selectedDoc);
+}
+
+function triggerDocumentUpload() {
+    const input = document.getElementById('documentFileInput');
+    if (input) {
+        input.click();
+    }
+}
+
+async function handleDocumentFileSelected(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+        return;
+    }
+
+    let suggestedName = file.name || DEFAULT_DOCUMENT_NAME;
+    try {
+        suggestedName = sanitizeDocumentNameForClient(suggestedName);
+    } catch {
+        suggestedName = DEFAULT_DOCUMENT_NAME;
+    }
+
+    const userInput = prompt('Enter a name for this YAML document (.yaml will be appended if missing):', suggestedName);
+    if (userInput === null) {
+        return; // user cancelled
+    }
+
+    let docName;
+    try {
+        docName = sanitizeDocumentNameForClient(userInput);
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
+
+    try {
+        const contents = await file.text();
+        await uploadDocumentFromContents(docName, contents);
+    } catch (error) {
+        console.error('Upload failed:', error);
+        alert('Failed to upload document: ' + (error.message || 'Unknown error'));
+    }
+}
+
+async function uploadDocumentFromContents(docName, yamlText) {
+    setDocumentStatusMessage(`Uploading "${docName}"...`);
+
+    const response = await fetch(`/api/config?doc=${encodeURIComponent(docName)}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/yaml',
+            'X-Config-Name': docName
+        },
+        body: yamlText
+    });
+
+    if (!response.ok) {
+        throw new Error('Upload failed');
+    }
+
+    await refreshDocumentList(docName);
+    setActiveDocumentName(docName);
+    await loadAgents(docName);
+
+    setDocumentStatusMessage(`Document "${docName}" uploaded and loaded.`, 'success');
+}
+
+async function downloadCurrentDocument() {
+    if (!currentDocumentName) {
+        alert('No document selected to download.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/config?doc=${encodeURIComponent(currentDocumentName)}`);
+        if (!response.ok) {
+            throw new Error('Download failed');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = currentDocumentName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert('Failed to download document: ' + (error.message || 'Unknown error'));
+    }
+}
+
+// ----- Modal YAML view helpers -----
+function setElementText(elementId, text = '') {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = text;
+    }
+}
+
+async function copyTextToClipboard(text) {
+    if (!navigator.clipboard) {
+        return false;
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (error) {
+        console.warn('Clipboard copy failed:', error);
+        return false;
+    }
+}
+
+function updateAgentModalViewUI() {
+    const formContent = document.getElementById('agentFormContent');
+    const yamlContent = document.getElementById('agentYamlContent');
+    const formToggle = document.getElementById('agentFormToggle');
+    const yamlToggle = document.getElementById('agentYamlToggle');
+
+    if (formContent) {
+        formContent.style.display = agentModalViewMode === 'form' ? 'block' : 'none';
+    }
+    if (yamlContent) {
+        yamlContent.style.display = agentModalViewMode === 'yaml' ? 'block' : 'none';
+    }
+    if (formToggle) {
+        formToggle.classList.toggle('active', agentModalViewMode === 'form');
+    }
+    if (yamlToggle) {
+        yamlToggle.classList.toggle('active', agentModalViewMode === 'yaml');
+    }
+}
+
+function updateGroupModalViewUI() {
+    const formContent = document.getElementById('groupFormContent');
+    const yamlContent = document.getElementById('groupYamlContent');
+    const formToggle = document.getElementById('groupFormToggle');
+    const yamlToggle = document.getElementById('groupYamlToggle');
+
+    if (formContent) {
+        formContent.style.display = groupModalViewMode === 'form' ? 'block' : 'none';
+    }
+    if (yamlContent) {
+        yamlContent.style.display = groupModalViewMode === 'yaml' ? 'block' : 'none';
+    }
+    if (formToggle) {
+        formToggle.classList.toggle('active', groupModalViewMode === 'form');
+    }
+    if (yamlToggle) {
+        yamlToggle.classList.toggle('active', groupModalViewMode === 'yaml');
+    }
+}
+
+function populateAgentFormFields(agent = {}) {
+    document.getElementById('agentName').value = agent.name || '';
+    document.getElementById('agentObjective').value = agent.objective || '';
+    document.getElementById('agentDescription').value = agent.description || '';
+
+    const toolsContainer = document.getElementById('agentTools');
+    if (toolsContainer) {
+        toolsContainer.innerHTML = '';
+        const selectedTools = toArray(agent.tools);
+        Object.keys(configData?.toolsConfig || {}).forEach(toolName => {
+            const checked = selectedTools.includes(toolName) ? 'checked' : '';
+            toolsContainer.innerHTML += `
+                <label class="tool-checkbox-label">
+                    <input type="checkbox" name="tools" value="${toolName}" ${checked}>
+                    ${toolName}
+                </label>
+            `;
+        });
+    }
+
+    renderArrayInput('journeySteps', toArray(agent.journeySteps));
+
+    const metrics = getAgentMetrics(agent);
+    document.getElementById('metricsUsage').value = metrics.usageThisWeek || '';
+    document.getElementById('metricsTimeSaved').value = metrics.timeSaved || '';
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function populateGroupFormFields(group = {}) {
+    document.getElementById('groupName').value = group.groupName || '';
+    document.getElementById('groupId').value = group.groupId || '';
+    document.getElementById('groupClass').value = group.groupClass || '';
+    document.getElementById('groupPhaseTag').value = group.phaseTag || '';
+    document.getElementById('groupFlowDisplayName').value = group.flowDisplayName || '';
+}
+
+function buildAgentDraftFromForm() {
+    const form = document.getElementById('agentForm');
+    if (!form) return null;
+
+    const groupIndex = parseInt(form.dataset.groupIndex);
+    const agentIndex = parseInt(form.dataset.agentIndex);
+    const isNew = agentIndex === -1;
+    const baseAgent = deepClone(agentModalOriginal || {});
+    const group = configData?.agentGroups?.[groupIndex];
+
+    const draft = { ...baseAgent };
+    const existingAgentNumber = !isNew ? (baseAgent.agentNumber || group?.agents?.[agentIndex]?.agentNumber) : null;
+    draft.agentNumber = existingAgentNumber || ((group?.agents?.length || 0) + 1);
+    draft.name = document.getElementById('agentName').value;
+    draft.objective = document.getElementById('agentObjective').value;
+    draft.description = document.getElementById('agentDescription').value;
+    draft.tools = Array.from(document.querySelectorAll('#agentTools input:checked')).map(cb => cb.value);
+    draft.journeySteps = getArrayInputValues('journeySteps');
+
+    const metrics = { ...(baseAgent.metrics || {}), ...getAgentMetrics(baseAgent) };
+    metrics.usageThisWeek = document.getElementById('metricsUsage').value;
+    metrics.timeSaved = document.getElementById('metricsTimeSaved').value;
+    draft.metrics = metrics;
+
+    return draft;
+}
+
+function buildGroupDraftFromForm() {
+    const form = document.getElementById('groupForm');
+    if (!form) return null;
+
+    const groupIndex = parseInt(form.dataset.groupIndex);
+    const isNew = groupIndex === -1;
+    const baseGroup = deepClone(groupModalOriginal || {});
+
+    const draft = { ...baseGroup };
+    draft.groupNumber = isNew
+        ? configData?.agentGroups?.length || 0
+        : (baseGroup.groupNumber ?? configData.agentGroups[groupIndex].groupNumber);
+    draft.groupName = document.getElementById('groupName').value;
+    draft.groupId = document.getElementById('groupId').value;
+    draft.groupClass = document.getElementById('groupClass').value;
+    draft.phaseTag = document.getElementById('groupPhaseTag').value;
+    draft.flowDisplayName = document.getElementById('groupFlowDisplayName').value;
+
+    if (isNew) {
+        draft.agents = draft.agents || [];
+    } else {
+        draft.agents = configData.agentGroups[groupIndex].agents;
+    }
+
+    return draft;
+}
+
+function syncAgentStateFromForm() {
+    const draft = buildAgentDraftFromForm();
+    if (!draft) return false;
+    agentModalOriginal = draft;
+    return true;
+}
+
+function syncGroupStateFromForm() {
+    const draft = buildGroupDraftFromForm();
+    if (!draft) return false;
+    groupModalOriginal = draft;
+    return true;
+}
+
+function updateAgentYamlEditor() {
+    const textarea = document.getElementById('agentYamlInput');
+    if (!textarea) return;
+    textarea.value = jsyaml.dump(agentModalOriginal || {});
+    setElementText('agentYamlError', '');
+    setElementText('agentYamlStatus', '');
+}
+
+function updateGroupYamlEditor() {
+    const textarea = document.getElementById('groupYamlInput');
+    if (!textarea) return;
+    textarea.value = jsyaml.dump(groupModalOriginal || {});
+    setElementText('groupYamlError', '');
+    setElementText('groupYamlStatus', '');
+}
+
+function applyAgentYamlToForm() {
+    const textarea = document.getElementById('agentYamlInput');
+    if (!textarea) return false;
+    try {
+        const parsed = jsyaml.load(textarea.value) || {};
+        if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('Agent YAML must describe an object.');
+        }
+        agentModalOriginal = parsed;
+        populateAgentFormFields(parsed);
+        setElementText('agentYamlError', '');
+        return true;
+    } catch (error) {
+        setElementText('agentYamlError', error.message);
+        return false;
+    }
+}
+
+function applyGroupYamlToForm() {
+    const textarea = document.getElementById('groupYamlInput');
+    if (!textarea) return false;
+    try {
+        const parsed = jsyaml.load(textarea.value) || {};
+        if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('Section YAML must describe an object.');
+        }
+        groupModalOriginal = parsed;
+        populateGroupFormFields(parsed);
+        setElementText('groupYamlError', '');
+        return true;
+    } catch (error) {
+        setElementText('groupYamlError', error.message);
+        return false;
+    }
+}
+
+function setAgentModalView(mode) {
+    if (mode === agentModalViewMode) {
+        return;
+    }
+
+    if (mode === 'yaml') {
+        if (!syncAgentStateFromForm()) {
+            alert('Unable to read agent form data.');
+            return;
+        }
+        updateAgentYamlEditor();
+    } else {
+        if (!applyAgentYamlToForm()) {
+            alert('Please fix YAML errors before returning to form view.');
+            return;
+        }
+    }
+
+    agentModalViewMode = mode;
+    updateAgentModalViewUI();
+}
+
+function setGroupModalView(mode) {
+    if (mode === groupModalViewMode) {
+        return;
+    }
+
+    if (mode === 'yaml') {
+        if (!syncGroupStateFromForm()) {
+            alert('Unable to read section form data.');
+            return;
+        }
+        updateGroupYamlEditor();
+    } else {
+        if (!applyGroupYamlToForm()) {
+            alert('Please fix YAML errors before returning to form view.');
+            return;
+        }
+    }
+
+    groupModalViewMode = mode;
+    updateGroupModalViewUI();
+}
+
+function ensureAgentStateFromCurrentView() {
+    if (agentModalViewMode === 'yaml') {
+        return applyAgentYamlToForm();
+    }
+    return syncAgentStateFromForm();
+}
+
+function ensureGroupStateFromCurrentView() {
+    if (groupModalViewMode === 'yaml') {
+        return applyGroupYamlToForm();
+    }
+    return syncGroupStateFromForm();
+}
+
+async function copyAgentYaml() {
+    const textarea = document.getElementById('agentYamlInput');
+    if (!textarea) return;
+    const success = await copyTextToClipboard(textarea.value);
+    setElementText('agentYamlStatus', success ? 'Copied to clipboard' : 'Clipboard unavailable');
+    if (success) {
+        setTimeout(() => setElementText('agentYamlStatus', ''), 2000);
+    }
+}
+
+async function copyGroupYaml() {
+    const textarea = document.getElementById('groupYamlInput');
+    if (!textarea) return;
+    const success = await copyTextToClipboard(textarea.value);
+    setElementText('groupYamlStatus', success ? 'Copied to clipboard' : 'Clipboard unavailable');
+    if (success) {
+        setTimeout(() => setElementText('groupYamlStatus', ''), 2000);
+    }
+}
+
+// ----- Config load/save -----
+async function loadConfig(docName = currentDocumentName || DEFAULT_DOCUMENT_NAME) {
+    try {
+        const url = `/api/config?doc=${encodeURIComponent(docName)}`;
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Config request failed: ${response.status}`);
         }
         const yamlText = await response.text();
         configData = jsyaml.load(yamlText);
+        const resolvedDoc = response.headers.get('X-Config-Document');
+        if (resolvedDoc) {
+            setActiveDocumentName(resolvedDoc);
+        }
         const configSource = response.headers.get('X-Config-Source') || 'unknown';
         console.log('Config loaded from:', configSource, configData);
         return configData;
@@ -51,10 +854,12 @@ async function loadConfig() {
 async function saveConfig() {
     try {
         const yamlText = jsyaml.dump(configData);
-        const response = await fetch('/api/config', {
+        const docName = currentDocumentName || DEFAULT_DOCUMENT_NAME;
+        const response = await fetch(`/api/config?doc=${encodeURIComponent(docName)}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'text/yaml'
+                'Content-Type': 'text/yaml',
+                'X-Config-Name': docName
             },
             body: yamlText
         });
@@ -65,6 +870,7 @@ async function saveConfig() {
 
         const result = await response.json();
         console.log('Config saved:', result);
+        await refreshDocumentList(docName);
         return true;
     } catch (error) {
         console.error('Error saving config:', error);
@@ -358,9 +1164,18 @@ function renderAgentGroups() {
 
 // ----- Page interactions -----
 // Load and render agents
-async function loadAgents() {
+async function loadAgents(docName = currentDocumentName) {
+    if (!docName) {
+        const container = document.getElementById('agentGroupsContainer');
+        if (container) {
+            container.innerHTML =
+                '<p style="color: white; text-align: center;">No YAML document selected. Upload or select a document to begin.</p>';
+        }
+        return;
+    }
+
     try {
-        const config = await loadConfig();
+        const config = await loadConfig(docName);
 
         // Generate dynamic CSS
         generateDynamicCSS(config);
@@ -573,31 +1388,16 @@ function showAgentModal(agent, groupIndex, agentIndex) {
     const form = document.getElementById('agentForm');
 
     document.getElementById('modalAgentTitle').textContent = isNew ? 'Add Agent' : 'Edit Agent';
-    document.getElementById('agentName').value = agent.name || '';
-    document.getElementById('agentObjective').value = agent.objective || '';
-    document.getElementById('agentDescription').value = agent.description || '';
-
-    // Set tool checkboxes
-    const toolsContainer = document.getElementById('agentTools');
-    toolsContainer.innerHTML = '';
-    const selectedTools = toArray(agent.tools);
-    Object.keys(configData.toolsConfig).forEach(toolName => {
-        const checked = selectedTools.includes(toolName) ? 'checked' : '';
-        toolsContainer.innerHTML += `
-            <label class="tool-checkbox-label">
-                <input type="checkbox" name="tools" value="${toolName}" ${checked}>
-                ${toolName}
-            </label>
-        `;
-    });
-
-    // Set journey steps
-    renderArrayInput('journeySteps', toArray(agent.journeySteps));
-
-    // Set metrics
-    const metrics = getAgentMetrics(agent);
-    document.getElementById('metricsUsage').value = metrics.usageThisWeek;
-    document.getElementById('metricsTimeSaved').value = metrics.timeSaved;
+    agentModalOriginal = deepClone(agent);
+    agentModalViewMode = 'form';
+    populateAgentFormFields(agentModalOriginal);
+    setElementText('agentYamlError', '');
+    setElementText('agentYamlStatus', '');
+    const agentYamlInput = document.getElementById('agentYamlInput');
+    if (agentYamlInput) {
+        agentYamlInput.value = '';
+    }
+    updateAgentModalViewUI();
 
     // Show/hide delete button
     const deleteBtn = document.getElementById('deleteAgentBtn');
@@ -613,6 +1413,8 @@ function showAgentModal(agent, groupIndex, agentIndex) {
 }
 
 function closeAgentModal() {
+    agentModalViewMode = 'form';
+    agentModalOriginal = null;
     document.getElementById('agentModal').classList.remove('show');
 }
 
@@ -621,21 +1423,18 @@ function saveAgent() {
     const groupIndex = parseInt(form.dataset.groupIndex);
     const agentIndex = parseInt(form.dataset.agentIndex);
     const isNew = agentIndex === -1;
-    const existingMetrics = getAgentMetrics(configData.agentGroups[groupIndex]?.agents[agentIndex] || {});
 
-    const agent = {
-        agentNumber: isNew ? configData.agentGroups[groupIndex].agents.length + 1 : configData.agentGroups[groupIndex].agents[agentIndex].agentNumber,
-        name: document.getElementById('agentName').value,
-        objective: document.getElementById('agentObjective').value,
-        description: document.getElementById('agentDescription').value,
-        tools: Array.from(document.querySelectorAll('#agentTools input:checked')).map(cb => cb.value),
-        journeySteps: getArrayInputValues('journeySteps'),
-        metrics: {
-            usageThisWeek: document.getElementById('metricsUsage').value,
-            timeSaved: document.getElementById('metricsTimeSaved').value,
-            roiContribution: existingMetrics.roiContribution
-        }
-    };
+    if (!ensureAgentStateFromCurrentView()) {
+        alert('Please resolve form or YAML errors before saving.');
+        return;
+    }
+
+    const agent = deepClone(agentModalOriginal || {});
+    if (!agent.agentNumber) {
+        agent.agentNumber = isNew
+            ? configData.agentGroups[groupIndex].agents.length + 1
+            : (configData.agentGroups[groupIndex].agents[agentIndex]?.agentNumber || agentIndex + 1);
+    }
 
     if (isNew) {
         configData.agentGroups[groupIndex].agents.push(agent);
@@ -702,11 +1501,16 @@ function showGroupModal(group, groupIndex) {
     const form = document.getElementById('groupForm');
 
     document.getElementById('modalGroupTitle').textContent = isNew ? 'Add Section' : 'Edit Section';
-    document.getElementById('groupName').value = group.groupName || '';
-    document.getElementById('groupId').value = group.groupId || '';
-    document.getElementById('groupClass').value = group.groupClass || '';
-    document.getElementById('groupPhaseTag').value = group.phaseTag || '';
-    document.getElementById('groupFlowDisplayName').value = group.flowDisplayName || '';
+    groupModalOriginal = deepClone(group);
+    groupModalViewMode = 'form';
+    populateGroupFormFields(groupModalOriginal);
+    setElementText('groupYamlError', '');
+    setElementText('groupYamlStatus', '');
+    const groupYamlInput = document.getElementById('groupYamlInput');
+    if (groupYamlInput) {
+        groupYamlInput.value = '';
+    }
+    updateGroupModalViewUI();
 
     // Show/hide delete button
     const deleteBtn = document.getElementById('deleteGroupBtn');
@@ -720,6 +1524,8 @@ function showGroupModal(group, groupIndex) {
 }
 
 function closeGroupModal() {
+    groupModalViewMode = 'form';
+    groupModalOriginal = null;
     document.getElementById('groupModal').classList.remove('show');
 }
 
@@ -728,25 +1534,20 @@ function saveGroup() {
     const groupIndex = parseInt(form.dataset.groupIndex);
     const isNew = groupIndex === -1;
 
-    const group = {
-        groupNumber: isNew ? configData.agentGroups.length : configData.agentGroups[groupIndex].groupNumber,
-        groupName: document.getElementById('groupName').value,
-        groupId: document.getElementById('groupId').value,
-        groupClass: document.getElementById('groupClass').value,
-        phaseTag: document.getElementById('groupPhaseTag').value,
-        flowDisplayName: document.getElementById('groupFlowDisplayName').value,
-        agents: isNew ? [] : configData.agentGroups[groupIndex].agents
-    };
+    if (!ensureGroupStateFromCurrentView()) {
+        alert('Please resolve form or YAML errors before saving.');
+        return;
+    }
 
-    // Preserve any existing formatting overrides when editing
-    if (!isNew && configData.agentGroups[groupIndex]) {
-        const existing = configData.agentGroups[groupIndex];
-        if (existing.iconType !== undefined) group.iconType = existing.iconType;
-        if (existing.color !== undefined) group.color = existing.color;
-        if (existing.phaseTagColor !== undefined) group.phaseTagColor = existing.phaseTagColor;
-        if (existing.phaseImage !== undefined) group.phaseImage = existing.phaseImage;
-        if (existing.showInFlow !== undefined) group.showInFlow = existing.showInFlow;
-        if (existing.isSupport !== undefined) group.isSupport = existing.isSupport;
+    const group = deepClone(groupModalOriginal || {});
+    if (group.groupNumber === undefined || group.groupNumber === null) {
+        group.groupNumber = isNew ? configData.agentGroups.length : configData.agentGroups[groupIndex].groupNumber;
+    }
+
+    if (isNew) {
+        group.agents = Array.isArray(group.agents) ? group.agents : [];
+    } else {
+        group.agents = configData.agentGroups[groupIndex].agents;
     }
 
     if (isNew) {
@@ -830,4 +1631,13 @@ function getArrayInputValues(fieldName) {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', loadAgents);
+async function bootstrapApp() {
+    try {
+        await initializeDocumentControls();
+        await loadAgents();
+    } catch (error) {
+        console.error('Initialization failed:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', bootstrapApp);

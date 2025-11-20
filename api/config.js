@@ -1,9 +1,7 @@
-import { head } from '@vercel/blob';
-import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
+import { head, list, put, del } from '@vercel/blob';
 
-const CONFIG_BLOB_PATH = 'config.yaml';
-const LOCAL_CONFIG_PATH = join(process.cwd(), 'data', CONFIG_BLOB_PATH);
+const DEFAULT_DOCUMENT = 'config.yaml';
+const YAML_CONTENT_TYPE = 'text/yaml';
 
 /**
  * Get header value from Node.js request
@@ -43,54 +41,118 @@ function checkAuth(req, res) {
   return false;
 }
 
+function getQueryParam(req, key) {
+  if (req.query && req.query[key] !== undefined) {
+    return req.query[key];
+  }
+  if (req.url) {
+    try {
+      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      return url.searchParams.get(key);
+    } catch {
+      // ignore parse errors
+    }
+  }
+  return undefined;
+}
+
+function ensureBlobToken(res) {
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!blobToken) {
+    res.status(500).setHeader('Content-Type', 'application/json').send(JSON.stringify({
+      error: 'Blob storage token is not configured. Please set BLOB_READ_WRITE_TOKEN.'
+    }));
+    return null;
+  }
+  return blobToken;
+}
+
+function sanitizeDocumentName(name) {
+  if (!name) return DEFAULT_DOCUMENT;
+  let normalized = name.trim();
+  if (!normalized.endsWith('.yaml')) {
+    normalized += '.yaml';
+  }
+  const isValid = /^[A-Za-z0-9._-]+\.yaml$/.test(normalized);
+  if (!isValid) {
+    throw new Error('Invalid document name. Use alphanumeric, dot, dash, or underscore characters only.');
+  }
+  return normalized;
+}
+
+function getDocumentName(req) {
+  const queryDoc = getQueryParam(req, 'doc');
+  const headerDoc = getHeader(req, 'x-config-name');
+  return sanitizeDocumentName(queryDoc || headerDoc || DEFAULT_DOCUMENT);
+}
+
+async function fetchDocumentFromBlob(docName, token) {
+  try {
+    const { url } = await head(docName, { token });
+    if (!url) {
+      return null;
+    }
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Blob fetch failed with status ${response.status}`);
+    }
+    return await response.text();
+  } catch (error) {
+    if (error?.status === 404 || error?.statusCode === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 /**
  * GET handler
- * Fetches config from Blob Storage or static file
+ * - list=1 → JSON list of YAML documents
+ * - otherwise → YAML content for requested doc
  */
 async function handleGet(req, res) {
+  const blobToken = ensureBlobToken(res);
+  if (!blobToken) return;
+
+  if (req.query?.list === '1' || req.query?.list === 'true') {
+    try {
+      const { blobs } = await list({ token: blobToken, limit: 1000 });
+      const documents = blobs
+        .filter(blob => blob.pathname.endsWith('.yaml'))
+        .map(blob => ({
+          name: blob.pathname,
+          size: blob.size,
+          updatedAt: blob.uploadedAt
+        }));
+
+      res.status(200)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ documents }));
+    } catch (error) {
+      console.error('Error listing documents:', error);
+      res.status(500)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: 'Failed to list documents' }));
+    }
+    return;
+  }
+
   try {
-    // For local development (not on Vercel), use static file
-    // In production on Vercel, use Blob Storage
-    const isProduction = process.env.VERCEL_ENV === 'production' || process.env.VERCEL_ENV === 'preview';
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const docName = getDocumentName(req);
+    const yamlText = await fetchDocumentFromBlob(docName, blobToken);
 
-    if (isProduction && blobToken) {
-      try {
-        console.log('Attempting to fetch from Blob Storage...');
-
-        const { url } = await head(CONFIG_BLOB_PATH, {
-          token: blobToken
-        });
-
-        if (url) {
-          console.log('Blob found, fetching content...');
-          const blobResponse = await fetch(url);
-          const yamlText = await blobResponse.text();
-          console.log('Blob content fetched successfully');
-
-          res.status(200)
-            .setHeader('Content-Type', 'text/yaml')
-            .setHeader('X-Config-Source', 'blob-storage')
-            .send(yamlText);
-          return;
-        }
-      } catch (blobError) {
-        console.log('Blob error, falling back to static file:', blobError.message);
-      }
-    } else {
-      console.log('Local development mode - using static file');
+    if (!yamlText) {
+      res.status(404)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: `Document "${docName}" not found` }));
+      return;
     }
 
-    // Fallback to static file from filesystem
-    console.log('Loading from static file...');
-    const yamlText = await readFile(LOCAL_CONFIG_PATH, 'utf8');
-    console.log('Static file loaded successfully');
-
     res.status(200)
-      .setHeader('Content-Type', 'text/yaml')
-      .setHeader('X-Config-Source', 'static-file')
+      .setHeader('Content-Type', YAML_CONTENT_TYPE)
+      .setHeader('Content-Disposition', `inline; filename="${docName}"`)
+      .setHeader('X-Config-Document', docName)
       .send(yamlText);
-
   } catch (error) {
     console.error('Error fetching config:', error);
     res.status(500)
@@ -101,9 +163,12 @@ async function handleGet(req, res) {
 
 /**
  * POST handler
- * Saves config to Blob Storage or local file
+ * Saves config to Blob Storage
  */
 async function handlePost(req, res) {
+  const blobToken = ensureBlobToken(res);
+  if (!blobToken) return;
+
   try {
     // Get YAML content from request body
     let yamlText = '';
@@ -120,46 +185,88 @@ async function handlePost(req, res) {
       return;
     }
 
-    const isProduction = process.env.VERCEL_ENV === 'production' || process.env.VERCEL_ENV === 'preview';
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const docName = getDocumentName(req);
 
-    if (isProduction && blobToken) {
-      // Production: Save to Blob Storage
-      const { put } = await import('@vercel/blob');
-      const blob = await put(CONFIG_BLOB_PATH, yamlText, {
-        access: 'public',
-        token: blobToken,
-        addRandomSuffix: false,
-        contentType: 'text/yaml'
-      });
+    const blob = await put(docName, yamlText, {
+      access: 'public',
+      token: blobToken,
+      addRandomSuffix: false,
+      contentType: YAML_CONTENT_TYPE
+    });
 
-      res.status(200)
-        .setHeader('Content-Type', 'application/json')
-        .send(JSON.stringify({
-          success: true,
-          url: blob.url,
-          size: yamlText.length,
-          environment: 'production'
-        }));
-    } else {
-      // Local development: Save to local filesystem
-    await writeFile(LOCAL_CONFIG_PATH, yamlText, 'utf8');
-
-      res.status(200)
-        .setHeader('Content-Type', 'application/json')
-        .send(JSON.stringify({
-          success: true,
-          path: configPath,
-          size: yamlText.length,
-          environment: 'local'
-        }));
-    }
+    res.status(200)
+      .setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({
+        success: true,
+        document: docName,
+        url: blob.url,
+        size: yamlText.length
+      }));
 
   } catch (error) {
     console.error('Error saving config:', error);
     res.status(500)
       .setHeader('Content-Type', 'application/json')
       .send(JSON.stringify({ error: 'Failed to save configuration' }));
+  }
+}
+
+/**
+ * PUT handler
+ * Renames an existing YAML document
+ */
+async function handlePut(req, res) {
+  const blobToken = ensureBlobToken(res);
+  if (!blobToken) return;
+
+  try {
+    const docName = getDocumentName(req);
+    const newDocParam = getQueryParam(req, 'newDoc');
+    if (!newDocParam) {
+      res.status(400)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: 'Missing new document name' }));
+      return;
+    }
+
+    const newDocName = sanitizeDocumentName(newDocParam);
+    if (docName === newDocName) {
+      res.status(400)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: 'New document name must be different' }));
+      return;
+    }
+
+    const yamlText = await fetchDocumentFromBlob(docName, blobToken);
+    if (!yamlText) {
+      res.status(404)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: `Document "${docName}" not found` }));
+      return;
+    }
+
+    await put(newDocName, yamlText, {
+      access: 'public',
+      token: blobToken,
+      addRandomSuffix: false,
+      contentType: YAML_CONTENT_TYPE
+    });
+
+    await del(docName, { token: blobToken });
+
+    res.status(200)
+      .setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({
+        success: true,
+        document: newDocName,
+        previous: docName
+      }));
+
+  } catch (error) {
+    console.error('Error renaming config:', error);
+    res.status(500)
+      .setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({ error: 'Failed to rename configuration' }));
   }
 }
 
@@ -176,6 +283,8 @@ export default async function handler(req, res) {
     return handleGet(req, res);
   } else if (req.method === 'POST') {
     return handlePost(req, res);
+  } else if (req.method === 'PUT') {
+    return handlePut(req, res);
   } else {
     res.status(405).send('Method not allowed');
   }
