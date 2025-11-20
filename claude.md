@@ -15,13 +15,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 npm install
 
-# Run locally with Vercel dev server
+# Run locally with Vercel dev server (with hot reload)
 vercel dev
-# Access at http://localhost:3000
+# Always runs on http://localhost:3000
+# Hot reload enabled - changes reflect automatically
 
 # Pull environment variables from Vercel
 vercel env pull
 ```
+
+**Note:** Development server runs on port 3000 with automatic hot reload. Do not start additional instances on other ports.
 
 ### Deployment
 ```bash
