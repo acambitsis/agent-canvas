@@ -191,12 +191,10 @@
                     <div class="form-group">
                         <label for="groupName">Section Name</label>
                         <input type="text" id="groupName" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="groupId">Section ID</label>
-                        <input type="text" id="groupId" required>
-                        <small>Unique identifier (lowercase, no spaces)</small>
+                        <small>The internal section ID is generated automatically from this name.</small>
+                        <div id="groupIdPreview" class="generated-field" role="status" aria-live="polite">
+                            Section ID will be generated automatically.
+                        </div>
                     </div>
 
                     <div class="form-group">

@@ -61,6 +61,61 @@ function deepClone(value) {
     }
 }
 
+function slugifyIdentifier(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function getExistingGroupIdSet(excludeIndex = -1) {
+    if (!Array.isArray(configData?.agentGroups)) {
+        return new Set();
+    }
+
+    return new Set(
+        configData.agentGroups
+            .map((group, index) => (index === excludeIndex ? null : (group?.groupId || null)))
+            .filter(id => typeof id === 'string' && id.trim() !== '')
+            .map(id => id.trim())
+    );
+}
+
+function generateGroupIdFromName(name, excludeIndex = -1) {
+    const fallbackBase = `section-${(configData?.agentGroups?.length || 0) + 1}`;
+    const baseId = slugifyIdentifier(name) || fallbackBase;
+    const existingIds = getExistingGroupIdSet(excludeIndex);
+
+    let candidate = baseId;
+    let suffix = 2;
+    while (!candidate || existingIds.has(candidate)) {
+        candidate = `${baseId}-${suffix++}`;
+    }
+
+    return candidate;
+}
+
+function ensureGroupHasId(group, groupIndex = -1) {
+    if (!group || typeof group !== 'object') {
+        return group;
+    }
+
+    if (typeof group.groupId === 'string' && group.groupId.trim()) {
+        group.groupId = group.groupId.trim();
+        return group;
+    }
+
+    const fallbackName = group.groupName || `section-${Date.now()}`;
+    group.groupId = generateGroupIdFromName(fallbackName, groupIndex);
+    return group;
+}
+
 // ----- Document management helpers -----
 function getStoredDocumentPreference() {
     try {
@@ -651,12 +706,56 @@ function populateAgentFormFields(agent = {}) {
     }
 }
 
-function populateGroupFormFields(group = {}) {
+function populateGroupFormFields(group = {}, options = {}) {
+    const derivedIndex = typeof options.groupIndex === 'number'
+        ? options.groupIndex
+        : parseInt(document.getElementById('groupForm')?.dataset.groupIndex ?? '-1', 10);
+    const groupIndex = Number.isNaN(derivedIndex) ? -1 : derivedIndex;
+
     document.getElementById('groupName').value = group.groupName || '';
-    document.getElementById('groupId').value = group.groupId || '';
     document.getElementById('groupClass').value = group.groupClass || '';
     document.getElementById('groupPhaseTag').value = group.phaseTag || '';
     document.getElementById('groupFlowDisplayName').value = group.flowDisplayName || '';
+    updateGroupIdPreview({ groupIndex, group });
+}
+
+function updateGroupIdPreview(options = {}) {
+    const previewEl = document.getElementById('groupIdPreview');
+    if (!previewEl) {
+        return;
+    }
+
+    const form = document.getElementById('groupForm');
+    const datasetIndex = form ? parseInt(form.dataset.groupIndex ?? '-1', 10) : -1;
+    const groupIndex = typeof options.groupIndex === 'number'
+        ? options.groupIndex
+        : (Number.isNaN(datasetIndex) ? -1 : datasetIndex);
+
+    const isExistingGroup = groupIndex > -1;
+    const groupSource = options.group || groupModalOriginal || {};
+    const configGroup = isExistingGroup && Array.isArray(configData?.agentGroups)
+        ? configData.agentGroups[groupIndex]
+        : null;
+
+    const resolvedExistingId = (groupSource.groupId || configGroup?.groupId || '').trim();
+
+    if (isExistingGroup && resolvedExistingId) {
+        previewEl.textContent = `Section ID: ${resolvedExistingId}`;
+        return;
+    }
+
+    const rawName = options.nameOverride !== undefined
+        ? options.nameOverride
+        : document.getElementById('groupName')?.value || groupSource.groupName || '';
+    const trimmedName = rawName.trim();
+
+    if (!trimmedName) {
+        previewEl.textContent = 'Section ID will be generated when you enter a name.';
+        return;
+    }
+
+    const previewId = generateGroupIdFromName(trimmedName, groupIndex);
+    previewEl.textContent = `Section ID (auto): ${previewId}`;
 }
 
 function buildAgentDraftFromForm() {
@@ -699,10 +798,10 @@ function buildGroupDraftFromForm() {
         ? configData?.agentGroups?.length || 0
         : (baseGroup.groupNumber ?? configData.agentGroups[groupIndex].groupNumber);
     draft.groupName = document.getElementById('groupName').value;
-    draft.groupId = document.getElementById('groupId').value;
     draft.groupClass = document.getElementById('groupClass').value;
     draft.phaseTag = document.getElementById('groupPhaseTag').value;
     draft.flowDisplayName = document.getElementById('groupFlowDisplayName').value;
+    ensureGroupHasId(draft, groupIndex);
 
     if (isNew) {
         draft.agents = draft.agents || [];
@@ -769,8 +868,11 @@ function applyGroupYamlToForm() {
         if (typeof parsed !== 'object' || Array.isArray(parsed)) {
             throw new Error('Section YAML must describe an object.');
         }
-        groupModalOriginal = parsed;
-        populateGroupFormFields(parsed);
+        const form = document.getElementById('groupForm');
+        const datasetIndex = form ? parseInt(form.dataset.groupIndex ?? '-1', 10) : -1;
+        const groupIndex = Number.isNaN(datasetIndex) ? -1 : datasetIndex;
+        groupModalOriginal = ensureGroupHasId(parsed, groupIndex);
+        populateGroupFormFields(groupModalOriginal, { groupIndex });
         setElementText('groupYamlError', '');
         return true;
     } catch (error) {
@@ -1534,7 +1636,10 @@ function showGroupModal(group, groupIndex) {
     document.getElementById('modalGroupTitle').textContent = isNew ? 'Add Section' : 'Edit Section';
     groupModalOriginal = deepClone(group);
     groupModalViewMode = 'form';
-    populateGroupFormFields(groupModalOriginal);
+    if (form) {
+        form.dataset.groupIndex = groupIndex;
+    }
+    populateGroupFormFields(groupModalOriginal, { groupIndex });
     setElementText('groupYamlError', '');
     setElementText('groupYamlStatus', '');
     const groupYamlInput = document.getElementById('groupYamlInput');
@@ -1548,8 +1653,6 @@ function showGroupModal(group, groupIndex) {
     if (deleteBtn) {
         deleteBtn.style.display = isNew ? 'none' : 'inline-flex';
     }
-
-    form.dataset.groupIndex = groupIndex;
 
     modal.classList.add('show');
 }
@@ -1669,6 +1772,13 @@ async function bootstrapApp() {
     } catch (error) {
         console.error('Initialization failed:', error);
     }
+}
+
+const groupNameInput = document.getElementById('groupName');
+if (groupNameInput) {
+    groupNameInput.addEventListener('input', event => {
+        updateGroupIdPreview({ nameOverride: event.target.value });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
