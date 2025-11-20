@@ -1214,8 +1214,19 @@ function createAgentCard(agent, phaseImage, config, groupIndex, agentIndex) {
             <div class="agent-number">${agent.agentNumber}</div>
             <h3 style="display: flex; align-items: center; gap: 8px;">
                 <span>${agent.name}${handoverBadge}</span>
-                <div class="card-edit-icon" onclick="openEditAgentModal(${groupIndex}, ${agentIndex})" title="Edit agent">
-                    <i data-lucide="edit-3"></i>
+                <div class="context-menu-trigger" onclick="toggleContextMenu(event, 'agent-menu-${groupIndex}-${agentIndex}')" title="Agent options">
+                    <i data-lucide="more-vertical"></i>
+                    <div class="context-menu" id="agent-menu-${groupIndex}-${agentIndex}">
+                        <button type="button" class="context-menu-item" onclick="openEditAgentModal(${groupIndex}, ${agentIndex}); closeAllContextMenus();">
+                            <i data-lucide="edit-3"></i>
+                            Edit Agent
+                        </button>
+                        <div class="context-menu-divider"></div>
+                        <button type="button" class="context-menu-item danger" onclick="deleteAgent(${groupIndex}, ${agentIndex}); closeAllContextMenus();">
+                            <i data-lucide="trash-2"></i>
+                            Delete Agent
+                        </button>
+                    </div>
                 </div>
             </h3>
             <div class="agent-objective">Objective: ${agent.objective}</div>
@@ -1272,8 +1283,23 @@ function createAgentGroup(group, config, groupIndex) {
                         <div class="group-title" style="display: flex; align-items: center;">
                             <div>
                                 <h2 style="display: inline-block; margin: 0;">${group.groupName}</h2>
-                                <div class="section-edit-icon" onclick="openEditGroupModal(${groupIndex})" title="Edit section">
-                                    <i data-lucide="edit-3"></i>
+                                <div class="context-menu-trigger" onclick="toggleContextMenu(event, 'section-menu-${groupIndex}')" title="Section options">
+                                    <i data-lucide="more-vertical"></i>
+                                    <div class="context-menu" id="section-menu-${groupIndex}">
+                                        <button type="button" class="context-menu-item" onclick="openEditGroupModal(${groupIndex}); closeAllContextMenus();">
+                                            <i data-lucide="edit-3"></i>
+                                            Edit Section
+                                        </button>
+                                        <button type="button" class="context-menu-item" onclick="openAddAgentModal(${groupIndex}); closeAllContextMenus();">
+                                            <i data-lucide="plus"></i>
+                                            Add Agent
+                                        </button>
+                                        <div class="context-menu-divider"></div>
+                                        <button type="button" class="context-menu-item danger" onclick="deleteGroup(${groupIndex}); closeAllContextMenus();">
+                                            <i data-lucide="trash-2"></i>
+                                            Delete Section
+                                        </button>
+                                    </div>
                                 </div>
                                 ${phaseTagHTML}
                             </div>
@@ -1346,9 +1372,6 @@ async function loadAgents(docName = currentDocumentName) {
         // Render agent groups
         renderAgentGroups();
 
-        // Show edit mode button (since user is authenticated)
-        showEditModeButton();
-
     } catch (error) {
         console.error('Error loading agents:', error);
     }
@@ -1412,43 +1435,6 @@ function setupTooltips() {
     attachTooltipHandlers('.metrics-icon', '.metrics-tooltip', () => {
         lucide.createIcons();
     });
-}
-
-// ----- Edit mode functionality -----
-let editModeActive = false;
-
-// Toggle edit mode
-function toggleEditMode() {
-    editModeActive = !editModeActive;
-    const btn = document.getElementById('editModeBtn');
-    const text = document.getElementById('editModeText');
-    const icon = document.getElementById('editIcon');
-
-    if (editModeActive) {
-        btn.classList.add('active');
-        text.textContent = 'Exit Edit Mode';
-        document.body.classList.add('edit-mode-active');
-    } else {
-        btn.classList.remove('active');
-        text.textContent = 'Enable Edit Mode';
-        document.body.classList.remove('edit-mode-active');
-    }
-
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-// Show edit mode button after page loads (when authenticated)
-function showEditModeButton() {
-    const editBtn = document.getElementById('editModeBtn');
-    if (editBtn) {
-        editBtn.style.display = 'block';
-    }
-
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
 }
 
 // ----- Agent modal handlers -----
@@ -1542,14 +1528,18 @@ function saveAgent() {
     });
 }
 
-function deleteAgent() {
-    if (!confirm('Are you sure you want to delete this agent?')) {
-        return;
+function deleteAgent(groupIndex = null, agentIndex = null) {
+    // If called from modal, get indices from form
+    if (groupIndex === null || agentIndex === null) {
+        const form = document.getElementById('agentForm');
+        groupIndex = parseInt(form.dataset.groupIndex);
+        agentIndex = parseInt(form.dataset.agentIndex);
     }
 
-    const form = document.getElementById('agentForm');
-    const groupIndex = parseInt(form.dataset.groupIndex);
-    const agentIndex = parseInt(form.dataset.agentIndex);
+    const agent = configData.agentGroups[groupIndex].agents[agentIndex];
+    if (!confirm(`Are you sure you want to delete "${agent.name}"?`)) {
+        return;
+    }
 
     configData.agentGroups[groupIndex].agents.splice(agentIndex, 1);
 
@@ -1651,13 +1641,17 @@ function saveGroup() {
     });
 }
 
-function deleteGroup() {
-    if (!confirm('Are you sure you want to delete this entire section and all its agents?')) {
-        return;
+function deleteGroup(groupIndex = null) {
+    // If called from modal, get index from form
+    if (groupIndex === null) {
+        const form = document.getElementById('groupForm');
+        groupIndex = parseInt(form.dataset.groupIndex);
     }
 
-    const form = document.getElementById('groupForm');
-    const groupIndex = parseInt(form.dataset.groupIndex);
+    const group = configData.agentGroups[groupIndex];
+    if (!confirm(`Are you sure you want to delete "${group.groupName}" and all its agents?`)) {
+        return;
+    }
 
     configData.agentGroups.splice(groupIndex, 1);
 
@@ -1711,6 +1705,55 @@ function saveTitleEdit() {
         }
     });
 }
+
+// ----- Context menu handlers -----
+function toggleContextMenu(event, menuId) {
+    event.stopPropagation();
+
+    const menu = document.getElementById(menuId);
+    const trigger = event.currentTarget;
+
+    // Close all other menus first
+    document.querySelectorAll('.context-menu.open').forEach(m => {
+        if (m.id !== menuId) {
+            m.classList.remove('open');
+            // Remove active state from all triggers
+            document.querySelectorAll('.context-menu-trigger.active').forEach(t => {
+                t.classList.remove('active');
+            });
+        }
+    });
+
+    // Toggle current menu
+    const isOpen = menu.classList.toggle('open');
+
+    // Toggle active state on trigger
+    if (isOpen) {
+        trigger.classList.add('active');
+    } else {
+        trigger.classList.remove('active');
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeAllContextMenus() {
+    document.querySelectorAll('.context-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+    });
+    document.querySelectorAll('.context-menu-trigger.active').forEach(trigger => {
+        trigger.classList.remove('active');
+    });
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', (event) => {
+    if (!event.target.closest('.context-menu-trigger') && !event.target.closest('.context-menu')) {
+        closeAllContextMenus();
+    }
+});
 
 // ----- Reusable form helpers -----
 function renderArrayInput(fieldName, values) {

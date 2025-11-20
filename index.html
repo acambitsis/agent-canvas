@@ -14,8 +14,19 @@
             <div class="header-row">
                 <div class="title-section">
                     <h1 id="documentTitle">TPS Operating System</h1>
-                    <div class="title-edit-icon" onclick="openEditTitleModal()" title="Edit title">
-                        <i data-lucide="edit-3"></i>
+                    <div class="context-menu-trigger" onclick="toggleContextMenu(event, 'board-menu')" title="Board options">
+                        <i data-lucide="more-horizontal"></i>
+                        <div class="context-menu" id="board-menu">
+                            <button type="button" class="context-menu-item" onclick="openEditTitleModal(); closeAllContextMenus();">
+                                <i data-lucide="edit-3"></i>
+                                Edit Title
+                            </button>
+                            <div class="context-menu-divider"></div>
+                            <button type="button" class="context-menu-item" onclick="openAddSectionModal(); closeAllContextMenus();">
+                                <i data-lucide="plus"></i>
+                                Add Section
+                            </button>
+                        </div>
                     </div>
                     <p id="agent-count" class="agent-count-inline">Loading...</p>
                 </div>
@@ -56,9 +67,6 @@
                             </div>
                         </div>
                     </div>
-                    <button id="editModeBtn" class="edit-mode-btn" onclick="toggleEditMode()">
-                        <i data-lucide="edit" id="editIcon"></i> <span id="editModeText">Enable Edit Mode</span>
-                    </button>
                 </div>
             </div>
             <div class="header-meta">
