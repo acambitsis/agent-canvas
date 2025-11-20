@@ -407,6 +407,52 @@ async function handlePut(req, res) {
 }
 
 /**
+ * DELETE handler
+ * Deletes config from Blob Storage
+ */
+async function handleDelete(req, res) {
+  const blobToken = ensureBlobToken(res);
+  if (!blobToken) return;
+
+  try {
+    const docParam = getQueryParam(req, 'doc');
+    if (!docParam) {
+      res.status(400)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: 'Missing document name' }));
+      return;
+    }
+
+    const docName = sanitizeDocumentName(docParam);
+
+    // Check if document exists
+    const exists = await fetchDocumentFromBlob(docName, blobToken);
+    if (!exists) {
+      res.status(404)
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: `Document "${docName}" not found` }));
+      return;
+    }
+
+    // Delete from Blob Storage
+    await del(docName, { token: blobToken });
+
+    res.status(200)
+      .setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({
+        success: true,
+        deleted: docName
+      }));
+
+  } catch (error) {
+    console.error('Error deleting config:', error);
+    res.status(500)
+      .setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({ error: 'Failed to delete configuration' }));
+  }
+}
+
+/**
  * Main handler - routes to GET or POST
  */
 export default async function handler(req, res) {
@@ -421,6 +467,8 @@ export default async function handler(req, res) {
     return handlePost(req, res);
   } else if (req.method === 'PUT') {
     return handlePut(req, res);
+  } else if (req.method === 'DELETE') {
+    return handleDelete(req, res);
   } else {
     res.status(405).send('Method not allowed');
   }

@@ -9,7 +9,6 @@ let groupModalViewMode = 'form';
 let agentModalOriginal = null;
 let groupModalOriginal = null;
 let documentMenuBound = false;
-let workflowPhasesDraft = [];
 
 const DEFAULT_DOCUMENT_NAME = 'config.yaml';
 const DOCUMENT_STORAGE_KEY = 'tps-active-config-doc';
@@ -246,6 +245,9 @@ function handleDocumentMenuAction(action) {
         case 'download':
             downloadCurrentDocument();
             break;
+        case 'delete':
+            deleteCurrentDocument();
+            break;
         default:
             break;
     }
@@ -395,14 +397,25 @@ function updateDocumentControlsUI() {
     if (menu) {
         const renameBtn = menu.querySelector('button[data-action="rename"]');
         const downloadMenuBtn = menu.querySelector('button[data-action="download"]');
+        const deleteBtn = menu.querySelector('button[data-action="delete"]');
         const divider = menu.querySelector('[data-role="menu-divider"]');
         const hasDocument = Boolean(currentDocumentName);
+        const isLastDocument = availableDocuments.length <= 1;
 
         if (renameBtn) {
             renameBtn.disabled = !hasDocument;
         }
         if (downloadMenuBtn) {
             downloadMenuBtn.disabled = !hasDocument;
+        }
+        if (deleteBtn) {
+            // Disable if no document or if it's the last one
+            deleteBtn.disabled = !hasDocument || isLastDocument;
+            if (isLastDocument && hasDocument) {
+                deleteBtn.title = 'Cannot delete the last document';
+            } else {
+                deleteBtn.title = 'Delete current document';
+            }
         }
         if (divider) {
             divider.style.display = hasDocument ? 'block' : 'none';
@@ -625,6 +638,60 @@ async function downloadCurrentDocument() {
     }
 }
 
+async function deleteCurrentDocument() {
+    if (!currentDocumentName) {
+        alert('No document selected to delete.');
+        return;
+    }
+
+    // Prevent deleting the last document
+    if (availableDocuments.length <= 1) {
+        alert('Cannot delete the last document. At least one document must remain.');
+        return;
+    }
+
+    // Confirm deletion
+    const confirmed = confirm(
+        `Are you sure you want to permanently delete "${currentDocumentName}"?\n\n` +
+        `This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        setDocumentStatusMessage(`Deleting "${currentDocumentName}"...`);
+        const response = await fetch(
+            `/api/config?doc=${encodeURIComponent(currentDocumentName)}`,
+            { method: 'DELETE' }
+        );
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Delete failed');
+        }
+
+        // Find a new document to load (first one that's not the deleted one)
+        const remainingDocs = availableDocuments.filter(doc => doc.name !== currentDocumentName);
+        const nextDoc = remainingDocs.length > 0 ? remainingDocs[0].name : null;
+
+        // Refresh list and load next document
+        await refreshDocumentList(nextDoc);
+        if (nextDoc) {
+            await loadAgents(nextDoc);
+            setDocumentStatusMessage(`Document "${currentDocumentName}" deleted successfully.`, 'success');
+        } else {
+            setDocumentStatusMessage('Document deleted. No documents remaining.', 'success');
+        }
+
+    } catch (error) {
+        console.error('Delete failed:', error);
+        alert('Failed to delete document: ' + (error.message || 'Unknown error'));
+        setDocumentStatusMessage('Delete failed.', 'error');
+    }
+}
+
 // ----- Modal YAML view helpers -----
 function setElementText(elementId, text = '') {
     const el = document.getElementById(elementId);
@@ -726,30 +793,7 @@ function populateGroupFormFields(group = {}, options = {}) {
     document.getElementById('groupName').value = group.groupName || '';
     document.getElementById('groupPhaseTag').value = group.phaseTag || '';
 
-    // Populate workflow phase dropdown
-    populateWorkflowPhaseDropdown(group.workflowPhase || group.flowDisplayName || '');
-
     updateGroupIdPreview({ groupIndex, group });
-}
-
-function populateWorkflowPhaseDropdown(selectedPhase = '') {
-    const select = document.getElementById('groupWorkflowPhase');
-    if (!select) return;
-
-    const phases = getWorkflowPhases();
-
-    // Clear and rebuild
-    select.innerHTML = '<option value="">None</option>';
-
-    phases.forEach(phase => {
-        const option = document.createElement('option');
-        option.value = phase.id;
-        option.textContent = phase.name;
-        if (phase.id === selectedPhase) {
-            option.selected = true;
-        }
-        select.appendChild(option);
-    });
 }
 
 function updateGroupIdPreview(options = {}) {
@@ -836,16 +880,6 @@ function buildGroupDraftFromForm() {
         delete draft.groupClass;
     }
     draft.phaseTag = document.getElementById('groupPhaseTag').value;
-
-    // Store workflow phase reference (replaces flowDisplayName)
-    const workflowPhaseValue = document.getElementById('groupWorkflowPhase').value;
-    if (workflowPhaseValue) {
-        draft.workflowPhase = workflowPhaseValue;
-    } else {
-        delete draft.workflowPhase;
-    }
-    // Remove old flowDisplayName if it exists (migration)
-    delete draft.flowDisplayName;
 
     ensureGroupHasId(draft, groupIndex);
 
@@ -1090,82 +1124,6 @@ function generateDynamicCSS(config) {
     dynamicStyleElement.textContent = css;
 }
 
-// Helper to get display name for flow diagram
-function getFlowDisplayName(group) {
-    // Use workflowPhase if available (new system)
-    if (group.workflowPhase) {
-        const phases = getWorkflowPhases();
-        const phase = phases.find(p => p.id === group.workflowPhase);
-        if (phase) {
-            return phase.name;
-        }
-    }
-    // Fallback to old flowDisplayName for backward compatibility
-    if (group.flowDisplayName) {
-        return group.flowDisplayName;
-    }
-    // Last resort: use group name
-    return group.groupName;
-}
-
-// Generate flow diagram dynamically
-function generateFlowDiagram(config) {
-    const flowDiagram = document.getElementById('flowDiagram');
-
-    // Get groups to show in flow (exclude support or mark it separately)
-    const flowGroups = config.agentGroups.filter(g => getGroupFormatting(g, 'showInFlow') && !getGroupFormatting(g, 'isSupport'));
-    const supportGroups = config.agentGroups.filter(g => getGroupFormatting(g, 'showInFlow') && getGroupFormatting(g, 'isSupport'));
-
-    let flowHTML = '<div class="flow-content">';
-
-    // Generate main flow boxes
-    flowGroups.forEach((group, index) => {
-        const phaseImage = getGroupFormatting(group, 'phaseImage');
-        const imageOverlay = phaseImage ? `
-            <div class="phase-image-overlay">
-                <img src="${phaseImage}" alt="${group.groupName}">
-            </div>
-        ` : '';
-
-        const color = getGroupFormatting(group, 'color');
-        const iconType = getGroupFormatting(group, 'iconType');
-        const displayName = getFlowDisplayName(group);
-
-        flowHTML += `
-            <div class="flow-box" style="background: ${color};" data-group="${group.groupId}" data-group-index="${group.groupNumber}">
-                <i data-lucide="${iconType}" style="margin-bottom: 4px;"></i><br>${displayName}
-                ${imageOverlay}
-            </div>
-        `;
-
-        // Add arrow if not last item
-        if (index < flowGroups.length - 1) {
-            flowHTML += '<div class="flow-arrow">→</div>';
-        }
-    });
-
-    flowHTML += '</div>';
-
-    // Add support section if exists
-    if (supportGroups.length > 0) {
-        flowHTML += '<div class="flow-support">';
-        supportGroups.forEach(group => {
-            const color = getGroupFormatting(group, 'color');
-            const iconType = getGroupFormatting(group, 'iconType');
-            const displayName = getFlowDisplayName(group);
-            flowHTML += `
-                <div class="flow-support-box" style="background: ${color};" data-group="${group.groupId}" data-group-index="${group.groupNumber}">
-                    <i data-lucide="${iconType}"></i> ${displayName}
-                </div>
-            `;
-        });
-        flowHTML += '</div>';
-    }
-
-    flowDiagram.innerHTML = flowHTML;
-    lucide.createIcons();
-}
-
 // Template Functions
 function createToolChip(toolName, config) {
     const toolConfig = config.toolsConfig[toolName];
@@ -1361,7 +1319,6 @@ function renderAgentGroups() {
 
     // Setup interactions
     setupTooltips();
-    setupFlowBoxes();
 }
 
 // ----- Page interactions -----
@@ -1382,9 +1339,6 @@ async function loadAgents(docName = currentDocumentName) {
         // Generate dynamic CSS
         generateDynamicCSS(config);
 
-        // Generate flow diagram
-        generateFlowDiagram(config);
-
         // Render agent groups
         renderAgentGroups();
 
@@ -1396,45 +1350,7 @@ async function loadAgents(docName = currentDocumentName) {
     }
 }
 
-// Toggle Flow Diagram
-function toggleFlowDiagram(event) {
-    const diagram = document.getElementById('flowDiagram');
-    const button = event.target.closest('button');
-    const icon = button.querySelector('.toggle-icon');
-    const text = document.getElementById('toggleText');
-
-    if (diagram.style.display === 'none') {
-        diagram.style.display = 'block';
-        icon.setAttribute('data-lucide', 'chevron-up');
-        if (text) text.textContent = 'Hide Flow Diagram';
-    } else {
-        diagram.style.display = 'none';
-        icon.setAttribute('data-lucide', 'chevron-down');
-        if (text) text.textContent = 'Show Flow Diagram';
-    }
-    lucide.createIcons();
-}
-
-// Toggle Focus Mode
-function toggleFocusMode() {
-    const agentGroups = document.querySelector('.agent-groups');
-    const btn = document.getElementById('focusModeBtn');
-    const icon = document.getElementById('focusIcon');
-    const text = document.getElementById('focusModeText');
-
-    if (agentGroups.classList.contains('focus-mode')) {
-        agentGroups.classList.remove('focus-mode');
-        icon.setAttribute('data-lucide', 'eye');
-        if (text) text.textContent = 'Focus Mode';
-    } else {
-        agentGroups.classList.add('focus-mode');
-        icon.setAttribute('data-lucide', 'eye-off');
-        if (text) text.textContent = 'Exit Focus Mode';
-    }
-    lucide.createIcons();
-}
-
-// Tooltip + flow interactions
+// Tooltip interactions
 // Helper function to attach tooltip handlers
 function attachTooltipHandlers(selector, tooltipClass, extraInit) {
     const icons = document.querySelectorAll(selector);
@@ -1494,38 +1410,6 @@ function setupTooltips() {
     });
 }
 
-// Setup Flow Box Highlighting - now fully dynamic
-function setupFlowBoxes() {
-    const flowBoxes = document.querySelectorAll('.flow-box, .flow-support-box');
-    const agentGroups = document.querySelectorAll('.agent-group');
-
-    flowBoxes.forEach(box => {
-        box.addEventListener('click', function() {
-            const targetGroupIndex = parseInt(this.dataset.groupIndex);
-
-            flowBoxes.forEach(b => b.classList.remove('highlighted'));
-            agentGroups.forEach(g => g.style.border = 'none');
-
-            this.classList.add('highlighted');
-
-            // Find the matching group by index
-            const targetGroup = Array.from(agentGroups).find(g =>
-                parseInt(g.dataset.groupIndex) === targetGroupIndex
-            );
-
-            if (targetGroup) {
-                targetGroup.style.border = '4px solid #17a2b8';
-                targetGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                setTimeout(() => {
-                    this.classList.remove('highlighted');
-                    targetGroup.style.border = 'none';
-                }, 3000);
-            }
-        });
-    });
-}
-
 // ----- Edit mode functionality -----
 let editModeActive = false;
 
@@ -1556,11 +1440,6 @@ function showEditModeButton() {
     const editBtn = document.getElementById('editModeBtn');
     if (editBtn) {
         editBtn.style.display = 'block';
-    }
-
-    const workflowBtn = document.getElementById('workflowPhasesBtn');
-    if (workflowBtn) {
-        workflowBtn.style.display = 'block';
     }
 
     if (typeof lucide !== 'undefined') {
@@ -1655,7 +1534,6 @@ function saveAgent() {
             closeAgentModal();
             // Re-render the page with updated data
             renderAgentGroups();
-            generateFlowDiagram(configData);
         }
     });
 }
@@ -1675,7 +1553,6 @@ function deleteAgent() {
         if (success) {
             closeAgentModal();
             renderAgentGroups();
-            generateFlowDiagram(configData);
         }
     });
 }
@@ -1695,7 +1572,6 @@ function openAddSectionModal() {
     };
     // All formatting fields (color, phaseImage, showInFlow, isSupport, groupClass)
     // inherit from sectionDefaults unless explicitly overridden in YAML
-    // workflowPhase is optional and set via dropdown
 
     showGroupModal(newGroup, -1);
 }
@@ -1766,7 +1642,6 @@ function saveGroup() {
         if (success) {
             closeGroupModal();
             renderAgentGroups();
-            generateFlowDiagram(configData);
             generateDynamicCSS(configData);
         }
     });
@@ -1786,124 +1661,8 @@ function deleteGroup() {
         if (success) {
             closeGroupModal();
             renderAgentGroups();
-            generateFlowDiagram(configData);
         }
     });
-}
-
-// ----- Workflow Phases Management -----
-function getWorkflowPhases() {
-    return configData?.workflowPhases || [];
-}
-
-function openWorkflowPhasesModal() {
-    const modal = document.getElementById('workflowPhasesModal');
-    workflowPhasesDraft = deepClone(getWorkflowPhases());
-    renderWorkflowPhasesList();
-    modal.classList.add('show');
-}
-
-function closeWorkflowPhasesModal() {
-    workflowPhasesDraft = [];
-    document.getElementById('workflowPhasesModal').classList.remove('show');
-}
-
-function renderWorkflowPhasesList() {
-    const container = document.getElementById('workflowPhasesList');
-    if (!container) return;
-
-    if (workflowPhasesDraft.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No workflow phases defined. Click "Add Phase" to create one.</p>';
-        return;
-    }
-
-    // Sort by order
-    const sorted = [...workflowPhasesDraft].sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const html = sorted.map((phase, index) => `
-        <div class="workflow-phase-item" data-index="${index}">
-            <div class="workflow-phase-handle">
-                <i data-lucide="grip-vertical"></i>
-            </div>
-            <div class="workflow-phase-fields">
-                <input type="text"
-                       placeholder="Phase ID (e.g., sales)"
-                       value="${phase.id || ''}"
-                       onchange="updateWorkflowPhase(${index}, 'id', this.value)"
-                       class="workflow-phase-id">
-                <input type="text"
-                       placeholder="Display Name (e.g., Sales)"
-                       value="${phase.name || ''}"
-                       onchange="updateWorkflowPhase(${index}, 'name', this.value)"
-                       class="workflow-phase-name">
-                <input type="number"
-                       placeholder="Order"
-                       value="${phase.order !== undefined ? phase.order : index}"
-                       onchange="updateWorkflowPhase(${index}, 'order', parseInt(this.value))"
-                       class="workflow-phase-order"
-                       style="width: 80px;">
-            </div>
-            <button type="button" class="btn btn-danger" onclick="removeWorkflowPhase(${index})" title="Delete phase">
-                <i data-lucide="trash-2"></i>
-            </button>
-        </div>
-    `).join('');
-
-    container.innerHTML = html;
-
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-function addWorkflowPhase() {
-    const newPhase = {
-        id: '',
-        name: '',
-        order: workflowPhasesDraft.length
-    };
-    workflowPhasesDraft.push(newPhase);
-    renderWorkflowPhasesList();
-}
-
-function removeWorkflowPhase(index) {
-    if (!confirm('Are you sure you want to remove this workflow phase? Sections referencing it will lose the reference.')) {
-        return;
-    }
-    workflowPhasesDraft.splice(index, 1);
-    renderWorkflowPhasesList();
-}
-
-function updateWorkflowPhase(index, field, value) {
-    if (workflowPhasesDraft[index]) {
-        workflowPhasesDraft[index][field] = value;
-    }
-}
-
-async function saveWorkflowPhases() {
-    // Validate: all phases must have id and name
-    const invalid = workflowPhasesDraft.filter(p => !p.id || !p.name);
-    if (invalid.length > 0) {
-        alert('All workflow phases must have both an ID and a name.');
-        return;
-    }
-
-    // Check for duplicate IDs
-    const ids = workflowPhasesDraft.map(p => p.id);
-    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
-    if (duplicates.length > 0) {
-        alert(`Duplicate phase IDs found: ${duplicates.join(', ')}. Each phase must have a unique ID.`);
-        return;
-    }
-
-    // Update config
-    configData.workflowPhases = deepClone(workflowPhasesDraft);
-
-    const success = await saveConfig();
-    if (success) {
-        closeWorkflowPhasesModal();
-        alert('Workflow phases saved successfully.');
-    }
 }
 
 // ----- Reusable form helpers -----

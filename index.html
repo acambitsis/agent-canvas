@@ -49,38 +49,21 @@
                                 <i data-lucide="download"></i>
                                 Download Current
                             </button>
+                            <button type="button" data-action="delete" style="color: #dc3545;">
+                                <i data-lucide="trash-2"></i>
+                                Delete Current
+                            </button>
                         </div>
                     </div>
                 </div>
                 <input type="file" id="documentFileInput" accept=".yaml,.yml,text/yaml" style="display: none;">
-                <p class="document-meta" id="documentMeta">Loading documents...</p>
+                <p class="document-meta" id="documentMeta"></p>
                 <p class="document-status" id="documentStatusMessage"></p>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button id="workflowPhasesBtn" class="edit-mode-btn" onclick="openWorkflowPhasesModal()" style="display: none;">
-                    <i data-lucide="workflow"></i> <span>Manage Workflow Phases</span>
-                </button>
                 <button id="editModeBtn" class="edit-mode-btn" onclick="toggleEditMode()">
                     <i data-lucide="edit" id="editIcon"></i> <span id="editModeText">Enable Edit Mode</span>
                 </button>
-            </div>
-        </div>
-
-        <!-- Flow Diagram Section - Will be populated dynamically -->
-        <div class="flow-diagram-container">
-            <div class="flow-header">
-                <h2>🔄 Agent Workflow & Dependencies</h2>
-                <div style="display: flex; gap: 15px;">
-                    <button onclick="toggleFocusMode()" class="toggle-flow-btn" id="focusModeBtn">
-                        <i data-lucide="eye" id="focusIcon"></i> <span id="focusModeText">Focus Mode</span>
-                    </button>
-                    <button class="toggle-flow-btn" onclick="toggleFlowDiagram(event)">
-                        <i data-lucide="chevron-up" class="toggle-icon"></i> <span id="toggleText">Hide Flow Diagram</span>
-                    </button>
-                </div>
-            </div>
-            <div class="flow-diagram" id="flowDiagram" style="display: block;">
-                <!-- Flow content will be generated dynamically -->
             </div>
         </div>
 
@@ -207,15 +190,6 @@
                         <input type="text" id="groupPhaseTag" placeholder="e.g., Pre-Phase, Phase 1">
                         <small>Tag displayed next to section name</small>
                     </div>
-
-                    <div class="form-group">
-                        <label for="groupWorkflowPhase">Workflow Phase (optional)</label>
-                        <select id="groupWorkflowPhase">
-                            <option value="">None</option>
-                            <!-- Populated dynamically -->
-                        </select>
-                        <small>Assign this section to a workflow phase (shown in flow diagram)</small>
-                    </div>
                 </div>
 
                 <div id="groupYamlContent" class="yaml-editor">
@@ -239,35 +213,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Workflow Phases Modal -->
-    <div id="workflowPhasesModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Manage Workflow Phases</h2>
-                <button class="modal-close" onclick="closeWorkflowPhasesModal()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="color: #666; margin-bottom: 20px;">
-                    Define the workflow phases that sections can reference. These appear in the flow diagram.
-                </p>
-                <div id="workflowPhasesList" class="workflow-phases-list">
-                    <!-- Populated dynamically -->
-                </div>
-                <button type="button" class="btn btn-secondary" onclick="addWorkflowPhase()" style="margin-top: 15px;">
-                    <i data-lucide="plus"></i> Add Phase
-                </button>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeWorkflowPhasesModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveWorkflowPhases()">
-                    <i data-lucide="save"></i> Save Phases
-                </button>
-            </div>
         </div>
     </div>
 
