@@ -1293,6 +1293,10 @@ function createAgentGroup(group, config, groupIndex) {
 function renderAgentGroups() {
     if (!configData) return;
 
+    // Update document title
+    const title = configData.documentTitle || 'TPS Operating System';
+    document.getElementById('documentTitle').textContent = title;
+
     // Update agent count
     const totalAgents = configData.agentGroups.reduce((sum, group) => sum + group.agents.length, 0);
     document.getElementById('agent-count').textContent =
@@ -1661,6 +1665,49 @@ function deleteGroup() {
         if (success) {
             closeGroupModal();
             renderAgentGroups();
+        }
+    });
+}
+
+// ----- Title modal handlers -----
+function openEditTitleModal() {
+    const modal = document.getElementById('titleModal');
+    const input = document.getElementById('documentTitleInput');
+
+    // Set current title or default
+    const currentTitle = configData.documentTitle || 'TPS Operating System';
+    input.value = currentTitle;
+
+    modal.classList.add('show');
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeTitleModal() {
+    document.getElementById('titleModal').classList.remove('show');
+}
+
+function saveTitleEdit() {
+    const input = document.getElementById('documentTitleInput');
+    const newTitle = input.value.trim();
+
+    if (!newTitle) {
+        alert('Title cannot be empty');
+        return;
+    }
+
+    // Update config
+    configData.documentTitle = newTitle;
+
+    // Update display
+    document.getElementById('documentTitle').textContent = newTitle;
+
+    // Save config
+    saveConfig().then(success => {
+        if (success) {
+            closeTitleModal();
         }
     });
 }

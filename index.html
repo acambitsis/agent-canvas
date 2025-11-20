@@ -11,61 +11,62 @@
 <body>
     <div class="container">
         <div class="header">
-            <div>
-                <h1>TPS Operating System</h1>
-                <p id="agent-count">Loading...</p>
-                <div class="document-controls">
-                    <div class="document-select-group">
-                        <label for="documentSelect">Active document</label>
-                        <div class="document-control-pill">
-                            <select id="documentSelect" onchange="handleDocumentSelection(event)">
-                                <option value="">Loading...</option>
-                            </select>
-                            <button type="button" class="doc-menu-btn" id="documentMenuBtn" aria-haspopup="true" aria-expanded="false">
-                                <i data-lucide="sliders"></i>
-                                <span>Actions</span>
-                            </button>
-                        </div>
+            <div class="header-row">
+                <div class="title-section">
+                    <h1 id="documentTitle">TPS Operating System</h1>
+                    <div class="title-edit-icon" onclick="openEditTitleModal()" title="Edit title">
+                        <i data-lucide="edit-3"></i>
                     </div>
-                    <div class="document-menu" id="documentMenu">
-                        <div class="document-menu-group">
-                            <p class="menu-label">Documents</p>
-                            <button type="button" data-action="upload">
-                                <i data-lucide="upload"></i>
-                                Upload YAML
-                            </button>
-                            <button type="button" data-action="blank">
-                                <i data-lucide="file-plus"></i>
-                                New Blank Document
-                            </button>
-                        </div>
-                        <div class="document-menu-divider" data-role="menu-divider"></div>
-                        <div class="document-menu-group">
-                            <button type="button" data-action="rename">
-                                <i data-lucide="edit-3"></i>
-                                Rename Current
-                            </button>
-                            <button type="button" data-action="download">
-                                <i data-lucide="download"></i>
-                                Download Current
-                            </button>
-                            <button type="button" data-action="delete" style="color: #dc3545;">
-                                <i data-lucide="trash-2"></i>
-                                Delete Current
-                            </button>
-                        </div>
-                    </div>
+                    <p id="agent-count" class="agent-count-inline">Loading...</p>
                 </div>
-                <input type="file" id="documentFileInput" accept=".yaml,.yml,text/yaml" style="display: none;">
+                <div class="header-actions">
+                    <div class="document-controls-compact">
+                        <select id="documentSelect" onchange="handleDocumentSelection(event)">
+                            <option value="">Loading...</option>
+                        </select>
+                        <button type="button" class="icon-btn" id="documentMenuBtn" aria-haspopup="true" aria-expanded="false" title="Document actions">
+                            <i data-lucide="sliders"></i>
+                        </button>
+                        <div class="document-menu" id="documentMenu">
+                            <div class="document-menu-group">
+                                <p class="menu-label">Documents</p>
+                                <button type="button" data-action="upload">
+                                    <i data-lucide="upload"></i>
+                                    Upload YAML
+                                </button>
+                                <button type="button" data-action="blank">
+                                    <i data-lucide="file-plus"></i>
+                                    New Blank Document
+                                </button>
+                            </div>
+                            <div class="document-menu-divider" data-role="menu-divider"></div>
+                            <div class="document-menu-group">
+                                <button type="button" data-action="rename">
+                                    <i data-lucide="edit-3"></i>
+                                    Rename Current
+                                </button>
+                                <button type="button" data-action="download">
+                                    <i data-lucide="download"></i>
+                                    Download Current
+                                </button>
+                                <button type="button" data-action="delete" style="color: #dc3545;">
+                                    <i data-lucide="trash-2"></i>
+                                    Delete Current
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="editModeBtn" class="edit-mode-btn" onclick="toggleEditMode()">
+                        <i data-lucide="edit" id="editIcon"></i> <span id="editModeText">Enable Edit Mode</span>
+                    </button>
+                </div>
+            </div>
+            <div class="header-meta">
                 <p class="document-meta" id="documentMeta"></p>
                 <p class="document-status" id="documentStatusMessage"></p>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button id="editModeBtn" class="edit-mode-btn" onclick="toggleEditMode()">
-                    <i data-lucide="edit" id="editIcon"></i> <span id="editModeText">Enable Edit Mode</span>
-                </button>
-            </div>
         </div>
+        <input type="file" id="documentFileInput" accept=".yaml,.yml,text/yaml" style="display: none;">
 
         <!-- Agent Groups Container - will be populated by JavaScript -->
         <div class="agent-groups" id="agentGroupsContainer"></div>
@@ -209,6 +210,31 @@
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="closeGroupModal()">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="saveGroup()">
+                        <i data-lucide="save"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Title Modal -->
+    <div id="titleModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Edit Document Title</h2>
+                <button class="modal-close" onclick="closeTitleModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="titleForm">
+                <div class="form-group">
+                    <label for="documentTitleInput">Title</label>
+                    <input type="text" id="documentTitleInput" required placeholder="Enter document title">
+                    <small>This title will be displayed at the top of the page</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTitleModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTitleEdit()">
                         <i data-lucide="save"></i> Save
                     </button>
                 </div>
