@@ -267,10 +267,9 @@ All storage operations in `api/config.js`:
 - Verify token has Read and Write permissions
 - Check Vercel logs: `vercel logs`
 
-**Edit mode button doesn't appear**
-- Ensure authentication succeeded
-- Check browser console for JavaScript errors
-- Verify `showEditModeButton()` is called in `loadAgents()`
+**Document actions disabled**
+- Make sure a document is selected; actions stay disabled when no document is loaded
+- Delete stays disabled while only one document exists in Blob storage
 
 **Changes don't persist**
 - Network tab: Look for failed POST to `/api/config`
@@ -295,7 +294,7 @@ availableDocuments      // List of all documents
 ### Naming Conventions
 - **Functions**: camelCase (e.g., `loadAgents()`, `createAgentCard()`)
 - **Variables**: camelCase (e.g., `configData`, `agentModalViewMode`)
-- **CSS Classes**: kebab-case (e.g., `agent-card`, `edit-mode-btn`)
+- **CSS Classes**: kebab-case (e.g., `agent-card`, `collapse-all-btn`)
 
 ### Defensive Coding Patterns
 - `toArray(value)` - Ensures array values for YAML fields
@@ -312,7 +311,7 @@ availableDocuments      // List of all documents
 
 ## Important Notes
 
-- **No DELETE endpoint**: Documents must be deleted via Vercel Dashboard or Blob API directly
+- **DELETE endpoint**: `/api/config` supports DELETE; the UI prevents removing the final remaining document for safety
 - **No automated tests**: Manual testing only (consider adding Jest/Vitest if needed)
 - **No versioning**: Blob Storage overwrites on save (consider adding version history if needed)
 - **No conflict resolution**: Last write wins (consider adding optimistic locking if needed)
@@ -320,5 +319,4 @@ availableDocuments      // List of all documents
 
 ## Related Documentation
 
-- `EDIT_MODE_SETUP.md` - Detailed setup guide for edit functionality
 - `data/config.yaml` - Example configuration structure with comments

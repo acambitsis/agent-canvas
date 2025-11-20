@@ -1171,35 +1171,6 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-.array-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.array-input-item {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.array-input-item input {
-    flex: 1;
-}
-
-.array-input-item button {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.add-array-item-btn {
-    margin-top: 8px;
-}
-
 /* Animated Transitions */
 .agent-card,
 .agent-group,
@@ -1270,11 +1241,6 @@ body {
 
     .document-controls-compact select {
         flex: 1;
-    }
-
-    .edit-mode-btn {
-        width: 100%;
-        justify-content: center;
     }
 
     .agents-grid {

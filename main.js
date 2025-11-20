@@ -85,6 +85,17 @@ function slugifyIdentifier(value) {
         .replace(/^-+|-+$/g, '');
 }
 
+function refreshIcons() {
+    if (typeof lucide === 'undefined') {
+        return;
+    }
+    try {
+        lucide.createIcons();
+    } catch (error) {
+        console.warn('Lucide icon refresh failed:', error);
+    }
+}
+
 function getExistingGroupIdSet(excludeIndex = -1) {
     if (!Array.isArray(configData?.agentGroups)) {
         return new Set();
@@ -250,9 +261,7 @@ function updateCollapseAllButton() {
         icon.setAttribute('data-lucide', 'chevrons-down');
     }
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function setActiveDocumentName(name, options = {}) {
@@ -529,9 +538,7 @@ function updateDocumentControlsUI() {
         }
     }
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function formatBytes(bytes = 0) {
@@ -821,43 +828,11 @@ async function copyTextToClipboard(text) {
 }
 
 function updateAgentModalViewUI() {
-    const formContent = document.getElementById('agentFormContent');
-    const yamlContent = document.getElementById('agentYamlContent');
-    const formToggle = document.getElementById('agentFormToggle');
-    const yamlToggle = document.getElementById('agentYamlToggle');
-
-    if (formContent) {
-        formContent.style.display = agentModalViewMode === 'form' ? 'block' : 'none';
-    }
-    if (yamlContent) {
-        yamlContent.style.display = agentModalViewMode === 'yaml' ? 'block' : 'none';
-    }
-    if (formToggle) {
-        formToggle.classList.toggle('active', agentModalViewMode === 'form');
-    }
-    if (yamlToggle) {
-        yamlToggle.classList.toggle('active', agentModalViewMode === 'yaml');
-    }
+    updateDualViewModalUI(modalViewConfigs.agent);
 }
 
 function updateGroupModalViewUI() {
-    const formContent = document.getElementById('groupFormContent');
-    const yamlContent = document.getElementById('groupYamlContent');
-    const formToggle = document.getElementById('groupFormToggle');
-    const yamlToggle = document.getElementById('groupYamlToggle');
-
-    if (formContent) {
-        formContent.style.display = groupModalViewMode === 'form' ? 'block' : 'none';
-    }
-    if (yamlContent) {
-        yamlContent.style.display = groupModalViewMode === 'yaml' ? 'block' : 'none';
-    }
-    if (formToggle) {
-        formToggle.classList.toggle('active', groupModalViewMode === 'form');
-    }
-    if (yamlToggle) {
-        yamlToggle.classList.toggle('active', groupModalViewMode === 'yaml');
-    }
+    updateDualViewModalUI(modalViewConfigs.group);
 }
 
 function populateAgentFormFields(agent = {}) {
@@ -888,9 +863,7 @@ function populateAgentFormFields(agent = {}) {
     document.getElementById('metricsUsage').value = metrics.usageThisWeek || '';
     document.getElementById('metricsTimeSaved').value = metrics.timeSaved || '';
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function populateGroupFormFields(group = {}, options = {}) {
@@ -1076,62 +1049,114 @@ function applyGroupYamlToForm() {
     }
 }
 
-function setAgentModalView(mode) {
-    if (mode === agentModalViewMode) {
+const modalViewConfigs = {
+    agent: {
+        getMode: () => agentModalViewMode,
+        setMode: mode => {
+            agentModalViewMode = mode;
+        },
+        selectors: {
+            formContentId: 'agentFormContent',
+            yamlContentId: 'agentYamlContent',
+            formToggleId: 'agentFormToggle',
+            yamlToggleId: 'agentYamlToggle'
+        },
+        syncFromForm: syncAgentStateFromForm,
+        applyFromYaml: applyAgentYamlToForm,
+        updateYamlEditor: updateAgentYamlEditor,
+        formReadError: 'Unable to read agent form data.',
+        yamlValidationError: 'Please fix YAML errors before returning to form view.'
+    },
+    group: {
+        getMode: () => groupModalViewMode,
+        setMode: mode => {
+            groupModalViewMode = mode;
+        },
+        selectors: {
+            formContentId: 'groupFormContent',
+            yamlContentId: 'groupYamlContent',
+            formToggleId: 'groupFormToggle',
+            yamlToggleId: 'groupYamlToggle'
+        },
+        syncFromForm: syncGroupStateFromForm,
+        applyFromYaml: applyGroupYamlToForm,
+        updateYamlEditor: updateGroupYamlEditor,
+        formReadError: 'Unable to read section form data.',
+        yamlValidationError: 'Please fix YAML errors before returning to form view.'
+    }
+};
+
+function updateDualViewModalUI(config) {
+    const mode = config.getMode();
+    const {
+        formContentId,
+        yamlContentId,
+        formToggleId,
+        yamlToggleId
+    } = config.selectors;
+
+    const formContent = document.getElementById(formContentId);
+    const yamlContent = document.getElementById(yamlContentId);
+    const formToggle = document.getElementById(formToggleId);
+    const yamlToggle = document.getElementById(yamlToggleId);
+
+    if (formContent) {
+        formContent.style.display = mode === 'form' ? 'block' : 'none';
+    }
+    if (yamlContent) {
+        yamlContent.style.display = mode === 'yaml' ? 'block' : 'none';
+    }
+    if (formToggle) {
+        formToggle.classList.toggle('active', mode === 'form');
+    }
+    if (yamlToggle) {
+        yamlToggle.classList.toggle('active', mode === 'yaml');
+    }
+}
+
+function setModalView(mode, config) {
+    if (mode === config.getMode()) {
         return;
     }
 
     if (mode === 'yaml') {
-        if (!syncAgentStateFromForm()) {
-            alert('Unable to read agent form data.');
+        if (!config.syncFromForm()) {
+            alert(config.formReadError);
             return;
         }
-        updateAgentYamlEditor();
+        config.updateYamlEditor();
     } else {
-        if (!applyAgentYamlToForm()) {
-            alert('Please fix YAML errors before returning to form view.');
+        if (!config.applyFromYaml()) {
+            alert(config.yamlValidationError);
             return;
         }
     }
 
-    agentModalViewMode = mode;
-    updateAgentModalViewUI();
+    config.setMode(mode);
+    updateDualViewModalUI(config);
+}
+
+function ensureModalStateFromCurrentView(config) {
+    if (config.getMode() === 'yaml') {
+        return config.applyFromYaml();
+    }
+    return config.syncFromForm();
+}
+
+function setAgentModalView(mode) {
+    setModalView(mode, modalViewConfigs.agent);
 }
 
 function setGroupModalView(mode) {
-    if (mode === groupModalViewMode) {
-        return;
-    }
-
-    if (mode === 'yaml') {
-        if (!syncGroupStateFromForm()) {
-            alert('Unable to read section form data.');
-            return;
-        }
-        updateGroupYamlEditor();
-    } else {
-        if (!applyGroupYamlToForm()) {
-            alert('Please fix YAML errors before returning to form view.');
-            return;
-        }
-    }
-
-    groupModalViewMode = mode;
-    updateGroupModalViewUI();
+    setModalView(mode, modalViewConfigs.group);
 }
 
 function ensureAgentStateFromCurrentView() {
-    if (agentModalViewMode === 'yaml') {
-        return applyAgentYamlToForm();
-    }
-    return syncAgentStateFromForm();
+    return ensureModalStateFromCurrentView(modalViewConfigs.agent);
 }
 
 function ensureGroupStateFromCurrentView() {
-    if (groupModalViewMode === 'yaml') {
-        return applyGroupYamlToForm();
-    }
-    return syncGroupStateFromForm();
+    return ensureModalStateFromCurrentView(modalViewConfigs.group);
 }
 
 async function copyAgentYaml() {
@@ -1465,9 +1490,7 @@ function renderAgentGroups() {
     container.innerHTML = groupsHTML;
 
     // Initialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    refreshIcons();
 
     // Setup interactions
     setupTooltips();
@@ -1558,7 +1581,7 @@ function setupTooltips() {
 
     // Metrics tooltips (re-initialize Lucide icons)
     attachTooltipHandlers('.metrics-icon', '.metrics-tooltip', () => {
-        lucide.createIcons();
+        refreshIcons();
     });
 }
 
@@ -1799,9 +1822,7 @@ function openEditTitleModal() {
 
     modal.classList.add('show');
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function closeTitleModal() {
@@ -1859,9 +1880,7 @@ function toggleContextMenu(event, menuId) {
         trigger.classList.remove('active');
     }
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function closeAllContextMenus() {
@@ -1881,50 +1900,6 @@ document.addEventListener('click', (event) => {
 });
 
 // ----- Reusable form helpers -----
-function renderArrayInput(fieldName, values) {
-    const container = document.getElementById(fieldName + 'Container');
-    container.innerHTML = '';
-
-    values.forEach((value, index) => {
-        addArrayInputField(fieldName, value);
-    });
-
-    // Always have at least one empty field
-    if (values.length === 0) {
-        addArrayInputField(fieldName, '');
-    }
-}
-
-function addArrayInputField(fieldName, value = '') {
-    const container = document.getElementById(fieldName + 'Container');
-    const index = container.children.length;
-
-    const div = document.createElement('div');
-    div.className = 'array-input-item';
-    div.innerHTML = `
-        <input type="text" value="${value}" data-field="${fieldName}" data-index="${index}">
-        <button type="button" class="btn btn-danger" onclick="removeArrayInputField(this)">
-            <i data-lucide="x"></i>
-        </button>
-    `;
-
-    container.appendChild(div);
-
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-function removeArrayInputField(button) {
-    button.parentElement.remove();
-}
-
-function getArrayInputValues(fieldName) {
-    return Array.from(document.querySelectorAll(`input[data-field="${fieldName}"]`))
-        .map(input => input.value)
-        .filter(val => val.trim() !== '');
-}
-
 // Initialize on page load
 async function bootstrapApp() {
     try {
