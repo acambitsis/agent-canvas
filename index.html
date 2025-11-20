@@ -595,43 +595,96 @@
             background: linear-gradient(135deg, #e74c3c, #c0392b);
         }
 
-        /* Inline edit buttons */
-        .inline-edit-btn {
-            background: #f5f5f5;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 6px 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
-            color: #555;
-            display: inline-flex;
+        /* Inline edit icon for agent cards */
+        .card-edit-icon {
+            display: none;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            flex-shrink: 0;
         }
 
-        .inline-edit-btn:hover {
+        .edit-mode-active .card-edit-icon {
+            display: inline-flex;
+        }
+
+        .card-edit-icon:hover {
             background: #17a2b8;
             color: white;
-            border-color: #17a2b8;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: scale(1.1);
         }
 
-        .inline-edit-btn svg {
-            width: 16px;
-            height: 16px;
+        .card-edit-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
-        .edit-controls {
+        /* Inline edit icon for section headers */
+        .section-edit-icon {
             display: none;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            margin-left: 12px;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.3s ease;
+            border-radius: 6px;
         }
 
-        .edit-mode-active .edit-controls {
+        .edit-mode-active .section-edit-icon {
+            display: inline-flex;
+        }
+
+        .section-edit-icon:hover {
+            background: #17a2b8;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .section-edit-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Add agent button */
+        .add-agent-btn {
+            background: transparent;
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+            color: #777;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .edit-mode-active .add-agent-btn {
             display: flex;
+        }
+
+        .add-agent-btn:hover {
+            background: rgba(23, 162, 184, 0.05);
+            border-color: #17a2b8;
+            color: #17a2b8;
+            border-style: solid;
+        }
+
+        .add-agent-btn svg {
+            width: 18px;
+            height: 18px;
         }
 
         .group-header-edit {
@@ -1181,11 +1234,27 @@
         // Global configuration data
         let configData = null;
         let dynamicStyleElement = null;
+        const defaultAgentMetrics = {
+            usageThisWeek: '0',
+            timeSaved: '0',
+            roiContribution: 'Medium'
+        };
+
+        function getAgentMetrics(agent = {}) {
+            return { ...defaultAgentMetrics, ...(agent.metrics || {}) };
+        }
+
+        function toArray(value) {
+            return Array.isArray(value) ? value : [];
+        }
 
         // Load YAML configuration file
         async function loadConfig() {
             try {
                 const response = await fetch('/api/config');
+                if (!response.ok) {
+                    throw new Error(`Config request failed: ${response.status}`);
+                }
                 const yamlText = await response.text();
                 configData = jsyaml.load(yamlText);
                 const configSource = response.headers.get('X-Config-Source') || 'unknown';
@@ -1310,19 +1379,24 @@
         }
 
         function createJourneyTooltip(steps) {
-            const stepsHTML = steps.map(step => `→ ${step}`).join('<br>');
+            const stepsList = toArray(steps);
+            if (stepsList.length === 0) {
+                return '<div class="journey-tooltip"><strong>User Journey:</strong><br>No steps defined</div>';
+            }
+            const stepsHTML = stepsList.map(step => `→ ${step}`).join('<br>');
             return `<div class="journey-tooltip"><strong>User Journey:</strong><br>${stepsHTML}</div>`;
         }
 
         function createMetricsTooltip(agent) {
-            const usageNum = parseInt(agent.metrics.usageThisWeek) || 0;
+            const metrics = getAgentMetrics(agent);
+            const usageNum = parseInt(metrics.usageThisWeek, 10) || 0;
             const usageMax = 100;
             const usagePercent = Math.min((usageNum / usageMax) * 100, 100);
 
-            const timeSavedNum = parseInt(agent.metrics.timeSaved);
-            const roiValue = agent.metrics.roiContribution === 'Very High' ? 95 :
-                            agent.metrics.roiContribution === 'High' ? 85 :
-                            agent.metrics.roiContribution === 'Medium' ? 60 : 30;
+            const timeSavedNum = parseInt(metrics.timeSaved, 10) || 0;
+            const roiValue = metrics.roiContribution === 'Very High' ? 95 :
+                            metrics.roiContribution === 'High' ? 85 :
+                            metrics.roiContribution === 'Medium' ? 60 : 30;
 
             return `
                 <div class="metrics-tooltip">
@@ -1333,7 +1407,7 @@
                         <div class="metric-row">
                             <div class="metric-label">
                                 <span>Usage This Week</span>
-                                <span class="metric-value">${agent.metrics.usageThisWeek}</span>
+                                <span class="metric-value">${metrics.usageThisWeek}</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill usage" style="width: ${usagePercent}%;"></div>
@@ -1342,7 +1416,7 @@
                         <div class="metric-row">
                             <div class="metric-label">
                                 <span>Time Saved</span>
-                                <span class="metric-value">${agent.metrics.timeSaved}</span>
+                                <span class="metric-value">${metrics.timeSaved}</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill time-saved" style="width: ${timeSavedNum}%;"></div>
@@ -1351,7 +1425,7 @@
                         <div class="metric-row">
                             <div class="metric-label">
                                 <span>ROI Contribution</span>
-                                <span class="metric-value">${agent.metrics.roiContribution}</span>
+                                <span class="metric-value">${metrics.roiContribution}</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill roi-contribution" style="width: ${roiValue}%;"></div>
@@ -1362,9 +1436,12 @@
         }
 
         function createAgentCard(agent, phaseImage, config, groupIndex, agentIndex) {
-            const toolsHTML = agent.tools.map(tool => createToolChip(tool, config)).join('');
-            const journeyHTML = createJourneyTooltip(agent.journeySteps);
-            const metricsHTML = createMetricsTooltip(agent);
+            const tools = toArray(agent.tools);
+            const journeySteps = toArray(agent.journeySteps);
+            const metrics = getAgentMetrics(agent);
+            const toolsHTML = tools.map(tool => createToolChip(tool, config)).join('');
+            const journeyHTML = createJourneyTooltip(journeySteps);
+            const metricsHTML = createMetricsTooltip({ ...agent, metrics });
             const linkUrl = agent.demoLink || '#';
             const linkTarget = agent.demoLink ? 'target="_blank"' : '';
             const linkTitle = agent.demoLink ? 'Try Demo' : 'Go to agent';
@@ -1379,7 +1456,12 @@
             return `
                 <div class="agent-card">
                     <div class="agent-number">${agent.agentNumber}</div>
-                    <h3>${agent.name}${handoverBadge}</h3>
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <span>${agent.name}${handoverBadge}</span>
+                        <div class="card-edit-icon" onclick="openEditAgentModal(${groupIndex}, ${agentIndex})" title="Edit agent">
+                            <i data-lucide="edit-3"></i>
+                        </div>
+                    </h3>
                     <div class="agent-objective">Objective: ${agent.objective}</div>
                     <div class="agent-description">${agent.description}</div>
                     <div class="tools-container">${toolsHTML}</div>
@@ -1399,11 +1481,6 @@
                             <i data-lucide="trending-up"></i>
                             ${metricsHTML}
                         </div>
-                    </div>
-                    <div class="edit-controls">
-                        <button class="inline-edit-btn" onclick="openEditAgentModal(${groupIndex}, ${agentIndex})">
-                            <i data-lucide="edit"></i> Edit
-                        </button>
                     </div>
                 </div>`;
         }
@@ -1434,24 +1511,22 @@
                                     <i data-lucide="${iconType}"></i>
                                     ${groupIconOverlay}
                                 </div>
-                                <div class="group-title">
-                                    <h2>${group.groupName}</h2>
-                                    <span class="phase-tag" ${phaseStyle}>${group.phaseTag}</span>
+                                <div class="group-title" style="display: flex; align-items: center;">
+                                    <div>
+                                        <h2 style="display: inline-block; margin: 0;">${group.groupName}</h2>
+                                        <div class="section-edit-icon" onclick="openEditGroupModal(${groupIndex})" title="Edit section">
+                                            <i data-lucide="edit-3"></i>
+                                        </div>
+                                        <div><span class="phase-tag" ${phaseStyle}>${group.phaseTag}</span></div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="edit-controls">
-                                <button class="inline-edit-btn" onclick="openEditGroupModal(${groupIndex})">
-                                    <i data-lucide="edit"></i> Edit Section
-                                </button>
                             </div>
                         </div>
                     </div>
                     <div class="agents-grid">${agentsHTML}</div>
-                    <div class="edit-controls" style="margin-top: 20px;">
-                        <button class="inline-edit-btn" onclick="openAddAgentModal(${groupIndex})">
-                            <i data-lucide="plus"></i> Add Agent
-                        </button>
-                    </div>
+                    <button class="add-agent-btn" onclick="openAddAgentModal(${groupIndex})">
+                        <i data-lucide="plus"></i> Add Agent to ${group.groupName}
+                    </button>
                 </div>`;
         }
 
@@ -1722,10 +1797,7 @@
                 description: '',
                 tools: [],
                 journeySteps: [],
-                metrics: {
-                    usageThisWeek: '',
-                    timeSaved: ''
-                }
+                metrics: getAgentMetrics({})
             };
 
             showAgentModal(newAgent, groupIndex, -1);
@@ -1744,8 +1816,9 @@
             // Set tool checkboxes
             const toolsContainer = document.getElementById('agentTools');
             toolsContainer.innerHTML = '';
+            const selectedTools = toArray(agent.tools);
             Object.keys(configData.toolsConfig).forEach(toolName => {
-                const checked = (agent.tools || []).includes(toolName) ? 'checked' : '';
+                const checked = selectedTools.includes(toolName) ? 'checked' : '';
                 toolsContainer.innerHTML += `
                     <label class="tool-checkbox-label">
                         <input type="checkbox" name="tools" value="${toolName}" ${checked}>
@@ -1755,11 +1828,12 @@
             });
 
             // Set journey steps
-            renderArrayInput('journeySteps', agent.journeySteps || []);
+            renderArrayInput('journeySteps', toArray(agent.journeySteps));
 
             // Set metrics
-            document.getElementById('metricsUsage').value = agent.metrics?.usageThisWeek || '';
-            document.getElementById('metricsTimeSaved').value = agent.metrics?.timeSaved || '';
+            const metrics = getAgentMetrics(agent);
+            document.getElementById('metricsUsage').value = metrics.usageThisWeek;
+            document.getElementById('metricsTimeSaved').value = metrics.timeSaved;
 
             // Show/hide delete button
             const deleteBtn = document.getElementById('deleteAgentBtn');
@@ -1783,6 +1857,7 @@
             const groupIndex = parseInt(form.dataset.groupIndex);
             const agentIndex = parseInt(form.dataset.agentIndex);
             const isNew = agentIndex === -1;
+            const existingMetrics = getAgentMetrics(configData.agentGroups[groupIndex]?.agents[agentIndex] || {});
 
             const agent = {
                 agentNumber: isNew ? configData.agentGroups[groupIndex].agents.length + 1 : configData.agentGroups[groupIndex].agents[agentIndex].agentNumber,
@@ -1793,7 +1868,8 @@
                 journeySteps: getArrayInputValues('journeySteps'),
                 metrics: {
                     usageThisWeek: document.getElementById('metricsUsage').value,
-                    timeSaved: document.getElementById('metricsTimeSaved').value
+                    timeSaved: document.getElementById('metricsTimeSaved').value,
+                    roiContribution: existingMetrics.roiContribution
                 }
             };
 

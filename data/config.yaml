@@ -6,21 +6,27 @@ toolsConfig:
   Forms:
     icon: clipboard-list
     class: tool-forms
+    color: '#17a2b8'
   Code:
     icon: code-2
     class: tool-code
+    color: '#3776ab'
   RAG:
     icon: file-text
     class: tool-rag
+    color: '#e67e22'
   Web Search:
     icon: globe
     class: tool-web
+    color: '#27ae60'
   Deep Research:
     icon: search
     class: tool-research
+    color: '#8e44ad'
   Context:
     icon: book-open
     class: tool-context
+    color: '#c0392b'
 
 # Global defaults for new sections
 sectionDefaults:

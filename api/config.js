@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 
 const CONFIG_BLOB_PATH = 'config.yaml';
+const LOCAL_CONFIG_PATH = join(process.cwd(), 'data', CONFIG_BLOB_PATH);
 
 /**
  * Get header value from Node.js request
@@ -23,16 +24,19 @@ function checkAuth(req, res) {
     return false;
   }
 
-  if (basicAuth) {
-    const authValue = basicAuth.split(' ')[1];
-    try {
-      const [, pwd] = Buffer.from(authValue, 'base64').toString().split(':');
-      if (pwd === expectedPassword) {
-        return true;
-      }
-    } catch (e) {
-      // Invalid auth header format
+  if (!basicAuth || !basicAuth.startsWith('Basic ')) {
+    res.status(401).setHeader('WWW-Authenticate', 'Basic realm="Secure Area"').send('Authentication required');
+    return false;
+  }
+
+  const encodedToken = basicAuth.split(' ')[1];
+  try {
+    const [, pwd] = Buffer.from(encodedToken, 'base64').toString().split(':');
+    if (pwd === expectedPassword) {
+      return true;
     }
+  } catch (e) {
+    // Invalid auth header format
   }
 
   res.status(401).setHeader('WWW-Authenticate', 'Basic realm="Secure Area"').send('Authentication required');
@@ -79,8 +83,7 @@ async function handleGet(req, res) {
 
     // Fallback to static file from filesystem
     console.log('Loading from static file...');
-    const configPath = join(process.cwd(), 'data', 'config.yaml');
-    const yamlText = await readFile(configPath, 'utf8');
+    const yamlText = await readFile(LOCAL_CONFIG_PATH, 'utf8');
     console.log('Static file loaded successfully');
 
     res.status(200)
@@ -140,8 +143,7 @@ async function handlePost(req, res) {
         }));
     } else {
       // Local development: Save to local filesystem
-      const configPath = join(process.cwd(), 'data', 'config.yaml');
-      await writeFile(configPath, yamlText, 'utf8');
+    await writeFile(LOCAL_CONFIG_PATH, yamlText, 'utf8');
 
       res.status(200)
         .setHeader('Content-Type', 'application/json')
