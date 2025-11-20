@@ -43,49 +43,66 @@ body {
 .document-controls {
     margin-top: 20px;
     display: inline-flex;
-    align-items: center;
-    gap: 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
     background: rgba(0, 0, 0, 0.25);
-    border-radius: 999px;
-    padding: 12px 18px;
+    border-radius: 24px;
+    padding: 16px 20px;
     position: relative;
+    min-width: 320px;
 }
 
 .document-select-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     text-align: left;
+    width: 100%;
 }
 
 .document-select-group label {
     font-weight: 600;
-    font-size: 0.85em;
+    font-size: 0.8em;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     color: rgba(255, 255, 255, 0.8);
 }
 
+.document-control-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 6px 8px 6px 12px;
+}
+
 .document-select-group select {
-    padding: 8px 12px;
-    border-radius: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border-radius: 999px;
     border: none;
     font-size: 0.95em;
-    min-width: 220px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.95);
 }
 
 .doc-menu-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(23, 162, 184, 0.25);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 10px 14px;
+    padding: 10px 16px;
     border-radius: 999px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .doc-menu-btn:hover {
@@ -164,9 +181,15 @@ body {
     margin: 10px 0;
 }
 
-.document-meta,
-.document-status {
+.document-meta {
     margin-top: 12px;
+    font-size: 0.95em;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.document-status {
+    margin-top: 8px;
     font-size: 0.9em;
     color: rgba(255, 255, 255, 0.85);
 }

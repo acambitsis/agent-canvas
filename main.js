@@ -309,14 +309,19 @@ function updateDocumentControlsUI() {
             meta.textContent = 'No YAML documents found. Upload one to get started.';
         } else if (currentDocumentName) {
             const doc = availableDocuments.find(d => d.name === currentDocumentName);
-            const sizeText = doc ? formatBytes(doc.size) : '';
-            const updatedText = doc && doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : '';
-            const details = [currentDocumentName, sizeText && `• ${sizeText}`, updatedText && `• Updated ${updatedText}`]
-                .filter(Boolean)
-                .join(' ');
-            meta.textContent = details;
+            if (doc) {
+                const sizeText = typeof doc.size === 'number' ? formatBytes(doc.size) : '';
+                const updatedText = doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : '';
+                const details = [
+                    updatedText && `Last updated ${updatedText}`,
+                    sizeText && sizeText
+                ].filter(Boolean).join(' • ');
+                meta.textContent = details || 'Document details unavailable.';
+            } else {
+                meta.textContent = 'Document details unavailable.';
+            }
         } else {
-            meta.textContent = 'No document selected.';
+            meta.textContent = 'Select a document to see details.';
         }
     }
 
