@@ -226,11 +226,20 @@ All storage operations in `api/config.js`:
 ### Design Tokens (CSS Variables)
 ```css
 :root {
-  --interactive-teal: #17a2b8;
-  --sales-red: #e74c3c;
-  /* Dynamic tool colors generated from YAML */
+  --page-bg-start: #0a3d4d;
+  --page-bg-end: #1a5f73;
+  --brand-primary: #17a2b8;
+  --brand-primary-strong: #138496;
+  --group-accent-fallback: var(--brand-primary);
+  --tool-chip-bg-fallback: #999999;
+  /* See styles.css for the full token set */
 }
 ```
+
+### Dynamic YAML-driven accents
+- `generateDynamicCSS()` now injects only CSS variables (no hard-coded colors). Each agent group gets `--group-accent` and `--phase-tag-color`, and every tool class receives `--tool-chip-bg`.
+- `styles.css` consumes those variables (`border-color: var(--group-accent, var(--group-accent-fallback))`, `background: var(--tool-chip-bg, var(--tool-chip-bg-fallback))`, etc.), so theming flows from YAML → JS → CSS without inline overrides.
+- To add new themable surfaces, create a token in `:root`, reference it in the relevant selectors, then (optionally) expose a YAML field that sets a matching CSS variable inside `generateDynamicCSS()`.
 
 ### Key UI Patterns
 - **Agent Cards**: CSS Grid layout, hover effects with transform and shadow

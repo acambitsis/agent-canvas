@@ -1240,26 +1240,35 @@ function generateDynamicCSS(config) {
         document.head.appendChild(dynamicStyleElement);
     }
 
-    let css = '';
+    const groupCss = (config.agentGroups || [])
+        .map(group => {
+            const color = getGroupFormatting(group, 'color');
+            const phaseColor = getGroupFormatting(group, 'phaseTagColor') || color;
+            const groupClass = getGroupClass(group);
+            return `
+                .${groupClass} {
+                    --group-accent: ${color};
+                    --phase-tag-color: ${phaseColor};
+                }
+            `;
+        })
+        .join('');
 
-    // Generate CSS for each group
-    config.agentGroups.forEach(group => {
-        const color = getGroupFormatting(group, 'color');
-        const groupClass = getGroupClass(group);
-        css += `
-            .${groupClass} .group-header { border-color: ${color}; }
-            .${groupClass} .group-icon { background: ${color}; }
-        `;
-    });
+    const toolCss = Object.values(config.toolsConfig || {})
+        .map(toolConfig => {
+            if (!toolConfig?.class) {
+                return '';
+            }
+            const chipColor = toolConfig.color || 'var(--tool-chip-bg-fallback)';
+            return `
+                .${toolConfig.class} {
+                    --tool-chip-bg: ${chipColor};
+                }
+            `;
+        })
+        .join('');
 
-    // Generate CSS for tool chips
-    Object.entries(config.toolsConfig).forEach(([toolName, toolConfig]) => {
-        css += `
-            .${toolConfig.class} { background: ${toolConfig.color}; }
-        `;
-    });
-
-    dynamicStyleElement.textContent = css;
+    dynamicStyleElement.textContent = groupCss + toolCss;
 }
 
 // Template Functions
@@ -1267,7 +1276,7 @@ function createToolChip(toolName, config) {
     const toolConfig = config.toolsConfig[toolName];
     if (!toolConfig) {
         console.warn(`Unknown tool "${toolName}" referenced in config. Available tools:`, Object.keys(config.toolsConfig));
-        return `<span class="tool-chip" style="background: #999;" title="Unknown tool: ${toolName}"><i data-lucide="alert-circle"></i> ${toolName}</span>`;
+        return `<span class="tool-chip" style="background: var(--tool-chip-bg-fallback);" title="Unknown tool: ${toolName}"><i data-lucide="alert-circle"></i> ${toolName}</span>`;
     }
     return `<span class="tool-chip ${toolConfig.class}"><i data-lucide="${toolConfig.icon}"></i> ${toolName}</span>`;
 }
@@ -1392,7 +1401,8 @@ function createAgentGroup(group, config, groupIndex) {
     const agentsHTML = group.agents.map((agent, agentIndex) =>
         createAgentCard(agent, config, groupIndex, agentIndex)
     ).join('');
-    const phaseStyle = phaseTagColor ? `style="background: ${phaseTagColor};"` : `style="background: ${color};"`;
+    const phaseColor = phaseTagColor || color;
+    const phaseStyle = phaseColor ? `style="--phase-tag-color: ${phaseColor};"` : '';
     const phaseTagHTML = group.phaseTag ? `<div class="phase-tag-wrapper"><span class="phase-tag" ${phaseStyle}>${group.phaseTag}</span></div>` : '';
 
     const isCollapsed = collapsedSections[group.groupId] || false;
