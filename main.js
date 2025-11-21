@@ -1251,6 +1251,7 @@ if (groupNameInput) {
 
 function bindStaticEventHandlers() {
     const agentGroupsContainer = document.getElementById('agentGroupsContainer');
+    const boardMenu = document.getElementById('board-menu');
 
     const collapseBtn = document.getElementById('collapseAllBtn');
     collapseBtn?.addEventListener('click', toggleCollapseAll);
@@ -1336,13 +1337,15 @@ function bindStaticEventHandlers() {
     });
 
     document.addEventListener('click', event => {
-        const action = event.target.closest('[data-board-action]')?.dataset.boardAction;
+        const action = event.target.closest('[data-board-action]');
         if (!action) return;
+        if (boardMenu && !boardMenu.contains(event.target) && !boardTrigger.contains(event.target)) return;
         event.preventDefault();
         closeAllContextMenus();
-        if (action === 'edit-title') {
+        const type = action.dataset.boardAction;
+        if (type === 'edit-title') {
             openEditTitleModal();
-        } else if (action === 'add-section') {
+        } else if (type === 'add-section') {
             openAddSectionModal();
         }
     });
