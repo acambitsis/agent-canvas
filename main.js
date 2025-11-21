@@ -1183,11 +1183,11 @@ function saveTitleEdit() {
 }
 
 // ----- Context menu handlers -----
-function toggleContextMenu(event, menuId) {
-    event.stopPropagation();
+function toggleContextMenu(event, menuId, triggerEl = null) {
+    event?.stopPropagation();
 
     const menu = document.getElementById(menuId);
-    const trigger = event.currentTarget;
+    const trigger = triggerEl || event?.currentTarget;
 
     // Close all other menus first
     document.querySelectorAll('.context-menu.open').forEach(m => {
@@ -1204,10 +1204,12 @@ function toggleContextMenu(event, menuId) {
     const isOpen = menu.classList.toggle('open');
 
     // Toggle active state on trigger
-    if (isOpen) {
-        trigger.classList.add('active');
-    } else {
-        trigger.classList.remove('active');
+    if (trigger) {
+        if (isOpen) {
+            trigger.classList.add('active');
+        } else {
+            trigger.classList.remove('active');
+        }
     }
 
     refreshIcons();
@@ -1259,7 +1261,7 @@ function bindStaticEventHandlers() {
     const boardTrigger = document.querySelector('[data-board-trigger="board-menu"]');
     boardTrigger?.addEventListener('click', event => {
         event.stopPropagation();
-        toggleContextMenu(event, 'board-menu');
+        toggleContextMenu(event, 'board-menu', boardTrigger);
     });
 
     document.getElementById('agentModalClose')?.addEventListener('click', closeAgentModal);
@@ -1283,18 +1285,12 @@ function bindStaticEventHandlers() {
     document.getElementById('titleModalSave')?.addEventListener('click', saveTitleEdit);
 
     agentGroupsContainer?.addEventListener('click', event => {
-        const openMenuBtn = event.target.closest('[data-open-menu]');
-        if (openMenuBtn) {
-            toggleContextMenu(event, openMenuBtn.dataset.openMenu);
-            return;
-        }
-
         const menuTrigger = event.target.closest('[data-menu-trigger]');
         if (menuTrigger) {
             const menuId = menuTrigger.dataset.menuTrigger;
             const stopProp = menuTrigger.dataset.stopProp === 'true';
             if (stopProp) event.stopPropagation();
-            toggleContextMenu(event, menuId);
+            toggleContextMenu(event, menuId, menuTrigger);
             return;
         }
 
@@ -1355,7 +1351,7 @@ function bindStaticEventHandlers() {
         const menuId = trigger.dataset.menuTrigger;
         const stopProp = trigger.dataset.stopProp === 'true';
         if (stopProp) event.stopPropagation();
-        toggleContextMenu(event, menuId);
+        toggleContextMenu(event, menuId, trigger);
     });
 
     document.addEventListener('click', event => {
