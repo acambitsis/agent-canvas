@@ -534,7 +534,8 @@ function renderMenuItems(actions = []) {
         }
         const dangerClass = action.danger ? ' danger' : '';
         const iconMarkup = action.icon ? `<i data-lucide="${action.icon}"></i>` : '';
-        return `<button type="button" class="menu-item${dangerClass}" onclick="${action.onClick}">
+        const dataAttrs = action.dataAttrs || '';
+        return `<button type="button" class="menu-item${dangerClass}" ${dataAttrs}>
             ${iconMarkup}
             ${action.label}
         </button>`;
@@ -543,9 +544,9 @@ function renderMenuItems(actions = []) {
 
 function renderContextMenuTrigger({ menuId, title, actions, icon = 'more-vertical', stopPropagation = false }) {
     const menuMarkup = renderMenuItems(actions);
-    const preHandler = stopPropagation ? 'event.stopPropagation(); ' : '';
+    const stopClass = stopPropagation ? ' data-stop-prop="true"' : '';
     return `
-        <div class="context-menu-trigger" onclick="${preHandler}toggleContextMenu(event, '${menuId}')" title="${title}">
+        <div class="context-menu-trigger" data-menu-trigger="${menuId}"${stopClass} title="${title}">
             <i data-lucide="${icon}"></i>
             <div class="context-menu menu-panel" id="${menuId}">
                 ${menuMarkup}
@@ -669,14 +670,14 @@ function createAgentCard(agent, config, groupIndex, agentIndex) {
             {
                 icon: 'edit-3',
                 label: 'Edit Agent',
-                onClick: `openEditAgentModal(${groupIndex}, ${agentIndex}); closeAllContextMenus();`
+                dataAttrs: `data-action-type="agent-edit" data-group-index="${groupIndex}" data-agent-index="${agentIndex}"`
             },
             { type: 'divider' },
             {
                 icon: 'trash-2',
                 label: 'Delete Agent',
                 danger: true,
-                onClick: `deleteAgent(${groupIndex}, ${agentIndex}); closeAllContextMenus();`
+                dataAttrs: `data-action-type="agent-delete" data-group-index="${groupIndex}" data-agent-index="${agentIndex}"`
             }
         ]
     });
@@ -738,26 +739,26 @@ function createAgentGroup(group, config, groupIndex) {
             {
                 icon: 'edit-3',
                 label: 'Edit Section',
-                onClick: `openEditGroupModal(${groupIndex}); closeAllContextMenus();`
+                dataAttrs: `data-action-type="group-edit" data-group-index="${groupIndex}"`
             },
             {
                 icon: 'plus',
                 label: 'Add Agent',
-                onClick: `openAddAgentModal(${groupIndex}); closeAllContextMenus();`
+                dataAttrs: `data-action-type="agent-add" data-group-index="${groupIndex}"`
             },
             { type: 'divider' },
             {
                 icon: 'trash-2',
                 label: 'Delete Section',
                 danger: true,
-                onClick: `deleteGroup(${groupIndex}); closeAllContextMenus();`
+                dataAttrs: `data-action-type="group-delete" data-group-index="${groupIndex}"`
             }
         ]
     });
 
     return `
         <div class="surface-card agent-group ${groupClass} ${collapsedClass}" data-group-id="${group.groupId}" data-group-index="${groupIndex}">
-            <div class="group-header" onclick="toggleSectionCollapse('${group.groupId}')">
+            <div class="group-header" data-collapse-target="${group.groupId}">
                 <div class="group-header-edit">
                     <div class="u-flex u-align-center u-full-width">
                         <div class="section-collapse-toggle">
@@ -1247,6 +1248,8 @@ if (groupNameInput) {
 }
 
 function bindStaticEventHandlers() {
+    const agentGroupsContainer = document.getElementById('agentGroupsContainer');
+
     const collapseBtn = document.getElementById('collapseAllBtn');
     collapseBtn?.addEventListener('click', toggleCollapseAll);
 
@@ -1279,6 +1282,49 @@ function bindStaticEventHandlers() {
     document.getElementById('titleModalCancel')?.addEventListener('click', closeTitleModal);
     document.getElementById('titleModalSave')?.addEventListener('click', saveTitleEdit);
 
+    agentGroupsContainer?.addEventListener('click', event => {
+        const collapseTarget = event.target.closest('[data-collapse-target]')?.dataset.collapseTarget;
+        if (collapseTarget) {
+            toggleSectionCollapse(collapseTarget);
+            return;
+        }
+        const menuTrigger = event.target.closest('[data-menu-trigger]');
+        if (menuTrigger) {
+            const menuId = menuTrigger.dataset.menuTrigger;
+            const stopProp = menuTrigger.dataset.stopProp === 'true';
+            if (stopProp) event.stopPropagation();
+            toggleContextMenu(event, menuId);
+            return;
+        }
+        const actionBtn = event.target.closest('[data-action-type]');
+        if (actionBtn) {
+            event.preventDefault();
+            closeAllContextMenus();
+            const type = actionBtn.dataset.actionType;
+            const g = parseInt(actionBtn.dataset.groupIndex, 10);
+            const a = parseInt(actionBtn.dataset.agentIndex, 10);
+            switch (type) {
+                case 'agent-edit':
+                    openEditAgentModal(g, a);
+                    break;
+                case 'agent-delete':
+                    deleteAgent(g, a);
+                    break;
+                case 'agent-add':
+                    openAddAgentModal(g);
+                    break;
+                case 'group-edit':
+                    openEditGroupModal(g);
+                    break;
+                case 'group-delete':
+                    deleteGroup(g);
+                    break;
+                default:
+                    break;
+            }
+        }
+    });
+
     document.addEventListener('click', event => {
         const action = event.target.closest('[data-board-action]')?.dataset.boardAction;
         if (!action) return;
@@ -1289,6 +1335,15 @@ function bindStaticEventHandlers() {
         } else if (action === 'add-section') {
             openAddSectionModal();
         }
+    });
+
+    document.addEventListener('click', event => {
+        const trigger = event.target.closest('[data-menu-trigger]');
+        if (!trigger) return;
+        const menuId = trigger.dataset.menuTrigger;
+        const stopProp = trigger.dataset.stopProp === 'true';
+        if (stopProp) event.stopPropagation();
+        toggleContextMenu(event, menuId);
     });
 }
 
