@@ -31,6 +31,24 @@ import {
     getSectionColor
 } from './config.js';
 
+// ----- Loading overlay helpers -----
+function showLoadingOverlay(message = 'Loading...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const messageEl = document.getElementById('loadingMessage');
+    if (overlay) {
+        if (messageEl) messageEl.textContent = message;
+        overlay.classList.add('show');
+        refreshIcons();
+    }
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+    }
+}
+
 // ----- State and utility helpers -----
 function toggleSectionCollapse(groupId) {
     state.collapsedSections[groupId] = !state.collapsedSections[groupId];
@@ -886,6 +904,9 @@ function genericSaveModal(type) {
         refreshIcons();
     }
 
+    // Show loading overlay
+    showLoadingOverlay('Saving...');
+
     const item = deepClone(state[def.stateKey] || {});
 
     // Handle numbering
@@ -911,6 +932,9 @@ function genericSaveModal(type) {
     }
 
     saveConfig().then(success => {
+        // Hide loading overlay
+        hideLoadingOverlay();
+
         // Re-enable button
         if (saveBtn) {
             saveBtn.disabled = false;
@@ -1102,6 +1126,9 @@ function saveTitleEdit() {
         refreshIcons();
     }
 
+    // Show loading overlay
+    showLoadingOverlay('Saving title...');
+
     // Update config
     state.configData.documentTitle = newTitle;
 
@@ -1110,6 +1137,9 @@ function saveTitleEdit() {
 
     // Save config
     saveConfig().then(success => {
+        // Hide loading overlay
+        hideLoadingOverlay();
+
         // Re-enable button
         if (saveBtn) {
             saveBtn.disabled = false;

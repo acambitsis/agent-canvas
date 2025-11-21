@@ -389,10 +389,21 @@ export async function handleDocumentSelection(event) {
         return;
     }
 
-    // Show loading state
+    // Show prominent loading overlay
     const docSelect = event.target;
     docSelect.disabled = true;
-    setDocumentStatusMessage(`Loading "${selectedDoc}"...`, 'info');
+
+    // Show loading overlay
+    const overlay = document.getElementById('loadingOverlay');
+    const messageEl = document.getElementById('loadingMessage');
+    if (overlay) {
+        if (messageEl) messageEl.textContent = `Loading "${selectedDoc}"...`;
+        overlay.classList.add('show');
+        // Refresh icons after DOM update
+        setTimeout(() => {
+            if (window.lucide) window.lucide.createIcons();
+        }, 50);
+    }
 
     try {
         setActiveDocumentName(selectedDoc);
@@ -403,6 +414,9 @@ export async function handleDocumentSelection(event) {
         setDocumentStatusMessage(`Failed to load "${selectedDoc}".`, 'error');
     } finally {
         docSelect.disabled = false;
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
     }
 }
 
