@@ -22,7 +22,8 @@ import {
     refreshDocumentList,
     initializeDocumentControls,
     handleDocumentSelection,
-    registerLoadAgents
+    registerLoadAgents,
+    setDocumentStatusMessage
 } from './documents.js';
 
 // ----- State and utility helpers -----
