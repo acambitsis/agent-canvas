@@ -1154,6 +1154,198 @@ function saveTitleEdit() {
     });
 }
 
+// ----- Full YAML modal -----
+function showFullYamlModal() {
+    const modal = document.getElementById('fullYamlModal');
+    const textarea = document.getElementById('fullYamlInput');
+
+    // Dump entire configData to YAML
+    textarea.value = window.jsyaml.dump(state.configData);
+
+    // Clear any previous errors
+    setElementText('fullYamlError', '');
+
+    modal.classList.add('show');
+    refreshIcons();
+}
+
+function closeFullYamlModal() {
+    document.getElementById('fullYamlModal').classList.remove('show');
+    setElementText('fullYamlError', '');
+}
+
+function validateAndNormalizeConfig(parsed) {
+    // Validate root structure
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Configuration must be a YAML object');
+    }
+
+    // Validate agentGroups exists and is array
+    if (!parsed.agentGroups) {
+        throw new Error('Missing required field: agentGroups');
+    }
+    if (!Array.isArray(parsed.agentGroups)) {
+        throw new Error('agentGroups must be an array');
+    }
+
+    // Ensure sectionDefaults exists with proper defaults
+    if (!parsed.sectionDefaults || typeof parsed.sectionDefaults !== 'object') {
+        parsed.sectionDefaults = {
+            iconType: 'target',
+            showInFlow: true,
+            isSupport: false
+        };
+    } else {
+        // Fill in missing defaults
+        if (parsed.sectionDefaults.iconType === undefined) {
+            parsed.sectionDefaults.iconType = 'target';
+        }
+        if (parsed.sectionDefaults.showInFlow === undefined) {
+            parsed.sectionDefaults.showInFlow = true;
+        }
+        if (parsed.sectionDefaults.isSupport === undefined) {
+            parsed.sectionDefaults.isSupport = false;
+        }
+    }
+
+    // Validate and normalize each group
+    parsed.agentGroups.forEach((group, groupIdx) => {
+        const groupLabel = `Group ${groupIdx + 1}`;
+
+        // Validate group is an object
+        if (!group || typeof group !== 'object' || Array.isArray(group)) {
+            throw new Error(`${groupLabel} must be an object`);
+        }
+
+        // Validate required: groupName
+        if (!group.groupName || typeof group.groupName !== 'string' || !group.groupName.trim()) {
+            throw new Error(`${groupLabel} missing required field: groupName (non-empty string)`);
+        }
+        group.groupName = group.groupName.trim();
+
+        // Auto-generate groupNumber if missing
+        if (group.groupNumber === undefined || group.groupNumber === null) {
+            group.groupNumber = groupIdx;
+        } else if (typeof group.groupNumber !== 'number') {
+            throw new Error(`${groupLabel} "${group.groupName}": groupNumber must be a number`);
+        }
+
+        // Auto-generate groupId if missing
+        ensureGroupHasId(group, groupIdx, parsed);
+
+        // Validate required: agents array
+        if (!group.agents) {
+            throw new Error(`${groupLabel} "${group.groupName}" missing required field: agents`);
+        }
+        if (!Array.isArray(group.agents)) {
+            throw new Error(`${groupLabel} "${group.groupName}": agents must be an array`);
+        }
+
+        // Validate and normalize each agent
+        group.agents.forEach((agent, agentIdx) => {
+            const agentLabel = `${groupLabel} "${group.groupName}", Agent ${agentIdx + 1}`;
+
+            // Validate agent is an object
+            if (!agent || typeof agent !== 'object' || Array.isArray(agent)) {
+                throw new Error(`${agentLabel} must be an object`);
+            }
+
+            // Validate required: name
+            if (!agent.name || typeof agent.name !== 'string' || !agent.name.trim()) {
+                throw new Error(`${agentLabel} missing required field: name (non-empty string)`);
+            }
+            agent.name = agent.name.trim();
+
+            // Auto-generate agentNumber if missing
+            if (agent.agentNumber === undefined || agent.agentNumber === null) {
+                agent.agentNumber = agentIdx + 1;
+            } else if (typeof agent.agentNumber !== 'number') {
+                throw new Error(`${agentLabel} "${agent.name}": agentNumber must be a number`);
+            }
+
+            // Ensure optional fields have correct types if present
+            if (agent.objective !== undefined && typeof agent.objective !== 'string') {
+                throw new Error(`${agentLabel} "${agent.name}": objective must be a string`);
+            }
+            if (agent.description !== undefined && typeof agent.description !== 'string') {
+                throw new Error(`${agentLabel} "${agent.name}": description must be a string`);
+            }
+            if (agent.tools !== undefined && !Array.isArray(agent.tools)) {
+                throw new Error(`${agentLabel} "${agent.name}": tools must be an array`);
+            }
+            if (agent.journeySteps !== undefined && !Array.isArray(agent.journeySteps)) {
+                throw new Error(`${agentLabel} "${agent.name}": journeySteps must be an array`);
+            }
+            if (agent.metrics !== undefined && (typeof agent.metrics !== 'object' || Array.isArray(agent.metrics))) {
+                throw new Error(`${agentLabel} "${agent.name}": metrics must be an object`);
+            }
+
+            // Set defaults for optional fields
+            agent.tools = agent.tools || [];
+            agent.journeySteps = agent.journeySteps || [];
+            agent.objective = agent.objective || '';
+            agent.description = agent.description || '';
+        });
+    });
+
+    return parsed;
+}
+
+function saveFullYaml() {
+    const textarea = document.getElementById('fullYamlInput');
+    const errorEl = document.getElementById('fullYamlError');
+    const saveBtn = document.getElementById('fullYamlSave');
+
+    try {
+        // Parse YAML
+        let parsed;
+        try {
+            parsed = window.jsyaml.load(textarea.value);
+        } catch (yamlError) {
+            throw new Error(`YAML syntax error: ${yamlError.message}`);
+        }
+
+        // Validate and normalize configuration
+        const normalized = validateAndNormalizeConfig(parsed);
+
+        // Show loading state
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i data-lucide="loader-2"></i> Saving...';
+            saveBtn.classList.add('btn-loading');
+            refreshIcons();
+        }
+
+        // Show loading overlay
+        showLoadingOverlay('Saving full configuration...');
+
+        // Apply to state
+        state.configData = normalized;
+
+        // Save to backend
+        saveConfig().then(success => {
+            // Hide loading overlay
+            hideLoadingOverlay();
+
+            // Re-enable button
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-lucide="save"></i> Save Full Config';
+                saveBtn.classList.remove('btn-loading');
+                refreshIcons();
+            }
+
+            if (success) {
+                closeFullYamlModal();
+                renderAgentGroups(); // Re-render entire dashboard
+            }
+        });
+
+    } catch (error) {
+        setElementText('fullYamlError', `Error: ${error.message}`);
+    }
+}
+
 // ----- Context menu handlers -----
 function toggleContextMenu(event, menuId, triggerEl = null) {
     event?.stopPropagation();
@@ -1244,6 +1436,8 @@ function bindStaticEventHandlers() {
         const type = actionBtn.dataset.boardAction;
         if (type === 'edit-title') {
             openEditTitleModal();
+        } else if (type === 'edit-full-yaml') {
+            showFullYamlModal();
         } else if (type === 'add-section') {
             openAddSectionModal();
         }
@@ -1272,6 +1466,10 @@ function bindStaticEventHandlers() {
         e.preventDefault();
         saveTitleEdit();
     });
+
+    document.getElementById('fullYamlModalClose')?.addEventListener('click', closeFullYamlModal);
+    document.getElementById('fullYamlCancel')?.addEventListener('click', closeFullYamlModal);
+    document.getElementById('fullYamlSave')?.addEventListener('click', saveFullYaml);
 
     agentGroupsContainer?.addEventListener('click', event => {
         const actionBtn = event.target.closest('[data-action-type]');

@@ -939,6 +939,18 @@ body {
     max-width: 500px;
 }
 
+.modal-large {
+    max-width: 900px;
+    max-height: 90vh;
+}
+
+.modal-large .yaml-input {
+    min-height: 500px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -993,6 +1005,35 @@ body {
     color: var(--status-error);
     font-size: 0.9em;
     min-height: 1em;
+}
+
+.yaml-input {
+    width: 100%;
+    min-height: 300px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    background: var(--surface-contrast);
+    color: var(--context-menu-text);
+    border-radius: 8px;
+    padding: 12px;
+    border: 2px solid var(--context-menu-border);
+    resize: vertical;
+    line-height: 1.4;
+}
+
+.help-text {
+    margin-bottom: 16px;
+    color: var(--text-muted);
+    font-size: 0.95em;
+    line-height: 1.6;
+}
+
+.help-text code {
+    background: var(--surface-contrast);
+    color: var(--brand-primary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
 }
 
 .empty-state-message {

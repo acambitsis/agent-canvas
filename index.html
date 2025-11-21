@@ -22,6 +22,11 @@
                                 Edit Title
                             </button>
                             <div class="context-menu-divider menu-divider"></div>
+                            <button type="button" class="menu-item" data-board-action="edit-full-yaml">
+                                <i data-lucide="file-code"></i>
+                                Edit Full YAML
+                            </button>
+                            <div class="context-menu-divider menu-divider"></div>
                             <button type="button" class="menu-item" data-board-action="add-section">
                                 <i data-lucide="plus"></i>
                                 Add Section
@@ -249,6 +254,31 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Edit Full YAML Modal -->
+    <div id="fullYamlModal" class="modal">
+        <div class="surface-card modal-content modal-large">
+            <div class="modal-header">
+                <h2>Edit Full Dashboard YAML</h2>
+                <button class="modal-close" id="fullYamlModalClose">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="help-text">Edit the complete dashboard configuration. Required fields: <code>agentGroups</code> (array), each group must have <code>groupName</code> (string) and <code>agents</code> (array), each agent must have <code>name</code> (string). Missing optional fields will be auto-generated.</p>
+                <div class="yaml-editor-container">
+                    <textarea id="fullYamlInput" class="yaml-input"></textarea>
+                    <p class="yaml-error" id="fullYamlError"></p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="fullYamlCancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="fullYamlSave">
+                    <i data-lucide="save"></i> Save Full Config
+                </button>
+            </div>
         </div>
     </div>
 
