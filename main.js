@@ -1290,6 +1290,7 @@ function bindStaticEventHandlers() {
             const menuId = menuTrigger.dataset.menuTrigger;
             const stopProp = menuTrigger.dataset.stopProp === 'true';
             if (stopProp) event.stopPropagation();
+            console.debug('[menu-trigger-click]', { menuId, trigger: menuTrigger });
             toggleContextMenu(event, menuId, menuTrigger);
             return;
         }
@@ -1305,6 +1306,7 @@ function bindStaticEventHandlers() {
             const a = actionBtn.dataset.agentIndex !== undefined
                 ? parseInt(actionBtn.dataset.agentIndex, 10)
                 : null;
+            console.debug('[menu-action-click]', { type, groupIndex: g, agentIndex: a });
             switch (type) {
                 case 'agent-edit':
                     if (g !== null && a !== null) openEditAgentModal(g, a);
@@ -1351,6 +1353,7 @@ function bindStaticEventHandlers() {
         const menuId = trigger.dataset.menuTrigger;
         const stopProp = trigger.dataset.stopProp === 'true';
         if (stopProp) event.stopPropagation();
+        console.debug('[menu-trigger-click]', { menuId, trigger });
         toggleContextMenu(event, menuId, trigger);
     });
 
@@ -1366,6 +1369,7 @@ function bindStaticEventHandlers() {
         const a = actionBtn.dataset.agentIndex !== undefined
             ? parseInt(actionBtn.dataset.agentIndex, 10)
             : null;
+        console.debug('[menu-action-click]', { type, groupIndex: g, agentIndex: a });
         switch (type) {
             case 'agent-edit':
                 if (g !== null && a !== null) openEditAgentModal(g, a);
