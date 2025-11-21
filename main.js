@@ -462,6 +462,7 @@ async function loadConfig(docName = state.currentDocumentName || DEFAULT_DOCUMEN
 
 async function saveConfig() {
     try {
+        setDocumentStatusMessage('Saving configuration...');
         const yamlText = window.jsyaml.dump(state.configData);
         const docName = state.currentDocumentName || DEFAULT_DOCUMENT_NAME;
         const response = await fetch(`/api/config?doc=${encodeURIComponent(docName)}`, {
@@ -479,11 +480,13 @@ async function saveConfig() {
 
         const result = await response.json();
         console.log('Config saved:', result);
+        setDocumentStatusMessage('Saved.', 'success');
         await refreshDocumentList(docName);
         return true;
     } catch (error) {
         console.error('Error saving config:', error);
         alert('Failed to save configuration: ' + error.message);
+        setDocumentStatusMessage('Save failed.', 'error');
         return false;
     }
 }
@@ -1262,7 +1265,6 @@ function bindStaticEventHandlers() {
     const boardTrigger = document.querySelector('[data-board-trigger="board-menu"]');
     boardTrigger?.addEventListener('click', event => {
         event.stopPropagation();
-        console.debug('[board-trigger-click]');
         toggleContextMenu(event, 'board-menu', boardTrigger);
     });
     boardMenu?.addEventListener('click', event => {
@@ -1271,7 +1273,6 @@ function bindStaticEventHandlers() {
         event.preventDefault();
         closeAllContextMenus();
         const type = actionBtn.dataset.boardAction;
-        console.debug('[board-action-click]', { type });
         if (type === 'edit-title') {
             openEditTitleModal();
         } else if (type === 'add-section') {
@@ -1311,7 +1312,6 @@ function bindStaticEventHandlers() {
             const a = actionBtn.dataset.agentIndex !== undefined
                 ? parseInt(actionBtn.dataset.agentIndex, 10)
                 : null;
-            console.debug('[menu-action-click]', { type, groupIndex: g, agentIndex: a });
             switch (type) {
                 case 'agent-edit':
                     if (g !== null && a !== null) openEditAgentModal(g, a);
@@ -1339,7 +1339,6 @@ function bindStaticEventHandlers() {
             const menuId = menuTrigger.dataset.menuTrigger;
             const stopProp = menuTrigger.dataset.stopProp === 'true';
             if (stopProp) event.stopPropagation();
-            console.debug('[menu-trigger-click]', { menuId, trigger: menuTrigger });
             toggleContextMenu(event, menuId, menuTrigger);
             return;
         }
@@ -1357,7 +1356,6 @@ function bindStaticEventHandlers() {
         event.preventDefault();
         closeAllContextMenus();
         const type = action.dataset.boardAction;
-        console.debug('[board-action-click]', { type });
         if (type === 'edit-title') {
             openEditTitleModal();
         } else if (type === 'add-section') {
@@ -1377,7 +1375,6 @@ function bindStaticEventHandlers() {
         const a = actionBtn.dataset.agentIndex !== undefined
             ? parseInt(actionBtn.dataset.agentIndex, 10)
             : null;
-        console.debug('[menu-action-click]', { type, groupIndex: g, agentIndex: a });
         switch (type) {
             case 'agent-edit':
                 if (g !== null && a !== null) openEditAgentModal(g, a);
@@ -1406,7 +1403,6 @@ function bindStaticEventHandlers() {
         const menuId = trigger.dataset.menuTrigger;
         const stopProp = trigger.dataset.stopProp === 'true';
         if (stopProp) event.stopPropagation();
-        console.debug('[menu-trigger-click]', { menuId, trigger });
         toggleContextMenu(event, menuId, trigger);
     });
 }
