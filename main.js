@@ -1297,23 +1297,27 @@ function bindStaticEventHandlers() {
             event.preventDefault();
             closeAllContextMenus();
             const type = actionBtn.dataset.actionType;
-            const g = parseInt(actionBtn.dataset.groupIndex, 10);
-            const a = parseInt(actionBtn.dataset.agentIndex, 10);
+            const g = actionBtn.dataset.groupIndex !== undefined
+                ? parseInt(actionBtn.dataset.groupIndex, 10)
+                : null;
+            const a = actionBtn.dataset.agentIndex !== undefined
+                ? parseInt(actionBtn.dataset.agentIndex, 10)
+                : null;
             switch (type) {
                 case 'agent-edit':
-                    openEditAgentModal(g, a);
+                    if (g !== null && a !== null) openEditAgentModal(g, a);
                     break;
                 case 'agent-delete':
-                    deleteAgent(g, a);
+                    if (g !== null && a !== null) deleteAgent(g, a);
                     break;
                 case 'agent-add':
-                    openAddAgentModal(g);
+                    if (g !== null) openAddAgentModal(g);
                     break;
                 case 'group-edit':
-                    openEditGroupModal(g);
+                    if (g !== null) openEditGroupModal(g);
                     break;
                 case 'group-delete':
-                    deleteGroup(g);
+                    if (g !== null) deleteGroup(g);
                     break;
                 default:
                     break;
