@@ -20,11 +20,9 @@ export const COLLAPSED_SECTIONS_KEY = 'tps-collapsed-sections';
 export const BLANK_DOCUMENT_TEMPLATE = [
     '# TPS Agent Ecosystem configuration',
     'sectionDefaults:',
-    '  color: "#1a5f73"',
     '  iconType: target',
     '  showInFlow: true',
     '  isSupport: false',
-    'toolsConfig: {}',
     'agentGroups: []',
     ''
 ].join('\n');
@@ -77,7 +75,6 @@ export function slugifyIdentifier(value) {
 
 export function getGroupFormatting(group, field, config = state.configData) {
     const defaults = config?.sectionDefaults || {
-        color: '#1a5f73',
         iconType: 'target',
         showInFlow: true,
         isSupport: false

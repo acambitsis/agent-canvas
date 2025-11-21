@@ -94,6 +94,15 @@
     --progress-purple-shadow: rgba(102, 126, 234, 0.3);
     --progress-green-shadow: rgba(72, 187, 120, 0.3);
     --progress-orange-shadow: rgba(246, 173, 85, 0.3);
+
+    /* Tool colors - static definitions */
+    --tool-cyan: #17a2b8;
+    --tool-blue: #3776ab;
+    --tool-orange: #e67e22;
+    --tool-green: #27ae60;
+    --tool-purple: #8e44ad;
+    --tool-red: #c0392b;
+    --tool-gray: #999999;
 }
 
 /* Utility classes */
@@ -630,6 +639,15 @@ body {
     --chip-bg: var(--tool-chip-bg, var(--tool-chip-bg-fallback));
     --chip-text: var(--text-inverse);
 }
+
+/* Static tool colors using data attributes - NO dynamic CSS generation */
+.tool-chip[data-color="cyan"] { --chip-bg: var(--tool-cyan); }
+.tool-chip[data-color="blue"] { --chip-bg: var(--tool-blue); }
+.tool-chip[data-color="orange"] { --chip-bg: var(--tool-orange); }
+.tool-chip[data-color="green"] { --chip-bg: var(--tool-green); }
+.tool-chip[data-color="purple"] { --chip-bg: var(--tool-purple); }
+.tool-chip[data-color="red"] { --chip-bg: var(--tool-red); }
+.tool-chip[data-color="gray"] { --chip-bg: var(--tool-gray); }
 
 .icon-panel {
     display: flex;

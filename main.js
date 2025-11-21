@@ -25,6 +25,11 @@ import {
     registerLoadAgents,
     setDocumentStatusMessage
 } from './documents.js';
+import {
+    getToolConfig,
+    getAvailableTools,
+    getSectionColor
+} from './config.js';
 
 // ----- State and utility helpers -----
 function toggleSectionCollapse(groupId) {
@@ -103,7 +108,7 @@ function populateAgentFormFields(agent = {}) {
     if (toolsContainer) {
         toolsContainer.innerHTML = '';
         const selectedTools = toArray(agent.tools);
-        Object.keys(state.configData?.toolsConfig || {}).forEach(toolName => {
+        getAvailableTools().forEach(toolName => {
             const checked = selectedTools.includes(toolName) ? 'checked' : '';
             toolsContainer.innerHTML += `
                 <label class="tool-checkbox-label">
@@ -253,67 +258,63 @@ function syncGroupStateFromForm() {
     return true;
 }
 
-function updateAgentYamlEditor() {
-    const textarea = document.getElementById('agentYamlInput');
-    if (!textarea) return;
-    textarea.value = window.jsyaml.dump(state.agentModalOriginal || {});
-    setElementText('agentYamlError', '');
-    setElementText('agentYamlStatus', '');
-}
+function updateYamlEditor(type) {
+    const inputId = type === 'agent' ? 'agentYamlInput' : 'groupYamlInput';
+    const errorId = type === 'agent' ? 'agentYamlError' : 'groupYamlError';
+    const statusId = type === 'agent' ? 'agentYamlStatus' : 'groupYamlStatus';
+    const stateKey = type === 'agent' ? 'agentModalOriginal' : 'groupModalOriginal';
 
-function updateGroupYamlEditor() {
-    const textarea = document.getElementById('groupYamlInput');
+    const textarea = document.getElementById(inputId);
     if (!textarea) return;
-    textarea.value = window.jsyaml.dump(state.groupModalOriginal || {});
-    setElementText('groupYamlError', '');
-    setElementText('groupYamlStatus', '');
+    textarea.value = window.jsyaml.dump(state[stateKey] || {});
+    setElementText(errorId, '');
+    setElementText(statusId, '');
 }
+function updateAgentYamlEditor() { updateYamlEditor('agent'); }
+function updateGroupYamlEditor() { updateYamlEditor('group'); }
 
-function applyAgentYamlToForm() {
-    const textarea = document.getElementById('agentYamlInput');
+function applyYamlToForm(type) {
+    const inputId = type === 'agent' ? 'agentYamlInput' : 'groupYamlInput';
+    const errorId = type === 'agent' ? 'agentYamlError' : 'groupYamlError';
+    const stateKey = type === 'agent' ? 'agentModalOriginal' : 'groupModalOriginal';
+    const label = type === 'agent' ? 'Agent' : 'Section';
+
+    const textarea = document.getElementById(inputId);
     if (!textarea) return false;
     try {
         const parsed = window.jsyaml.load(textarea.value) || {};
         if (typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new Error('Agent YAML must describe an object.');
+            throw new Error(`${label} YAML must describe an object.`);
         }
-        state.agentModalOriginal = parsed;
-        populateAgentFormFields(parsed);
-        setElementText('agentYamlError', '');
-        return true;
-    } catch (error) {
-        setElementText('agentYamlError', error.message);
-        return false;
-    }
-}
 
-function applyGroupYamlToForm() {
-    const textarea = document.getElementById('groupYamlInput');
-    if (!textarea) return false;
-    try {
-        const parsed = window.jsyaml.load(textarea.value) || {};
-        if (typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new Error('Section YAML must describe an object.');
+        if (type === 'agent') {
+            state[stateKey] = parsed;
+            populateAgentFormFields(parsed);
+        } else {
+            const form = document.getElementById('groupForm');
+            const datasetIndex = form ? parseInt(form.dataset.groupIndex ?? '-1', 10) : -1;
+            const groupIndex = Number.isNaN(datasetIndex) ? -1 : datasetIndex;
+            state[stateKey] = ensureGroupHasId(parsed, groupIndex);
+            populateGroupFormFields(state[stateKey], { groupIndex });
         }
-        const form = document.getElementById('groupForm');
-        const datasetIndex = form ? parseInt(form.dataset.groupIndex ?? '-1', 10) : -1;
-        const groupIndex = Number.isNaN(datasetIndex) ? -1 : datasetIndex;
-        state.groupModalOriginal = ensureGroupHasId(parsed, groupIndex);
-        populateGroupFormFields(state.groupModalOriginal, { groupIndex });
-        setElementText('groupYamlError', '');
+
+        setElementText(errorId, '');
         return true;
     } catch (error) {
-        setElementText('groupYamlError', error.message);
+        setElementText(errorId, error.message);
         return false;
     }
 }
+function applyAgentYamlToForm() { return applyYamlToForm('agent'); }
+function applyGroupYamlToForm() { return applyYamlToForm('group'); }
 
 const modalViewConfigs = {
     agent: {
+        formId: 'agentForm', modalId: 'agentModal', titleId: 'modalAgentTitle',
+        stateKey: 'agentModalOriginal', indexKey: 'agentIndex', secondIndexKey: 'groupIndex',
+        numberKey: 'agentNumber', nameKey: 'name',
         getMode: () => state.agentModalViewMode,
-        setMode: mode => {
-            state.agentModalViewMode = mode;
-        },
+        setMode: mode => { state.agentModalViewMode = mode; },
         selectors: {
             formContentId: 'agentFormContent',
             yamlContentId: 'agentYamlContent',
@@ -324,13 +325,15 @@ const modalViewConfigs = {
         applyFromYaml: applyAgentYamlToForm,
         updateYamlEditor: updateAgentYamlEditor,
         formReadError: 'Unable to read agent form data.',
-        yamlValidationError: 'Please fix YAML errors before returning to form view.'
+        yamlValidationError: 'Please fix YAML errors before returning to form view.',
+        getCollection: (gi) => state.configData.agentGroups[gi].agents
     },
     group: {
+        formId: 'groupForm', modalId: 'groupModal', titleId: 'modalGroupTitle',
+        stateKey: 'groupModalOriginal', indexKey: 'groupIndex',
+        numberKey: 'groupNumber', nameKey: 'groupName',
         getMode: () => state.groupModalViewMode,
-        setMode: mode => {
-            state.groupModalViewMode = mode;
-        },
+        setMode: mode => { state.groupModalViewMode = mode; },
         selectors: {
             formContentId: 'groupFormContent',
             yamlContentId: 'groupYamlContent',
@@ -341,7 +344,8 @@ const modalViewConfigs = {
         applyFromYaml: applyGroupYamlToForm,
         updateYamlEditor: updateGroupYamlEditor,
         formReadError: 'Unable to read section form data.',
-        yamlValidationError: 'Please fix YAML errors before returning to form view.'
+        yamlValidationError: 'Please fix YAML errors before returning to form view.',
+        getCollection: () => state.configData.agentGroups
     }
 };
 
@@ -402,41 +406,20 @@ function ensureModalStateFromCurrentView(config) {
     return config.syncFromForm();
 }
 
-function setAgentModalView(mode) {
-    setModalView(mode, modalViewConfigs.agent);
-}
+function ensureAgentStateFromCurrentView() { return ensureModalStateFromCurrentView(modalViewConfigs.agent); }
+function ensureGroupStateFromCurrentView() { return ensureModalStateFromCurrentView(modalViewConfigs.group); }
 
-function setGroupModalView(mode) {
-    setModalView(mode, modalViewConfigs.group);
-}
-
-function ensureAgentStateFromCurrentView() {
-    return ensureModalStateFromCurrentView(modalViewConfigs.agent);
-}
-
-function ensureGroupStateFromCurrentView() {
-    return ensureModalStateFromCurrentView(modalViewConfigs.group);
-}
-
-async function copyAgentYaml() {
-    const textarea = document.getElementById('agentYamlInput');
+async function copyYaml(type) {
+    const inputId = type === 'agent' ? 'agentYamlInput' : 'groupYamlInput';
+    const statusId = type === 'agent' ? 'agentYamlStatus' : 'groupYamlStatus';
+    const textarea = document.getElementById(inputId);
     if (!textarea) return;
     const success = await copyTextToClipboard(textarea.value);
-    setElementText('agentYamlStatus', success ? 'Copied to clipboard' : 'Clipboard unavailable');
-    if (success) {
-        setTimeout(() => setElementText('agentYamlStatus', ''), 2000);
-    }
+    setElementText(statusId, success ? 'Copied to clipboard' : 'Clipboard unavailable');
+    if (success) setTimeout(() => setElementText(statusId, ''), 2000);
 }
-
-async function copyGroupYaml() {
-    const textarea = document.getElementById('groupYamlInput');
-    if (!textarea) return;
-    const success = await copyTextToClipboard(textarea.value);
-    setElementText('groupYamlStatus', success ? 'Copied to clipboard' : 'Clipboard unavailable');
-    if (success) {
-        setTimeout(() => setElementText('groupYamlStatus', ''), 2000);
-    }
-}
+async function copyAgentYaml() { return copyYaml('agent'); }
+async function copyGroupYaml() { return copyYaml('group'); }
 
 // ----- Config load/save -----
 async function loadConfig(docName = state.currentDocumentName || DEFAULT_DOCUMENT_NAME) {
@@ -494,42 +477,7 @@ async function saveConfig() {
 
 // ----- Rendering helpers -----
 // Generate dynamic CSS for group colors
-function generateDynamicCSS(config) {
-    // Reuse existing style element or create new one
-    if (!state.dynamicStyleElement) {
-        state.dynamicStyleElement = document.createElement('style');
-        state.dynamicStyleElement.id = 'dynamic-config-styles';
-        document.head.appendChild(state.dynamicStyleElement);
-    }
-
-    const groupCss = (config.agentGroups || [])
-        .map(group => {
-            const color = getGroupFormatting(group, 'color');
-            const groupClass = getGroupClass(group);
-            return `
-                .${groupClass} {
-                    --group-accent: ${color};
-                }
-            `;
-        })
-        .join('');
-
-    const toolCss = Object.values(config.toolsConfig || {})
-        .map(toolConfig => {
-            if (!toolConfig?.class) {
-                return '';
-            }
-            const chipColor = toolConfig.color || 'var(--tool-chip-bg-fallback)';
-            return `
-                .${toolConfig.class} {
-                    --tool-chip-bg: ${chipColor};
-                }
-            `;
-        })
-        .join('');
-
-    state.dynamicStyleElement.textContent = groupCss + toolCss;
-}
+// Dynamic CSS generation removed - now using static CSS with data attributes
 
 function renderMenuItems(actions = []) {
     return actions.map(action => {
@@ -560,13 +508,14 @@ function renderContextMenuTrigger({ menuId, title, actions, icon = 'more-vertica
 }
 
 // Template Functions
-function createToolChip(toolName, config) {
-    const toolConfig = config.toolsConfig[toolName];
-    if (!toolConfig) {
-        console.warn(`Unknown tool "${toolName}" referenced in config. Available tools:`, Object.keys(config.toolsConfig));
-        return `<span class="chip tool-chip tool-chip-unknown" title="Unknown tool: ${toolName}"><i data-lucide="alert-circle"></i> ${toolName}</span>`;
-    }
-    return `<span class="chip tool-chip ${toolConfig.class}"><i data-lucide="${toolConfig.icon}"></i> ${toolName}</span>`;
+function createToolChip(toolName) {
+    const toolConfig = getToolConfig(toolName);
+    const colorAttr = toolConfig.colorKey ? `data-color="${toolConfig.colorKey}"` : '';
+    const isUnknown = !toolConfig.colorKey || toolConfig.colorKey === 'gray';
+    const unknownClass = isUnknown ? ' tool-chip-unknown' : '';
+    const icon = isUnknown ? 'alert-circle' : toolConfig.icon;
+
+    return `<span class="chip tool-chip${unknownClass}" ${colorAttr} title="${toolName}"><i data-lucide="${icon}"></i> ${toolName}</span>`;
 }
 
 function createJourneyTooltip(steps) {
@@ -710,7 +659,7 @@ function createAgentCard(agent, config, groupIndex, agentIndex) {
 }
 
 function createAgentGroup(group, config, groupIndex) {
-    const color = getGroupFormatting(group, 'color');
+    const color = getSectionColor(groupIndex);
     const iconType = getGroupFormatting(group, 'iconType');
     const groupClass = getGroupClass(group);
 
@@ -761,7 +710,7 @@ function createAgentGroup(group, config, groupIndex) {
     });
 
     return `
-        <div class="surface-card agent-group ${groupClass} ${collapsedClass}" data-group-id="${group.groupId}" data-group-index="${groupIndex}">
+        <div class="surface-card agent-group ${groupClass} ${collapsedClass}" data-group-id="${group.groupId}" data-group-index="${groupIndex}" style="--group-accent: ${color};">
             <div class="group-header" data-collapse-target="${group.groupId}">
                 <div class="group-header-edit">
                     <div class="u-flex u-align-center u-full-width">
@@ -846,9 +795,6 @@ async function loadAgents(docName = state.currentDocumentName) {
     try {
         const config = await loadConfig(docName);
 
-        // Generate dynamic CSS
-        generateDynamicCSS(config);
-
         // Render agent groups
         renderAgentGroups();
 
@@ -919,6 +865,79 @@ function setupTooltips() {
     });
 }
 
+// ----- Generic Modal Save/Delete -----
+function genericSaveModal(type) {
+    const def = modalViewConfigs[type];
+    const form = document.getElementById(def.formId);
+    const idx = parseInt(form.dataset[def.indexKey]);
+    const isNew = idx === -1;
+
+    if (!ensureModalStateFromCurrentView(def)) {
+        alert('Please resolve form or YAML errors before saving.');
+        return;
+    }
+
+    const item = deepClone(state[def.stateKey] || {});
+
+    // Handle numbering
+    if (type === 'agent') {
+        const gi = parseInt(form.dataset.groupIndex);
+        const coll = def.getCollection(gi);
+        if (!item[def.numberKey]) {
+            item[def.numberKey] = isNew ? coll.length + 1 : (coll[idx]?.[def.numberKey] || idx + 1);
+        }
+        if (isNew) coll.push(item); else coll[idx] = item;
+    } else {
+        const coll = def.getCollection();
+        if (!item[def.numberKey]) {
+            item[def.numberKey] = isNew ? coll.length : coll[idx][def.numberKey];
+        }
+        if (isNew) {
+            item.agents = Array.isArray(item.agents) ? item.agents : [];
+            coll.push(item);
+        } else {
+            item.agents = coll[idx].agents;
+            coll[idx] = item;
+        }
+    }
+
+    saveConfig().then(success => {
+        if (success) {
+            def.setMode('form');
+            state[def.stateKey] = null;
+            document.getElementById(def.modalId).classList.remove('show');
+            renderAgentGroups();
+        }
+    });
+}
+
+function genericDeleteModal(type, idx1 = null, idx2 = null) {
+    const def = modalViewConfigs[type];
+    if (idx1 === null) {
+        const form = document.getElementById(def.formId);
+        idx1 = parseInt(form.dataset[def.indexKey]);
+        if (type === 'agent') idx2 = parseInt(form.dataset[def.secondIndexKey]);
+    }
+
+    const coll = type === 'agent' ? def.getCollection(idx2) : def.getCollection();
+    const item = coll[idx1];
+    const confirmMsg = type === 'agent'
+        ? `Are you sure you want to delete "${item[def.nameKey]}"?`
+        : `Are you sure you want to delete "${item[def.nameKey]}" and all its agents?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    coll.splice(idx1, 1);
+    saveConfig().then(success => {
+        if (success) {
+            def.setMode('form');
+            state[def.stateKey] = null;
+            document.getElementById(def.modalId).classList.remove('show');
+            renderAgentGroups();
+        }
+    });
+}
+
 // ----- Agent modal handlers -----
 function openEditAgentModal(groupIndex, agentIndex) {
     const group = state.configData.agentGroups[groupIndex];
@@ -971,67 +990,17 @@ function showAgentModal(agent, groupIndex, agentIndex) {
     modal.classList.add('show');
 }
 
-function closeAgentModal() {
-    state.agentModalViewMode = 'form';
-    state.agentModalOriginal = null;
-    document.getElementById('agentModal').classList.remove('show');
+function closeModal(type) {
+    const def = modalViewConfigs[type];
+    def.setMode('form');
+    state[def.stateKey] = null;
+    document.getElementById(def.modalId).classList.remove('show');
 }
+function closeAgentModal() { closeModal('agent'); }
+function closeGroupModal() { closeModal('group'); }
 
-function saveAgent() {
-    const form = document.getElementById('agentForm');
-    const groupIndex = parseInt(form.dataset.groupIndex);
-    const agentIndex = parseInt(form.dataset.agentIndex);
-    const isNew = agentIndex === -1;
-
-    if (!ensureAgentStateFromCurrentView()) {
-        alert('Please resolve form or YAML errors before saving.');
-        return;
-    }
-
-    const agent = deepClone(state.agentModalOriginal || {});
-    if (!agent.agentNumber) {
-        agent.agentNumber = isNew
-            ? state.configData.agentGroups[groupIndex].agents.length + 1
-            : (state.configData.agentGroups[groupIndex].agents[agentIndex]?.agentNumber || agentIndex + 1);
-    }
-
-    if (isNew) {
-        state.configData.agentGroups[groupIndex].agents.push(agent);
-    } else {
-        state.configData.agentGroups[groupIndex].agents[agentIndex] = agent;
-    }
-
-    saveConfig().then(success => {
-        if (success) {
-            closeAgentModal();
-            // Re-render the page with updated data
-            renderAgentGroups();
-        }
-    });
-}
-
-function deleteAgent(groupIndex = null, agentIndex = null) {
-    // If called from modal, get indices from form
-    if (groupIndex === null || agentIndex === null) {
-        const form = document.getElementById('agentForm');
-        groupIndex = parseInt(form.dataset.groupIndex);
-        agentIndex = parseInt(form.dataset.agentIndex);
-    }
-
-    const agent = state.configData.agentGroups[groupIndex].agents[agentIndex];
-    if (!confirm(`Are you sure you want to delete "${agent.name}"?`)) {
-        return;
-    }
-
-    state.configData.agentGroups[groupIndex].agents.splice(agentIndex, 1);
-
-    saveConfig().then(success => {
-        if (success) {
-            closeAgentModal();
-            renderAgentGroups();
-        }
-    });
-}
+function saveAgent() { genericSaveModal('agent'); }
+function deleteAgent(groupIndex = null, agentIndex = null) { genericDeleteModal('agent', agentIndex, groupIndex); }
 
 // ----- Group modal handlers -----
 function openEditGroupModal(groupIndex) {
@@ -1046,9 +1015,6 @@ function openAddSectionModal() {
         groupId: '',
         agents: []
     };
-    // All formatting fields (color, showInFlow, isSupport, groupClass)
-    // inherit from sectionDefaults unless explicitly overridden in YAML
-
     showGroupModal(newGroup, -1);
 }
 
@@ -1072,7 +1038,6 @@ function showGroupModal(group, groupIndex) {
     }
     updateGroupModalViewUI();
 
-    // Show/hide delete button
     const deleteBtn = document.getElementById('deleteGroupBtn');
     if (deleteBtn) {
         deleteBtn.style.display = isNew ? 'none' : 'inline-flex';
@@ -1081,69 +1046,8 @@ function showGroupModal(group, groupIndex) {
     modal.classList.add('show');
 }
 
-function closeGroupModal() {
-    state.groupModalViewMode = 'form';
-    state.groupModalOriginal = null;
-    document.getElementById('groupModal').classList.remove('show');
-}
-
-function saveGroup() {
-    const form = document.getElementById('groupForm');
-    const groupIndex = parseInt(form.dataset.groupIndex);
-    const isNew = groupIndex === -1;
-
-    if (!ensureGroupStateFromCurrentView()) {
-        alert('Please resolve form or YAML errors before saving.');
-        return;
-    }
-
-    const group = deepClone(state.groupModalOriginal || {});
-    if (group.groupNumber === undefined || group.groupNumber === null) {
-        group.groupNumber = isNew ? state.configData.agentGroups.length : state.configData.agentGroups[groupIndex].groupNumber;
-    }
-
-    if (isNew) {
-        group.agents = Array.isArray(group.agents) ? group.agents : [];
-    } else {
-        group.agents = state.configData.agentGroups[groupIndex].agents;
-    }
-
-    if (isNew) {
-        state.configData.agentGroups.push(group);
-    } else {
-        state.configData.agentGroups[groupIndex] = group;
-    }
-
-    saveConfig().then(success => {
-        if (success) {
-            closeGroupModal();
-            renderAgentGroups();
-            generateDynamicCSS(state.configData);
-        }
-    });
-}
-
-function deleteGroup(groupIndex = null) {
-    // If called from modal, get index from form
-    if (groupIndex === null) {
-        const form = document.getElementById('groupForm');
-        groupIndex = parseInt(form.dataset.groupIndex);
-    }
-
-    const group = state.configData.agentGroups[groupIndex];
-    if (!confirm(`Are you sure you want to delete "${group.groupName}" and all its agents?`)) {
-        return;
-    }
-
-    state.configData.agentGroups.splice(groupIndex, 1);
-
-    saveConfig().then(success => {
-        if (success) {
-            closeGroupModal();
-            renderAgentGroups();
-        }
-    });
-}
+function saveGroup() { genericSaveModal('group'); }
+function deleteGroup(groupIndex = null) { genericDeleteModal('group', groupIndex); }
 
 // ----- Title modal handlers -----
 function openEditTitleModal() {
@@ -1282,16 +1186,16 @@ function bindStaticEventHandlers() {
     });
 
     document.getElementById('agentModalClose')?.addEventListener('click', closeAgentModal);
-    document.getElementById('agentFormToggle')?.addEventListener('click', () => setAgentModalView('form'));
-    document.getElementById('agentYamlToggle')?.addEventListener('click', () => setAgentModalView('yaml'));
+    document.getElementById('agentFormToggle')?.addEventListener('click', () => setModalView('form', modalViewConfigs.agent));
+    document.getElementById('agentYamlToggle')?.addEventListener('click', () => setModalView('yaml', modalViewConfigs.agent));
     document.getElementById('agentCopyYamlBtn')?.addEventListener('click', copyAgentYaml);
     document.getElementById('agentCancelBtn')?.addEventListener('click', closeAgentModal);
     document.getElementById('agentSaveBtn')?.addEventListener('click', saveAgent);
     document.getElementById('deleteAgentBtn')?.addEventListener('click', () => deleteAgent());
 
     document.getElementById('groupModalClose')?.addEventListener('click', closeGroupModal);
-    document.getElementById('groupFormToggle')?.addEventListener('click', () => setGroupModalView('form'));
-    document.getElementById('groupYamlToggle')?.addEventListener('click', () => setGroupModalView('yaml'));
+    document.getElementById('groupFormToggle')?.addEventListener('click', () => setModalView('form', modalViewConfigs.group));
+    document.getElementById('groupYamlToggle')?.addEventListener('click', () => setModalView('yaml', modalViewConfigs.group));
     document.getElementById('groupCopyYamlBtn')?.addEventListener('click', copyGroupYaml);
     document.getElementById('groupCancelBtn')?.addEventListener('click', closeGroupModal);
     document.getElementById('groupSaveBtn')?.addEventListener('click', saveGroup);
@@ -1300,6 +1204,10 @@ function bindStaticEventHandlers() {
     document.getElementById('titleModalClose')?.addEventListener('click', closeTitleModal);
     document.getElementById('titleModalCancel')?.addEventListener('click', closeTitleModal);
     document.getElementById('titleModalSave')?.addEventListener('click', saveTitleEdit);
+    document.getElementById('titleForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveTitleEdit();
+    });
 
     agentGroupsContainer?.addEventListener('click', event => {
         const actionBtn = event.target.closest('[data-action-type]');
