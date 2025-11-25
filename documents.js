@@ -413,12 +413,20 @@ export async function handleDocumentSelection(event) {
         }, 50);
     }
 
+    // Store previous document name to revert on error
+    const previousDocName = state.currentDocumentName;
+    
     try {
-        setActiveDocumentName(selectedDoc);
+        // Update UI state without persisting yet
+        setActiveDocumentName(selectedDoc, { skipPersist: true });
         await loadAgentsCallback(selectedDoc);
+        // Only persist after successful load
+        setActiveDocumentName(selectedDoc, { skipPersist: false });
         setDocumentStatusMessage(`Loaded "${selectedDoc}".`, 'success');
     } catch (error) {
         console.error('Error loading document:', error);
+        // Revert to previous document name on error
+        setActiveDocumentName(previousDocName, { skipPersist: false });
         setDocumentStatusMessage(`Failed to load "${selectedDoc}".`, 'error');
     } finally {
         docSelect.disabled = false;

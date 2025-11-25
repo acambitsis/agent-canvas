@@ -289,7 +289,7 @@ async function handleDelete(req, res) {
 
     // Check if document exists
     const exists = await fetchDocumentFromBlob(docName, blobToken);
-    if (!exists) {
+    if (exists === null) {
       json(res, 404, { error: `Document "${docName}" not found` });
       return;
     }

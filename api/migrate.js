@@ -81,7 +81,10 @@ export async function POST(request) {
       yamlText = readFileSync(configPath, 'utf8');
     } catch (error) {
       console.error('Error reading static config:', error);
-      return new Response(JSON.stringify({ error: 'Static config file not found' }), {
+      return new Response(JSON.stringify({ 
+        error: 'Static config file not found',
+        message: 'The data/config.yaml file no longer exists. Migration is no longer needed as the system now uses Blob Storage directly. If you need to create an initial configuration, use the POST /api/config endpoint instead.'
+      }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });

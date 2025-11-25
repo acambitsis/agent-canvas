@@ -354,6 +354,14 @@ body {
     flex-shrink: 0;
 }
 
+.menu-link {
+    text-decoration: none;
+}
+
+.menu-link:hover {
+    text-decoration: none;
+}
+
 .menu-label {
     font-size: 0.75em;
     text-transform: uppercase;
