@@ -1,4 +1,4 @@
-import { del, head, list, put } from '@vercel/blob';
+import { BlobAccessError, BlobNotFoundError, del, head, list, put } from '@vercel/blob';
 
 const DEFAULT_DOCUMENT = 'config.yaml';
 const YAML_CONTENT_TYPE = 'text/yaml';
@@ -120,6 +120,20 @@ async function fetchDocumentFromBlob(docName, token) {
     }
     return await response.text();
   } catch (error) {
+    // Handle BlobAccessError and BlobNotFoundError from @vercel/blob
+    // These are thrown when a document doesn't exist
+    // Check both instanceof and error name for robustness
+    if (
+      error instanceof BlobAccessError ||
+      error instanceof BlobNotFoundError ||
+      error?.name === 'BlobAccessError' ||
+      error?.name === 'BlobNotFoundError'
+    ) {
+      return null;
+    }
+    // Backward compatibility: check for status properties (for test mocks)
+    // This comes after the real error type checks since BlobAccessError/BlobNotFoundError
+    // don't have .status or .statusCode properties
     if (error?.status === 404 || error?.statusCode === 404) {
       return null;
     }

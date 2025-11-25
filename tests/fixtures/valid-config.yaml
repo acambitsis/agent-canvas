@@ -1,0 +1,55 @@
+agentGroups:
+  - groupName: Sales Phase
+    phaseTag: Phase 1
+    flowDisplayName: Sales
+    agents:
+      - name: Lead Qualification Agent
+        objective: Qualifies inbound leads using scoring criteria
+        description: |
+          Analyzes lead data from multiple sources, applies scoring rules,
+          and routes qualified leads to sales team.
+        tools: [Forms, Analytics]
+        journeySteps:
+          - Lead submission received
+          - Data validation and enrichment
+          - Scoring calculation
+          - Qualification decision
+        metrics:
+          usageThisWeek: "45"
+          timeSaved: "40%"
+          roiContribution: High
+
+      - name: Proposal Generator Agent
+        objective: Generates customized sales proposals
+        description: Creates tailored proposals based on customer requirements and pricing models.
+        tools: [Documents, Forms]
+        journeySteps:
+          - Requirements gathering
+          - Template selection
+          - Content generation
+          - Review and approval
+        demoLink: https://demo.example.com/proposal-generator
+
+  - groupName: Customer Onboarding
+    phaseTag: Phase 2
+    agents:
+      - name: Customer Onboarding Agent
+        objective: Automates customer data collection and validation
+        description: |
+          Handles complete onboarding workflow including data validation,
+          document processing, and automated welcome communications.
+        tools: [Forms, Documents, Email]
+        journeySteps:
+          - User initiates onboarding request
+          - Agent collects customer information
+          - Agent validates data completeness
+          - Agent processes documents
+          - Agent generates welcome package
+        demoLink: https://demo.example.com/onboarding
+        videoLink: https://youtube.com/watch?v=abc123
+        badge: Handover
+        metrics:
+          usageThisWeek: "150"
+          timeSaved: "60%"
+          roiContribution: High
+

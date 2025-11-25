@@ -5,5 +5,15 @@
   "dependencies": {
     "@vercel/blob": "^0.23.0",
     "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "jsdom": "^23.0.0",
+    "@vitest/ui": "^1.0.0"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   }
 }

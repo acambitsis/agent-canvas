@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Local Development
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Run locally with Vercel dev server (with hot reload)
 vercel dev
@@ -39,7 +39,18 @@ vercel env ls
 ```
 
 ### Testing
-**No automated testing framework is implemented.** Testing is manual/ad-hoc only.
+```bash
+# Run tests in watch mode
+pnpm test
+
+# Run tests once
+pnpm test:run
+
+# Run tests with UI
+pnpm test:ui
+```
+
+See `tests/README.md` for test suite details.
 
 ## Core Architecture
 
@@ -352,7 +363,7 @@ availableDocuments      // List of all documents
 ## Important Notes
 
 - **DELETE endpoint**: `/api/config` supports DELETE requests; the UI guards against removing the final remaining document
-- **No automated tests**: Manual testing only (consider adding Jest/Vitest if needed)
+- **Automated tests**: Vitest test suite with 4 ultra high-value tests covering data persistence, authentication, form/YAML sync, and input sanitization (see `tests/README.md`)
 - **No versioning**: Blob Storage overwrites on save (consider adding version history if needed)
 - **No conflict resolution**: Last write wins (consider adding optimistic locking if needed)
 - **localStorage usage**: Document preference stored locally, not synced across devices
