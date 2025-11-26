@@ -288,9 +288,9 @@ export async function addToAllowlist(email, addedBy) {
         [key, indexKey],
         [JSON.stringify(data), normalizedEmail]
       );
-      
-      // Result is [success, status]
-      return result[0] === true;
+
+      // Result is [success, status] - Lua booleans become 1/0 in Redis
+      return !!result[0];
     }
   } catch (error) {
     console.warn('Lua script evaluation failed, using fallback:', error);
@@ -418,9 +418,9 @@ export async function removeFromAllowlist(email) {
         [key, indexKey],
         [normalizedEmail]
       );
-      
-      // Result is [success, status]
-      return result[0] === true;
+
+      // Result is [success, status] - Lua booleans become 1/0 in Redis
+      return !!result[0];
     }
   } catch (error) {
     console.warn('Lua script evaluation failed, using fallback:', error);
