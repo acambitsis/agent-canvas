@@ -1,42 +1,30 @@
+import { isAuthenticated } from './api/lib/session.js';
+
 export const config = {
   runtime: 'edge',
+  // Exclude static files from middleware execution
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|css|js)$).*)',
+  ],
 };
 
-export default function middleware(request) {
-  const basicAuth = request.headers.get('authorization');
-  const expectedPassword = process.env.BASIC_AUTH_PASSWORD?.trim();
+export default async function middleware(request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
 
-  // If no password is configured, deny access
-  if (!expectedPassword) {
-    return new Response('Authentication not configured', {
-      status: 503,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-    });
+  // Allow access to login page and auth endpoints without authentication
+  if (pathname === '/login' || pathname === '/login.html' || pathname.startsWith('/auth/')) {
+    return;
   }
 
-  if (basicAuth) {
-    const authValue = basicAuth.split(' ')[1];
+  // Check if user is authenticated
+  const authenticated = await isAuthenticated(request);
 
-    try {
-      const [user, pwd] = atob(authValue).split(':');
-
-      // Username can be anything, password must match environment variable
-      if (pwd?.trim() === expectedPassword) {
-        // Authentication successful, continue to the original request
-        return;
-      }
-    } catch (e) {
-      // Invalid base64 or malformed header
-    }
+  if (!authenticated) {
+    // Redirect to login page
+    return Response.redirect(new URL('/login', request.url), 302);
   }
 
-  // Authentication failed or not provided
-  return new Response('Authentication required', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Secure Area"',
-    },
-  });
+  // User is authenticated, continue to the original request
+  return;
 }

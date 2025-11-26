@@ -1,55 +1,9 @@
 import { put } from '@vercel/blob';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { isAuthenticated } from './lib/session.js';
 
 const CONFIG_BLOB_PATH = 'config.yaml';
-
-/**
- * Get header value - works in both Edge and Node.js runtime
- */
-function getHeader(request, name) {
-  // Edge Runtime (production): request.headers is a Headers object
-  if (request.headers && typeof request.headers.get === 'function') {
-    return request.headers.get(name);
-  }
-  // Node.js Runtime (local dev): request.headers is a plain object
-  if (request.headers && typeof request.headers === 'object') {
-    return request.headers[name] || request.headers[name.toLowerCase()];
-  }
-  return null;
-}
-
-/**
- * Check HTTP Basic Authentication against BASIC_AUTH_PASSWORD env var
- */
-function checkAuth(request) {
-  const basicAuth = getHeader(request, 'authorization');
-  const expectedPassword = process.env.BASIC_AUTH_PASSWORD?.trim();
-
-  if (!expectedPassword) {
-    return { authorized: false, response: new Response('Server configuration error', { status: 500 }) };
-  }
-
-  if (basicAuth) {
-    const authValue = basicAuth.split(' ')[1];
-    try {
-      const [, pwd] = atob(authValue).split(':');
-      if (pwd?.trim() === expectedPassword) {
-        return { authorized: true };
-      }
-    } catch (e) {
-      // Invalid auth header format
-    }
-  }
-
-  return {
-    authorized: false,
-    response: new Response('Authentication required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="Secure Area"' }
-    })
-  };
-}
 
 /**
  * POST /api/migrate
@@ -57,9 +11,12 @@ function checkAuth(request) {
  */
 export async function POST(request) {
   // Check authentication
-  const auth = checkAuth(request);
-  if (!auth.authorized) {
-    return auth.response;
+  const authenticated = await isAuthenticated(request);
+  if (!authenticated) {
+    return new Response(JSON.stringify({ error: 'Authentication required' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {

@@ -1,4 +1,6 @@
 import { BlobAccessError, BlobNotFoundError, del, head, list, put } from '@vercel/blob';
+import { getQueryParam } from './lib/auth-utils.js';
+import { isAuthenticated } from './lib/session.js';
 
 const DEFAULT_DOCUMENT = 'config.yaml';
 const YAML_CONTENT_TYPE = 'text/yaml';
@@ -35,49 +37,17 @@ function getHeader(req, name) {
 }
 
 /**
- * Check HTTP Basic Authentication against BASIC_AUTH_PASSWORD env var
+ * Check session-based authentication
  */
-function checkAuth(req, res) {
-  const basicAuth = getHeader(req, 'authorization');
-  const expectedPassword = process.env.BASIC_AUTH_PASSWORD?.trim();
-
-  if (!expectedPassword) {
-    res.status(500).send('Server configuration error');
+async function checkAuth(req, res) {
+  const authenticated = await isAuthenticated(req);
+  
+  if (!authenticated) {
+    json(res, 401, { error: 'Authentication required' });
     return false;
   }
-
-  if (!basicAuth || !basicAuth.startsWith('Basic ')) {
-    res.status(401).setHeader('WWW-Authenticate', 'Basic realm="Secure Area"').send('Authentication required');
-    return false;
-  }
-
-  const encodedToken = basicAuth.split(' ')[1];
-  try {
-    const [, pwd] = Buffer.from(encodedToken, 'base64').toString().split(':');
-    if (pwd?.trim() === expectedPassword) {
-      return true;
-    }
-  } catch (e) {
-    // Invalid auth header format
-  }
-
-  res.status(401).setHeader('WWW-Authenticate', 'Basic realm="Secure Area"').send('Authentication required');
-  return false;
-}
-
-function getQueryParam(req, key) {
-  if (req.query && req.query[key] !== undefined) {
-    return req.query[key];
-  }
-  if (req.url) {
-    try {
-      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-      return url.searchParams.get(key);
-    } catch {
-      // ignore parse errors
-    }
-  }
-  return undefined;
+  
+  return true;
 }
 
 function ensureBlobToken(res) {
@@ -174,7 +144,7 @@ async function handleGet(req, res) {
     const docName = getDocumentName(req);
     const yamlText = await fetchDocumentFromBlob(docName, blobToken);
 
-    if (!yamlText) {
+    if (yamlText === null) {
       json(res, 404, { error: `Document "${docName}" not found` });
       return;
     }
@@ -324,7 +294,7 @@ async function handleDelete(req, res) {
  */
 export default async function handler(req, res) {
   // Check authentication first
-  if (!checkAuth(req, res)) {
+  if (!(await checkAuth(req, res))) {
     return; // checkAuth already sent the response
   }
 

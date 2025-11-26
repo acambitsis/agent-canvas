@@ -58,12 +58,15 @@ See `tests/README.md` for test suite details.
 - **Frontend**: Vanilla JavaScript (ES6 modules), HTML5, CSS3
 - **No build system**: Files served directly to browser
 - **Backend**: Node.js serverless functions on Vercel
-- **Storage**: Vercel Blob Storage for YAML configurations
-- **Auth**: HTTP Basic Authentication via Edge Middleware
+- **Storage**: Vercel Blob Storage for YAML configurations, Vercel KV for auth tokens
+- **Auth**: Magic link authentication (passwordless) via Edge Middleware
 - **Libraries**:
   - `js-yaml@4.1.0` - YAML parsing/serialization (CDN)
   - `lucide` - SVG icons library (CDN)
   - `@vercel/blob@0.23.0` - Cloud storage client
+  - `@vercel/kv@0.2.1` - Key-value storage for tokens and rate limiting
+  - `resend@3.2.0` - Email delivery service
+  - `nanoid@5.0.4` - Cryptographically secure token generation
 
 ### File Structure
 ```
@@ -72,9 +75,19 @@ See `tests/README.md` for test suite details.
 ├── main.js             # All client-side logic (1,643 lines, 83 functions)
 ├── styles.css          # Complete styling system (1,276 lines)
 ├── api/
-│   ├── config.js       # CRUD API for configurations (291 lines)
-│   └── migrate.js      # One-time migration endpoint (127 lines)
-├── middleware.js       # HTTP Basic Auth enforcement (43 lines)
+│   ├── config.js       # CRUD API for configurations
+│   ├── migrate.js      # One-time migration endpoint
+│   ├── auth/
+│   │   ├── send-magic-link.js  # POST endpoint to send magic link
+│   │   ├── verify.js            # GET endpoint to verify token
+│   │   └── logout.js            # POST/GET endpoint to logout
+│   └── lib/
+│       ├── storage.js   # KV storage abstraction for tokens/rate limiting
+│       ├── session.js   # Encrypted cookie session management
+│       ├── auth-utils.js # Auth utility functions
+│       └── email.js     # Resend email service
+├── middleware.js       # Session-based auth enforcement (Edge runtime)
+├── login.html          # Login page for magic link authentication
 ├── data/
 │   ├── config.yaml     # Default TPS configuration (15KB)
 │   └── tps-config.yaml # Alternative configuration (16KB)
@@ -112,12 +125,32 @@ See `tests/README.md` for test suite details.
 
 **POST /api/migrate**
 - One-time migration from static `data/config.yaml` to Blob Storage
-- Protected by Basic Auth
+- Protected by session authentication
+
+**POST /auth/send-magic-link**
+- Sends magic link email to provided address
+- Rate limited: 10 requests/15min by IP, 5 requests/15min by email
+- Requires email to be in ALLOWED_EMAILS allowlist
+
+**GET /auth/verify**
+- Verifies magic link token and creates session
+- Query params: `?token=xxx&redirect=xxx`
+- Redirects to validated URL or '/'
+
+**POST /auth/logout** and **GET /auth/logout**
+- Destroys session cookie
+- GET version supports redirect parameter
 
 ### Environment Variables Required
 ```bash
-BASIC_AUTH_PASSWORD      # HTTP Basic Auth password
-BLOB_READ_WRITE_TOKEN    # Vercel Blob storage token
+SESSION_SECRET           # 32+ char secret for session encryption (generate with openssl rand -hex 32)
+RESEND_API_KEY          # API key from Resend
+RESEND_FROM_EMAIL       # Verified sender email (must be from verified domain)
+BASE_URL                # Application base URL (e.g., https://yourdomain.com)
+ALLOWED_EMAILS          # Comma-separated list of allowed email addresses
+KV_REST_API_URL         # Vercel KV REST API URL
+KV_REST_API_TOKEN       # Vercel KV REST API token
+BLOB_READ_WRITE_TOKEN   # Vercel Blob storage token
 ```
 
 ## Key Architectural Patterns
@@ -227,10 +260,14 @@ All storage operations in `api/config.js`:
   ```
   When you need the raw YAML (e.g., to stream into Blob storage), read the request with classic `req.on('data')` listeners and concatenate buffers. Otherwise the handler will see `chunkCount = 0` and return "No content provided" even though the browser sent data.
 
-### Adding Authentication Logic
-- Middleware in `middleware.js` enforces HTTP Basic Auth on all routes
-- API routes also check auth via `checkAuth()` function in `api/config.js`
-- Both use `BASIC_AUTH_PASSWORD` environment variable
+### Authentication System
+- **Magic Link Authentication**: Passwordless authentication using email links
+- **Middleware**: `middleware.js` checks session cookies and redirects unauthenticated users to `/login`
+- **Session Management**: Encrypted cookies using Web Crypto API (works in both Edge and Node.js runtimes)
+- **Token Storage**: Vercel KV stores magic link tokens with 15-minute TTL
+- **Rate Limiting**: Applied at IP and email levels to prevent abuse
+- **Email Allowlist**: Only emails in `ALLOWED_EMAILS` can authenticate
+- **API Routes**: All API routes check session via `isAuthenticated()` from `api/lib/session.js`
 
 ## Styling System
 

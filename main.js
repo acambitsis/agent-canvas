@@ -1,35 +1,35 @@
 import {
-    state,
-    DEFAULT_DOCUMENT_NAME,
-    getAgentMetrics,
-    toArray,
-    getGroupFormatting,
-    getGroupClass,
-    deepClone,
-    getCollapsedPillClass,
-    refreshIcons,
-    generateGroupIdFromName,
-    ensureGroupHasId,
-    loadCollapsedState,
-    saveCollapsedState
-} from './state.js';
+    getAvailableTools,
+    getSectionColor,
+    getToolConfig
+} from './config.js';
 import {
-    setElementText,
-    copyTextToClipboard
-} from './modal-utils.js';
-import {
-    setActiveDocumentName,
-    refreshDocumentList,
-    initializeDocumentControls,
     handleDocumentSelection,
+    initializeDocumentControls,
+    refreshDocumentList,
     registerLoadAgents,
+    setActiveDocumentName,
     setDocumentStatusMessage
 } from './documents.js';
 import {
-    getToolConfig,
-    getAvailableTools,
-    getSectionColor
-} from './config.js';
+    copyTextToClipboard,
+    setElementText
+} from './modal-utils.js';
+import {
+    deepClone,
+    DEFAULT_DOCUMENT_NAME,
+    ensureGroupHasId,
+    generateGroupIdFromName,
+    getAgentMetrics,
+    getCollapsedPillClass,
+    getGroupClass,
+    getGroupFormatting,
+    loadCollapsedState,
+    refreshIcons,
+    saveCollapsedState,
+    state,
+    toArray
+} from './state.js';
 
 // ----- Loading overlay helpers -----
 function showLoadingOverlay(message = 'Loading...') {
@@ -439,11 +439,36 @@ async function copyYaml(type) {
 async function copyAgentYaml() { return copyYaml('agent'); }
 async function copyGroupYaml() { return copyYaml('group'); }
 
+// ----- Auth helpers -----
+function handleAuthError(response) {
+    if (response.status === 401) {
+        window.location.href = '/login';
+        return true;
+    }
+    return false;
+}
+
+async function logout() {
+    try {
+        const response = await fetch('/auth/logout', { method: 'POST' });
+        if (response.ok) {
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Still redirect to login even if logout fails
+        window.location.href = '/login';
+    }
+}
+
 // ----- Config load/save -----
 async function loadConfig(docName = state.currentDocumentName || DEFAULT_DOCUMENT_NAME) {
     try {
         const url = `/api/config?doc=${encodeURIComponent(docName)}`;
         const response = await fetch(url);
+        if (handleAuthError(response)) {
+            return null;
+        }
         if (!response.ok) {
             throw new Error(`Config request failed: ${response.status}`);
         }
@@ -475,6 +500,10 @@ async function saveConfig() {
             },
             body: yamlText
         });
+
+        if (handleAuthError(response)) {
+            return false;
+        }
 
         if (!response.ok) {
             throw new Error('Failed to save configuration');
@@ -776,13 +805,14 @@ function renderAgentGroups() {
     document.getElementById('documentTitle').textContent = title;
 
     // Update agent count
-    const totalAgents = state.configData.agentGroups.reduce((sum, group) => sum + group.agents.length, 0);
+    const agentGroups = state.configData.agentGroups || [];
+    const totalAgents = agentGroups.reduce((sum, group) => sum + (group.agents?.length || 0), 0);
     document.getElementById('agent-count').textContent =
         `${totalAgents} AI Agents`;
 
     // Render all agent groups
     const container = document.getElementById('agentGroupsContainer');
-    const groupsHTML = state.configData.agentGroups.map((group, index) =>
+    const groupsHTML = agentGroups.map((group, index) =>
         createAgentGroup(group, state.configData, index)
     ).join('');
 
@@ -1580,5 +1610,15 @@ function bindStaticEventHandlers() {
 
 document.addEventListener('DOMContentLoaded', bindStaticEventHandlers);
 document.addEventListener('DOMContentLoaded', bootstrapApp);
+
+// Logout button handler
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.style.display = 'flex';
+        logoutBtn.addEventListener('click', logout);
+        refreshIcons();
+    }
+});
 
 // No global window exports; all handlers are bound below.

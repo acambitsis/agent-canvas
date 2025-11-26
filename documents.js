@@ -1,9 +1,17 @@
-import { state, DEFAULT_DOCUMENT_NAME, BLANK_DOCUMENT_TEMPLATE, DOCUMENT_STORAGE_KEY, refreshIcons } from './state.js';
+import { BLANK_DOCUMENT_TEMPLATE, DEFAULT_DOCUMENT_NAME, DOCUMENT_STORAGE_KEY, refreshIcons, state } from './state.js';
 
 let loadAgentsCallback = async () => {};
 
 export function registerLoadAgents(fn) {
     loadAgentsCallback = typeof fn === 'function' ? fn : loadAgentsCallback;
+}
+
+function handleAuthError(response) {
+    if (response.status === 401) {
+        window.location.href = '/login';
+        return true;
+    }
+    return false;
 }
 
 function getStoredDocumentPreference() {
@@ -207,6 +215,10 @@ export async function renameCurrentDocument() {
             { method: 'PUT' }
         );
 
+        if (handleAuthError(response)) {
+            return;
+        }
+
         if (!response.ok) {
             throw new Error('Rename failed');
         }
@@ -347,6 +359,10 @@ export async function refreshDocumentList(preferredDocName) {
                 'Accept': 'application/json'
             }
         });
+
+        if (handleAuthError(response)) {
+            return;
+        }
 
         if (!response.ok) {
             throw new Error('Failed to fetch document list');
@@ -493,6 +509,10 @@ export async function uploadDocumentFromContents(docName, yamlText) {
         body: yamlText
     });
 
+    if (handleAuthError(response)) {
+        return;
+    }
+
     if (!response.ok) {
         let errorDetail = '';
         try {
@@ -532,6 +552,9 @@ export async function downloadCurrentDocument() {
 
     try {
         const response = await fetch(`/api/config?doc=${encodeURIComponent(state.currentDocumentName)}`);
+        if (handleAuthError(response)) {
+            return;
+        }
         if (!response.ok) {
             throw new Error('Download failed');
         }
@@ -577,6 +600,10 @@ export async function deleteCurrentDocument() {
             `/api/config?doc=${encodeURIComponent(state.currentDocumentName)}`,
             { method: 'DELETE' }
         );
+
+        if (handleAuthError(response)) {
+            return;
+        }
 
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));

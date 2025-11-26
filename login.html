@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+        <div class="surface-card" style="max-width: 400px; width: 100%; margin: 20px;">
+            <h1 style="margin-top: 0; text-align: center; color: var(--brand-primary);" id="appName">AgentCanvas</h1>
+            <p style="text-align: center; color: rgba(255, 255, 255, 0.8); margin-bottom: 30px;">
+                Enter your email to receive a magic link
+            </p>
+            
+            <form id="loginForm">
+                <div style="margin-bottom: 20px;">
+                    <label for="email" style="display: block; margin-bottom: 8px; color: rgba(255, 255, 255, 0.9);">
+                        Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required 
+                        autocomplete="email"
+                        style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 16px; box-sizing: border-box;"
+                        placeholder="your@email.com"
+                    >
+                </div>
+                
+                <div id="message" style="margin-bottom: 20px; padding: 12px; border-radius: 6px; display: none;"></div>
+                
+                <button 
+                    type="submit" 
+                    class="btn btn-glass"
+                    style="width: 100%; padding: 14px; font-size: 16px; font-weight: 600;"
+                    id="submitBtn"
+                >
+                    Send Magic Link
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const messageDiv = document.getElementById('message');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function showMessage(text, isError = false) {
+            messageDiv.textContent = text;
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = isError 
+                ? 'rgba(220, 53, 69, 0.2)' 
+                : 'rgba(23, 162, 184, 0.2)';
+            messageDiv.style.color = isError ? '#ff6b6b' : '#17a2b8';
+            messageDiv.style.border = `1px solid ${isError ? '#ff6b6b' : '#17a2b8'}`;
+        }
+
+        function hideMessage() {
+            messageDiv.style.display = 'none';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessage();
+            
+            const email = emailInput.value.trim();
+            if (!email) {
+                showMessage('Please enter your email address', true);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            try {
+                const response = await fetch('/auth/send-magic-link', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage(data.message || 'If that email is registered, a magic link has been sent. Check your inbox!', false);
+                    emailInput.value = '';
+                } else {
+                    showMessage(data.error || 'Failed to send magic link. Please try again.', true);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage('An error occurred. Please try again.', true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Magic Link';
+            }
+        });
+
+        // Focus email input on load
+        emailInput.focus();
+        
+        // Optionally load app name from environment (if exposed via API)
+        // For now, keep default "AgentCanvas" in HTML
+    </script>
+</body>
+</html>
+
