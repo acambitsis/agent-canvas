@@ -1,6 +1,6 @@
-import { isAuthenticated, getAuthenticatedEmail } from '../lib/session.js';
-import { normalizeEmail, validateEmail, getQueryParam } from '../lib/auth-utils.js';
-import { addToAllowlist, removeFromAllowlist, listAllowlist, isInAllowlist } from '../lib/storage.js';
+import { getQueryParam, normalizeEmail, validateEmail } from '../lib/auth-utils.js';
+import { getAuthenticatedEmail, isAuthenticated } from '../lib/session.js';
+import { addToAllowlist, isInAllowlist, listAllowlist, removeFromAllowlist } from '../lib/storage.js';
 
 const json = (res, status, payload) =>
   res.status(status).setHeader('Content-Type', 'application/json').send(JSON.stringify(payload));

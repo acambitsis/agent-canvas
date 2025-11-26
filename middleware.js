@@ -13,7 +13,7 @@ export default async function middleware(request) {
   const pathname = url.pathname;
 
   // Allow access to login page and auth endpoints without authentication
-  if (pathname === '/login' || pathname === '/login.html' || pathname.startsWith('/auth/')) {
+  if (pathname === '/login' || pathname === '/login.html' || pathname.startsWith('/api/auth/')) {
     return;
   }
 

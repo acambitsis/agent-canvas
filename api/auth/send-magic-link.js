@@ -89,7 +89,10 @@ export default async function handler(req, res) {
     }
 
     // Check email allowlist (checks both env var and KV storage)
+    console.log('Checking allowlist for:', normalizedEmail);
+    console.log('ALLOWED_EMAILS env:', process.env.ALLOWED_EMAILS);
     const isAllowed = await checkEmailAllowlist(normalizedEmail);
+    console.log('isAllowed:', isAllowed);
     if (!isAllowed) {
       // Return generic success message (don't reveal if email exists)
       return json(res, 200, {
@@ -114,7 +117,7 @@ export default async function handler(req, res) {
     }, TOKEN_TTL_SECONDS);
 
     // Construct magic link URL
-    const magicLinkUrl = `${baseUrl}/auth/verify?token=${token}${validatedRedirect ? `&redirect=${encodeURIComponent(validatedRedirect)}` : ''}`;
+    const magicLinkUrl = `${baseUrl}/api/auth/verify?token=${token}${validatedRedirect ? `&redirect=${encodeURIComponent(validatedRedirect)}` : ''}`;
 
     // Send email
     const emailResult = await sendMagicLinkEmail(normalizedEmail, magicLinkUrl);

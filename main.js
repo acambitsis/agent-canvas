@@ -450,7 +450,7 @@ function handleAuthError(response) {
 
 async function logout() {
     try {
-        const response = await fetch('/auth/logout', { method: 'POST' });
+        const response = await fetch('/api/auth/logout', { method: 'POST' });
         if (response.ok) {
             window.location.href = '/login';
         }
