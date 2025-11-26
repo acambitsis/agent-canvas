@@ -406,7 +406,7 @@ This specification uses **Resend** (https://resend.com) as the required email pr
 | Variable | Required | Example | Description |
 |----------|----------|---------|-------------|
 | `RESEND_API_KEY` | Yes | `re_123abc...` | API key from Resend dashboard |
-| `RESEND_FROM_EMAIL` | Yes | `auth@yourdomain.com` | Must be from a verified domain |
+| `RESEND_FROM_EMAIL` | Yes | `info@login.amplify360.ai` | Must be from a verified domain |
 
 **Important:** The `RESEND_FROM_EMAIL` must be an email address from a domain you've verified in Resend. Using an unverified domain will fail.
 
