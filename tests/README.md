@@ -1,6 +1,6 @@
 # Test Suite
 
-Ultra high-value tests for TPS Agent Ecosystem. These 4 tests cover the critical paths that prevent data loss, security breaches, and silent data corruption.
+Ultra high-value tests for AgentCanvas. These 4 tests cover the critical paths that prevent data loss, security breaches, and silent data corruption.
 
 ## Tests
 

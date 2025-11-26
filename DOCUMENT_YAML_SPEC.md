@@ -1,6 +1,6 @@
 # Document YAML Specification
 
-Complete specification for generating full TPS Agent Ecosystem YAML documents. For individual agent specifications, see [AGENT_YAML_SPEC.md](./AGENT_YAML_SPEC.md).
+Complete specification for generating full AgentCanvas YAML documents. For individual agent specifications, see [AGENT_YAML_SPEC.md](./AGENT_YAML_SPEC.md).
 
 ## Overview
 
@@ -10,7 +10,7 @@ A complete YAML document contains document metadata, tool configurations, sectio
 
 ```yaml
 # OPTIONAL TOP-LEVEL FIELDS
-documentTitle: string      # Page title (default: "TPS Operating System")
+documentTitle: string      # Page title (default: "AgentCanvas")
 
 # OPTIONAL TOOL CONFIGURATION
 toolsConfig:               # Tool definitions with icons and colors (optional)
@@ -35,7 +35,7 @@ agentGroups: [object]     # Array of agent groups (required, non-empty)
 ### `documentTitle` (string, optional)
 - **Type**: String
 - **Description**: Title displayed at the top of the dashboard page
-- **Default**: `"TPS Operating System"`
+- **Default**: `"AgentCanvas"`
 - **Example**: `"Sales Operations Dashboard"`
 
 ### `toolsConfig` (object, optional)
@@ -148,7 +148,7 @@ groupClass: string       # CSS class override (auto-generated from groupId if om
 ## Complete Example
 
 ```yaml
-documentTitle: TPS Operating System
+documentTitle: AgentCanvas
 
 toolsConfig:
   Forms:
@@ -237,7 +237,7 @@ agentGroups:
 ```
 
 All other fields will use defaults:
-- `documentTitle`: `"TPS Operating System"`
+- `documentTitle`: `"AgentCanvas"`
 - `sectionDefaults`: `{ iconType: "target", showInFlow: true, isSupport: false }`
 - `groupNumber`: Auto-generated (0, 1, 2...)
 - `groupId`: Auto-generated from `groupName`
@@ -302,4 +302,5 @@ When defining `toolsConfig`, common tool names include:
 
 - **Agent specification**: See [AGENT_YAML_SPEC.md](./AGENT_YAML_SPEC.md) for complete agent field details
 - **Agent examples**: See agent spec for minimal and complete agent examples
+
 

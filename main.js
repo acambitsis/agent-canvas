@@ -772,7 +772,7 @@ function renderAgentGroups() {
     }
 
     // Update document title
-    const title = state.configData.documentTitle || 'TPS Operating System';
+    const title = state.configData.documentTitle || 'AgentCanvas';
     document.getElementById('documentTitle').textContent = title;
 
     // Update agent count
@@ -1096,7 +1096,7 @@ function openEditTitleModal() {
     const input = document.getElementById('documentTitleInput');
 
     // Set current title or default
-    const currentTitle = state.configData.documentTitle || 'TPS Operating System';
+    const currentTitle = state.configData.documentTitle || 'AgentCanvas';
     input.value = currentTitle;
 
     modal.classList.add('show');

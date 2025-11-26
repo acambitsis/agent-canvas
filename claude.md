@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**TPS Agent Ecosystem** is a web-based configuration management system for visualizing and editing a multi-phase agent workflow. It displays business process agents organized by phases (Sales, Aspiration, Design, Installation, Value Analysis, New Ways of Working, Sustain) with interactive editing capabilities.
+**AgentCanvas** is a web-based configuration management system for visualizing and editing a multi-phase agent workflow. It displays business process agents organized by phases (Sales, Aspiration, Design, Installation, Value Analysis, New Ways of Working, Sustain) with interactive editing capabilities.
 
 **Architecture**: Client-side rendered vanilla JavaScript application with Vercel serverless backend for persistence.
 

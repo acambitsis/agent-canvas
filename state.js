@@ -14,11 +14,11 @@ export const state = {
 };
 
 export const DEFAULT_DOCUMENT_NAME = 'config.yaml';
-export const DOCUMENT_STORAGE_KEY = 'tps-active-config-doc';
-export const COLLAPSED_SECTIONS_KEY = 'tps-collapsed-sections';
+export const DOCUMENT_STORAGE_KEY = 'agentcanvas-active-doc';
+export const COLLAPSED_SECTIONS_KEY = 'agentcanvas-collapsed-sections';
 
 export const BLANK_DOCUMENT_TEMPLATE = [
-    '# TPS Agent Ecosystem configuration',
+    '# AgentCanvas configuration',
     'sectionDefaults:',
     '  iconType: target',
     '  showInFlow: true',
