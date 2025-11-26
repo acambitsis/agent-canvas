@@ -76,7 +76,8 @@ async function handleGet(req, res) {
     }
     
     // Combine and sort
-    const allEmails = [...kvEmails.map(e => ({ ...e, source: 'kv' })), ...envEmails];
+    // Preserve existing source property (may be 'both' if also in env var), otherwise default to 'kv'
+    const allEmails = [...kvEmails.map(e => ({ ...e, source: e.source || 'kv' })), ...envEmails];
     allEmails.sort((a, b) => {
       // Env var entries first, then by date
       if (a.source === 'env' && b.source !== 'env') return -1;
