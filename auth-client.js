@@ -19,25 +19,21 @@ export async function initClerk() {
     return initPromise;
   }
 
-  initPromise = new Promise((resolve, reject) => {
+  initPromise = new Promise(async (resolve, reject) => {
     if (typeof window === 'undefined' || !window.Clerk) {
       reject(new Error('Clerk SDK not loaded. Make sure @clerk/clerk-js is included in the page.'));
       return;
     }
 
-    const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || window.CLERK_PUBLISHABLE_KEY;
-    if (!clerkPubKey) {
-      reject(new Error('Clerk publishable key not found. Set VITE_CLERK_PUBLISHABLE_KEY or CLERK_PUBLISHABLE_KEY.'));
-      return;
-    }
-
-    window.Clerk.load({
-      publishableKey: clerkPubKey,
-    }).then(() => {
+    try {
+      // Clerk.load() is already called in index.html's clerkConfigReady
+      // Just grab the instance
       clerkInstance = window.Clerk;
       isInitialized = true;
       resolve(clerkInstance);
-    }).catch(reject);
+    } catch (error) {
+      reject(error);
+    }
   });
 
   return initPromise;

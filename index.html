@@ -6,20 +6,56 @@
     <title>AgentCanvas</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-    <script src="https://cdn.clerk.com/clerk-js@latest/dist/clerk.browser.js"></script>
     <script>
-        // Fetch Clerk publishable key from API and set it globally
-        (async function() {
+        // Fetch Clerk publishable key from API and dynamically inject the SDK script
+        window.clerkConfigReady = (async function() {
             try {
                 const response = await fetch('/api/clerk-config');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.publishableKey) {
-                        window.CLERK_PUBLISHABLE_KEY = data.publishableKey;
-                    }
+                if (!response.ok) {
+                    console.error('Clerk config API returned', response.status);
+                    return false;
                 }
+                const data = await response.json();
+                if (!data.publishableKey) {
+                    console.error('Clerk publishable key not found in API response');
+                    return false;
+                }
+
+                window.CLERK_PUBLISHABLE_KEY = data.publishableKey;
+
+                // Dynamically inject Clerk script with the publishable key
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
+                script.async = true;
+                script.crossOrigin = 'anonymous';
+                script.dataset.clerkPublishableKey = data.publishableKey;
+
+                // Wait for script to load
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Failed to load Clerk SDK'));
+                    document.head.appendChild(script);
+                });
+
+                // Wait for window.Clerk to be available
+                let attempts = 0;
+                while (!window.Clerk && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (!window.Clerk) {
+                    console.error('window.Clerk not available after script load');
+                    return false;
+                }
+
+                // Load Clerk immediately
+                await window.Clerk.load();
+
+                return true;
             } catch (error) {
                 console.error('Failed to load Clerk config:', error);
+                return false;
             }
         })();
     </script>

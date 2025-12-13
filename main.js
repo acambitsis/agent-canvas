@@ -1423,47 +1423,70 @@ document.addEventListener('click', (event) => {
 // Initialize on page load
 async function bootstrapApp() {
     try {
+        // Wait for Clerk config to be loaded (if available)
+        if (window.clerkConfigReady) {
+            const configLoaded = await window.clerkConfigReady;
+            if (!configLoaded) {
+                console.error('Failed to load Clerk configuration');
+                // Still try to proceed - maybe key is set another way
+            }
+        }
+        
         // Initialize Clerk first
-        const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || window.CLERK_PUBLISHABLE_KEY;
-        if (clerkPubKey) {
-            await initClerk();
-            const clerk = window.Clerk;
-            
-            // Mount Clerk components
-            if (clerk.user) {
-                // Mount organization switcher if user is in an org
-                const orgSwitcherEl = document.getElementById('clerk-org-switcher');
-                if (orgSwitcherEl) {
-                    const orgSwitcher = clerk.OrganizationSwitcher({
-                        appearance: {
-                            elements: {
-                                rootBox: 'clerk-org-switcher-root'
-                            }
+        const clerkPubKey = window.CLERK_PUBLISHABLE_KEY;
+        if (!clerkPubKey) {
+            console.error('Clerk publishable key not configured');
+            // Redirect to login if we can't initialize auth
+            window.location.href = '/login';
+            return;
+        }
+        
+        await initClerk();
+        const clerk = window.Clerk;
+
+        // Mount Clerk components
+        if (clerk.user) {
+            // Clear redirect loop tracking on successful auth
+            sessionStorage.removeItem('clerk_redirect_time');
+
+            // Mount organization switcher if user is in an org
+            const orgSwitcherEl = document.getElementById('clerk-org-switcher');
+            if (orgSwitcherEl) {
+                clerk.mountOrganizationSwitcher(orgSwitcherEl, {
+                    appearance: {
+                        elements: {
+                            rootBox: 'clerk-org-switcher-root'
                         }
-                    });
-                    orgSwitcher.mount('#clerk-org-switcher');
-                }
-                
-                // Mount user button
-                const userButtonEl = document.getElementById('clerk-user-button');
-                if (userButtonEl) {
-                    const userButton = clerk.UserButton({
-                        appearance: {
-                            elements: {
-                                rootBox: 'clerk-user-button-root'
-                            }
-                        },
-                        afterSignOutUrl: '/login'
-                    });
-                    userButton.mount('#clerk-user-button');
-                }
-            } else {
-                // Not authenticated, redirect to login
-                window.location.href = '/login';
-                return;
+                    }
+                });
+            }
+
+            // Mount user button
+            const userButtonEl = document.getElementById('clerk-user-button');
+            if (userButtonEl) {
+                clerk.mountUserButton(userButtonEl, {
+                    appearance: {
+                        elements: {
+                            rootBox: 'clerk-user-button-root'
+                        }
+                    },
+                    afterSignOutUrl: '/login'
+                });
             }
         } else {
-            console.error('Clerk publishable key not configured');
+            // Not authenticated, redirect to login
+            // Prevent redirect loops using sessionStorage
+            const lastRedirect = sessionStorage.getItem('clerk_redirect_time');
+            const now = Date.now();
+            if (lastRedirect && (now - parseInt(lastRedirect)) < 5000) {
+                console.error('Redirect loop detected! Stopping redirect.');
+                document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h2>Authentication Error</h2><p>Unable to verify authentication. Please <a href="/login">try logging in again</a>.</p></div>';
+                return;
+            }
+            sessionStorage.setItem('clerk_redirect_time', now.toString());
+            console.log('No user found, redirecting to login...');
+            window.location.href = '/login';
+            return;
         }
         
         await initializeDocumentControls();

@@ -5,57 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.clerk.com/clerk-js@latest/dist/clerk.browser.js"></script>
-    <script>
-        // Fetch Clerk publishable key from API and set it globally
-        (async function() {
-            try {
-                const response = await fetch('/api/clerk-config');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.publishableKey) {
-                        window.CLERK_PUBLISHABLE_KEY = data.publishableKey;
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load Clerk config:', error);
-            }
-        })();
-    </script>
 </head>
 <body>
     <div class="container" style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
         <div class="surface-card" style="max-width: 400px; width: 100%; margin: 20px;">
             <h1 style="margin-top: 0; text-align: center; color: var(--brand-primary);" id="appName">AgentCanvas</h1>
-            <div id="clerk-sign-in"></div>
+            <div id="clerk-sign-in">
+                <p style="text-align: center; color: var(--text-secondary);">Loading...</p>
+            </div>
         </div>
     </div>
 
-    <script type="module">
-        const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || window.CLERK_PUBLISHABLE_KEY;
-        
-        if (!clerkPubKey) {
-            document.getElementById('clerk-sign-in').innerHTML = 
-                '<p style="color: var(--text-error);">Clerk publishable key not configured.</p>';
-            console.error('Clerk publishable key not found. Set VITE_CLERK_PUBLISHABLE_KEY or CLERK_PUBLISHABLE_KEY.');
-        } else {
-            window.Clerk.load({
-                publishableKey: clerkPubKey,
-            }).then(() => {
-                const signIn = window.Clerk.SignIn({
+    <script>
+        (async function() {
+            const signInDiv = document.getElementById('clerk-sign-in');
+
+            try {
+                // Fetch the publishable key from API
+                const response = await fetch('/api/clerk-config');
+                if (!response.ok) {
+                    throw new Error('Failed to load configuration');
+                }
+                const data = await response.json();
+                if (!data.publishableKey) {
+                    throw new Error('Missing publishable key');
+                }
+
+                // Dynamically inject the Clerk script
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
+                script.async = true;
+                script.crossOrigin = 'anonymous';
+                script.dataset.clerkPublishableKey = data.publishableKey;
+
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Failed to load Clerk SDK'));
+                    document.head.appendChild(script);
+                });
+
+                // Wait for Clerk to be available
+                let attempts = 0;
+                while (!window.Clerk && attempts < 100) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (!window.Clerk) {
+                    throw new Error('Clerk SDK not available');
+                }
+
+                // Load Clerk
+                await window.Clerk.load();
+
+                // If already signed in, redirect to home
+                if (window.Clerk.user) {
+                    sessionStorage.removeItem('clerk_redirect_time');
+                    window.location.href = '/';
+                    return;
+                }
+
+                // Mount sign-in component
+                window.Clerk.mountSignIn(signInDiv, {
                     routing: 'path',
                     path: '/login',
-                    redirectUrl: '/',
+                    signUpUrl: '/login',
                     afterSignInUrl: '/',
                 });
-                signIn.mount('#clerk-sign-in');
-            }).catch(error => {
-                console.error('Failed to load Clerk:', error);
-                document.getElementById('clerk-sign-in').innerHTML = 
-                    '<p style="color: var(--text-error);">Failed to load authentication.</p>';
-            });
-        }
+
+            } catch (error) {
+                console.error('Login initialization failed:', error);
+                signInDiv.innerHTML = '<p style="color: var(--text-error);">Failed to load sign-in. Please refresh the page.</p>';
+            }
+        })();
     </script>
 </body>
 </html>
-
