@@ -187,6 +187,7 @@ package-lock.json
 yarn.lock
 # Keep pnpm-lock.yaml tracked for reproducible builds
 .vercel
+.vercel.original
 .env*.local
 
 # Utility scripts (may contain local test data)

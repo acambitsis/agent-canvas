@@ -8,6 +8,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Architecture**: Client-side rendered vanilla JavaScript application with Vercel serverless backend for persistence.
 
+## Vercel Project Setup
+
+This repository uses **two separate Vercel projects**:
+
+### Original Project (FROZEN)
+- **Project Name:** `agentcanvas-app`
+- **Production URL:** https://canvas.amplify360.ai
+- **Status:** FROZEN - Manual deployments only
+- **Deployment:** Use `vercel --prod` explicitly (requires switching to original project)
+- **Purpose:** Stable production version, no automatic changes
+
+### V2 Project (Active Development)
+- **Project Name:** `agentcanvas-app-v2`
+- **Status:** Active development - Default for all deployments
+- **Deployment:** `vercel --prod` deploys to v2 project
+- **Purpose:** Enhanced version with new features
+
+**Note:** The `.vercel` directory is linked to the v2 project. The original project configuration is preserved in `.vercel.original/`. See `.vercel/PROJECT_INFO.md` for details.
+
 ## Development Commands
 
 ### Local Development
