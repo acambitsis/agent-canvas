@@ -42,12 +42,11 @@ This will create a project and display the connection string. Copy it and set as
 2. Copy the connection string (format: `postgresql://user:pass@host/dbname`)
 3. Set `DATABASE_URL` in Vercel environment variables
 
-**Note:** A Neon project named "agent-canvas-eu" has been created in **EU Central (Frankfurt)**. The connection string is:
-```
-postgresql://neondb_owner:npg_qsQ9XyvIPuc7@ep-holy-mode-agnn0zb6.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require
-```
+**Note:** A Neon project named "agent-canvas-eu" has been created in **EU Central (Frankfurt)**.
 
-**Project Details:**
+**Important:** Do **not** store `DATABASE_URL` (or any connection string credentials) in git. Set it via Vercel environment variables (and optionally `.env.local` for local dev).
+
+**Project Details (non-secret):**
 - **Project ID:** `shy-sun-41379197`
 - **Region:** aws-eu-central-1 (Frankfurt, Germany)
 - **Status:** Schema applied and ready to use
