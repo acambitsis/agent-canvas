@@ -3,7 +3,7 @@
  * Verifies JWT tokens and extracts user/org information
  */
 
-import { clerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 
 let clerk = null;
 
@@ -16,7 +16,7 @@ function getClerk() {
     if (!secretKey) {
       throw new Error('CLERK_SECRET_KEY environment variable is not set');
     }
-    clerk = clerkClient({ secretKey });
+    clerk = createClerkClient({ secretKey });
   }
   return clerk;
 }
@@ -29,17 +29,21 @@ function getClerk() {
 export async function verifyAuth(req) {
   try {
     const authHeader = req.headers.get ? req.headers.get('authorization') : req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
     }
 
     const token = authHeader.substring(7);
-    const clerk = getClerk();
-    
-    // Verify the token
-    const sessionClaims = await clerk.verifyToken(token);
-    
+    const secretKey = process.env.CLERK_SECRET_KEY;
+
+    if (!secretKey) {
+      throw new Error('CLERK_SECRET_KEY environment variable is not set');
+    }
+
+    // Verify the token using standalone verifyToken function
+    const sessionClaims = await verifyToken(token, { secretKey });
+
     if (!sessionClaims || !sessionClaims.sub) {
       return null;
     }
@@ -92,12 +96,15 @@ export async function verifyOrgMembership(userId, orgId) {
   try {
     const clerk = getClerk();
     // Get user's organization memberships
-    const memberships = await clerk.users.getOrganizationMembershipList({
+    const response = await clerk.users.getOrganizationMembershipList({
       userId,
     });
-    
+
+    // Handle both old format (array) and new format ({ data: array })
+    const memberships = response?.data || response || [];
+
     // Check if user is member of the specified org
-    return memberships && memberships.some(m => m.organization.id === orgId);
+    return memberships.some(m => m.organization?.id === orgId);
   } catch (error) {
     console.error('Failed to verify org membership:', error);
     return false;

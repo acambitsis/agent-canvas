@@ -21,7 +21,7 @@
 
 import { list, head } from '@vercel/blob';
 import { neon } from '@neondatabase/serverless';
-import { clerkClient } from '@clerk/backend';
+import { createClerkClient } from '@clerk/backend';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -79,7 +79,7 @@ if (!clerkSecretKey) {
 }
 
 const sql = neon(dbUrl);
-const clerk = clerkClient({ secretKey: clerkSecretKey });
+const clerk = createClerkClient({ secretKey: clerkSecretKey });
 
 // Verify user exists
 async function verifyUser(userId) {

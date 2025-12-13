@@ -80,11 +80,14 @@ async function handleGet(req, res) {
     }
 
     // Get specific canvas
-    const docId = getDocumentIdentifier(req);
+    let docId = getDocumentIdentifier(req);
     if (!docId) {
       json(res, 400, { error: 'Missing document identifier' });
       return;
     }
+
+    // Strip .yaml/.yml extension for database lookup (slugs stored without extension)
+    docId = docId.replace(/\.ya?ml$/, '');
 
     const { hasAccess, canvas } = await checkCanvasAccess(userId, orgId, docId);
     

@@ -14,8 +14,9 @@ import { verifyOrgMembership } from './clerk.js';
  */
 export async function checkCanvasAccess(userId, orgId, canvasId) {
   // First, find the canvas by ID or slug
+  // Cast id to text to allow comparison with slug (text) using same parameter
   const canvas = await queryOne(
-    `SELECT * FROM canvases WHERE id = $1 OR slug = $1`,
+    `SELECT * FROM canvases WHERE id::text = $1 OR slug = $1`,
     [canvasId]
   );
 
