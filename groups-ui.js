@@ -6,6 +6,18 @@
 import { authenticatedFetch, acceptPendingInvites, getUserId } from './auth-client.js';
 import { refreshIcons, state } from './state.js';
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ * @param {string} str - The string to escape
+ * @returns {string} The escaped string
+ */
+function escapeHtml(str) {
+  if (str == null) return '';
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
 // Group state
 let currentGroupId = null;
 let userGroups = [];
@@ -122,8 +134,8 @@ export function renderGroupSwitcher() {
     <div class="group-switcher-wrapper">
       <select id="groupSwitcher" class="group-select" title="Switch group">
         ${userGroups.map(g => `
-          <option value="${g.id}" ${g.id === currentGroupId ? 'selected' : ''}>
-            ${g.name}
+          <option value="${escapeHtml(g.id)}" ${g.id === currentGroupId ? 'selected' : ''}>
+            ${escapeHtml(g.name)}
           </option>
         `).join('')}
       </select>
@@ -203,7 +215,7 @@ export async function openGroupManagementModal(groupId) {
     // Build UI
     let html = `
       <div class="group-management-header">
-        <h3>${group?.name || 'Group'}</h3>
+        <h3>${escapeHtml(group?.name || 'Group')}</h3>
         <span class="member-count">${members.length} member${members.length !== 1 ? 's' : ''}</span>
       </div>
     `;
@@ -218,16 +230,16 @@ export async function openGroupManagementModal(groupId) {
       html += `
         <li class="member-item">
           <div class="member-info">
-            <span class="member-id">${member.user_id}${isCurrentUser ? ' (you)' : ''}</span>
+            <span class="member-id">${escapeHtml(member.user_id)}${isCurrentUser ? ' (you)' : ''}</span>
             <span class="role-badge ${roleClass}">${roleLabel}</span>
           </div>
           ${canManage && !isCurrentUser ? `
             <div class="member-actions">
-              <select class="role-select" data-user-id="${member.user_id}" data-current-role="${member.role}">
+              <select class="role-select" data-user-id="${escapeHtml(member.user_id)}" data-current-role="${escapeHtml(member.role)}">
                 <option value="admin" ${member.role === 'admin' ? 'selected' : ''}>Admin</option>
                 <option value="viewer" ${member.role === 'viewer' ? 'selected' : ''}>Viewer</option>
               </select>
-              <button type="button" class="btn btn-icon btn-danger" data-remove-member="${member.user_id}" title="Remove member">
+              <button type="button" class="btn btn-icon btn-danger" data-remove-member="${escapeHtml(member.user_id)}" title="Remove member">
                 <i data-lucide="user-minus"></i>
               </button>
             </div>
@@ -245,13 +257,14 @@ export async function openGroupManagementModal(groupId) {
       } else {
         html += '<ul class="invite-list">';
         invites.forEach(invite => {
+          const inviteRoleClass = invite.role === 'admin' ? 'role-admin' : 'role-viewer';
           html += `
             <li class="invite-item">
               <div class="invite-info">
-                <span class="invite-email">${invite.email}</span>
-                <span class="role-badge role-${invite.role}">${invite.role === 'admin' ? 'Admin' : 'Viewer'}</span>
+                <span class="invite-email">${escapeHtml(invite.email)}</span>
+                <span class="role-badge ${inviteRoleClass}">${invite.role === 'admin' ? 'Admin' : 'Viewer'}</span>
               </div>
-              <button type="button" class="btn btn-icon" data-cancel-invite="${invite.id}" title="Cancel invite">
+              <button type="button" class="btn btn-icon" data-cancel-invite="${escapeHtml(invite.id)}" title="Cancel invite">
                 <i data-lucide="x"></i>
               </button>
             </li>
@@ -287,7 +300,7 @@ export async function openGroupManagementModal(groupId) {
 
   } catch (error) {
     console.error('Error loading group management:', error);
-    content.innerHTML = `<p class="help-text" style="color: var(--text-error);">Failed to load group: ${error.message}</p>`;
+    content.innerHTML = `<p class="help-text" style="color: var(--text-error);">Failed to load group: ${escapeHtml(error.message)}</p>`;
   }
 }
 

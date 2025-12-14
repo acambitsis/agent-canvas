@@ -117,6 +117,13 @@ export default async function handler(req, res) {
       );
 
       if (existingInvite) {
+        // Prevent privilege escalation: viewers cannot downgrade admin invites
+        // If existing invite is admin-level and current user is viewer, reject the update
+        if (existingInvite.role === 'admin' && userRole === 'viewer') {
+          json(res, 403, { error: 'Cannot modify an admin invite as a viewer' });
+          return;
+        }
+
         // Update existing invite with new role and reset expiration
         await query(
           `UPDATE group_invites
