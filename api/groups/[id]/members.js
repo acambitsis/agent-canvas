@@ -4,7 +4,7 @@
  */
 
 import { requireAuth } from '../../lib/clerk.js';
-import { query, queryOne, queryAll } from '../../lib/db.js';
+import { query, queryOne, queryAll, transaction } from '../../lib/db.js';
 import { getGroupRole, canManageMembers, canInviteToGroup } from '../../lib/permissions.js';
 import { parseJsonBody } from '../../lib/request-utils.js';
 
@@ -155,25 +155,49 @@ export default async function handler(req, res) {
         return;
       }
 
-      // If demoting from admin, ensure there's at least one other admin
+      // If demoting from admin, use atomic transaction to prevent race conditions
       if (member.role === 'admin' && role === 'viewer') {
-        const adminCount = await queryOne(
-          `SELECT COUNT(*) as count FROM group_members WHERE group_id = $1 AND role = 'admin'`,
-          [groupId]
+        try {
+          await transaction(async (client) => {
+            // Lock admin rows and check count atomically
+            const result = await client.query(
+              `WITH admin_check AS (
+                SELECT COUNT(*) as admin_count
+                FROM group_members
+                WHERE group_id = $1 AND role = 'admin'
+                FOR UPDATE
+              )
+              UPDATE group_members
+              SET role = $2
+              WHERE group_id = $1 AND user_id = $3
+                AND (SELECT admin_count FROM admin_check) > 1
+              RETURNING *`,
+              [groupId, role, targetUserId]
+            );
+
+            if (result.rows.length === 0) {
+              throw new Error('Cannot demote the last admin. Promote another member first.');
+            }
+          });
+
+          json(res, 200, { success: true, userId: targetUserId, role });
+          return;
+        } catch (error) {
+          if (error.message === 'Cannot demote the last admin. Promote another member first.') {
+            json(res, 400, { error: error.message });
+            return;
+          }
+          throw error;
+        }
+      } else {
+        // Non-admin role changes don't need transaction
+        await query(
+          `UPDATE group_members SET role = $1 WHERE group_id = $2 AND user_id = $3`,
+          [role, groupId, targetUserId]
         );
 
-        if (parseInt(adminCount.count, 10) <= 1) {
-          json(res, 400, { error: 'Cannot demote the last admin. Promote another member first.' });
-          return;
-        }
+        json(res, 200, { success: true, userId: targetUserId, role });
       }
-
-      await query(
-        `UPDATE group_members SET role = $1 WHERE group_id = $2 AND user_id = $3`,
-        [role, groupId, targetUserId]
-      );
-
-      json(res, 200, { success: true, userId: targetUserId, role });
       return;
     }
 
@@ -209,25 +233,48 @@ export default async function handler(req, res) {
         return;
       }
 
-      // If removing an admin, ensure there's at least one other admin
+      // If removing an admin, use atomic transaction to prevent race conditions
       if (member.role === 'admin') {
-        const adminCount = await queryOne(
-          `SELECT COUNT(*) as count FROM group_members WHERE group_id = $1 AND role = 'admin'`,
-          [groupId]
+        try {
+          await transaction(async (client) => {
+            // Lock admin rows and check count atomically
+            const result = await client.query(
+              `WITH admin_check AS (
+                SELECT COUNT(*) as admin_count
+                FROM group_members
+                WHERE group_id = $1 AND role = 'admin'
+                FOR UPDATE
+              )
+              DELETE FROM group_members
+              WHERE group_id = $1 AND user_id = $2
+                AND (SELECT admin_count FROM admin_check) > 1
+              RETURNING *`,
+              [groupId, targetUserId]
+            );
+
+            if (result.rows.length === 0) {
+              throw new Error('Cannot remove the last admin. Promote another member first.');
+            }
+          });
+
+          json(res, 200, { success: true, userId: targetUserId });
+          return;
+        } catch (error) {
+          if (error.message === 'Cannot remove the last admin. Promote another member first.') {
+            json(res, 400, { error: error.message });
+            return;
+          }
+          throw error;
+        }
+      } else {
+        // Non-admin removals don't need transaction
+        await query(
+          `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
+          [groupId, targetUserId]
         );
 
-        if (parseInt(adminCount.count, 10) <= 1) {
-          json(res, 400, { error: 'Cannot remove the last admin. Promote another member first.' });
-          return;
-        }
+        json(res, 200, { success: true, userId: targetUserId });
       }
-
-      await query(
-        `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
-        [groupId, targetUserId]
-      );
-
-      json(res, 200, { success: true, userId: targetUserId });
       return;
     }
 

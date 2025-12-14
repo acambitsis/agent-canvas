@@ -28,10 +28,13 @@ CREATE TABLE IF NOT EXISTS group_invites (
     role TEXT NOT NULL CHECK (role IN ('admin', 'viewer')) DEFAULT 'viewer',
     invited_by_user_id TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
-
-    UNIQUE (group_id, email)
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days')
 );
+
+-- Case-insensitive unique constraint on email per group
+-- Prevents duplicate invites with different email casing (e.g., user@example.com vs USER@example.com)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_group_invites_email_case_insensitive
+ON group_invites (group_id, LOWER(email));
 
 -- Canvases table: belongs to a group
 CREATE TABLE IF NOT EXISTS canvases (
