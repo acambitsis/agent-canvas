@@ -89,6 +89,7 @@
                     <p id="agent-count" class="agent-count-inline">Loading...</p>
                 </div>
                 <div class="header-actions u-flex u-align-center u-gap-sm">
+                    <div id="groupSwitcherContainer" class="group-switcher-container"></div>
                     <button type="button" class="btn btn-glass collapse-all-btn" id="collapseAllBtn" title="Collapse/Expand All">
                         <i id="collapseAllIcon" data-lucide="chevrons-down"></i>
                         <span id="collapseAllText">Collapse All</span>
@@ -145,10 +146,10 @@
                                 </a>
                             </div>
                             <div class="document-menu-divider menu-divider"></div>
-                            <div class="document-menu-group u-flex u-flex-column u-gap-sm">
+                            <div class="document-menu-group u-flex u-flex-column u-gap-sm admin-only">
                                 <p class="menu-label">Admin</p>
                                 <a href="/admin.html" class="menu-item menu-link">
-                                    <i data-lucide="users"></i>
+                                    <i data-lucide="shield-check"></i>
                                     Manage Allowlist
                                 </a>
                             </div>
@@ -376,6 +377,24 @@
                 <button type="button" class="btn btn-primary" id="fullYamlSave">
                     <i data-lucide="save"></i> Save Full Config
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Management Modal -->
+    <div id="groupManagementModal" class="modal">
+        <div class="surface-card modal-content">
+            <div class="modal-header">
+                <h2>Group Settings</h2>
+                <button class="modal-close" id="groupManagementModalClose">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="groupManagementContent">
+                <p class="help-text">Loading...</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="groupManagementModalCancel">Close</button>
             </div>
         </div>
     </div>

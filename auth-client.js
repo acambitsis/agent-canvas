@@ -55,7 +55,7 @@ export function getClerk() {
 export async function getAuthToken() {
   await initClerk();
   const clerk = getClerk();
-  
+
   if (!clerk.session) {
     return null;
   }
@@ -96,13 +96,13 @@ export async function getUserId() {
 }
 
 /**
- * Get current organization ID
+ * Get current user email
  */
-export async function getOrgId() {
+export async function getUserEmail() {
   try {
     await initClerk();
     const clerk = getClerk();
-    return clerk.organization?.id || null;
+    return clerk.user?.primaryEmailAddress?.emailAddress || null;
   } catch (error) {
     return null;
   }
@@ -113,7 +113,7 @@ export async function getOrgId() {
  */
 export async function authenticatedFetch(url, options = {}) {
   const token = await getAuthToken();
-  
+
   const headers = {
     ...options.headers,
   };
@@ -136,3 +136,32 @@ export async function authenticatedFetch(url, options = {}) {
   return response;
 }
 
+/**
+ * Accept any pending group invitations for the authenticated user
+ * Call this after successful authentication
+ * @returns {Promise<{processed: number, groups: Array}>}
+ */
+export async function acceptPendingInvites() {
+  try {
+    const response = await authenticatedFetch('/api/invites/accept', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to accept pending invites:', response.status);
+      return { processed: 0, groups: [] };
+    }
+
+    const result = await response.json();
+    if (result.processed > 0) {
+      console.log(`Accepted ${result.processed} group invitation(s):`, result.groups);
+    }
+    return result;
+  } catch (error) {
+    console.error('Error accepting pending invites:', error);
+    return { processed: 0, groups: [] };
+  }
+}

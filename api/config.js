@@ -1,9 +1,8 @@
 import { getQueryParam } from './lib/auth-utils.js';
 import { requireAuth } from './lib/clerk.js';
 import { query, queryOne } from './lib/db.js';
-import { checkCanvasAccess, checkCanvasWriteAccess, getAccessibleCanvases } from './lib/permissions.js';
+import { checkCanvasAccess, checkCanvasWriteAccess, getAccessibleCanvases, canManageCanvases, getUserGroups } from './lib/permissions.js';
 
-const DEFAULT_DOCUMENT = 'config.yaml';
 const YAML_CONTENT_TYPE = 'text/yaml';
 
 export const config = {
@@ -21,7 +20,7 @@ async function readRawBody(req) {
       resolve(Buffer.alloc(0));
       return;
     }
-    
+
     const chunks = [];
     req.on('data', chunk => chunks.push(typeof chunk === 'string' ? Buffer.from(chunk, 'utf8') : Buffer.from(chunk)));
     req.on('end', () => resolve(Buffer.concat(chunks)));
@@ -59,18 +58,18 @@ function getDocumentIdentifier(req) {
 async function handleGet(req, res) {
   try {
     const auth = await requireAuth(req);
-    const { userId, orgId } = auth;
+    const { userId, email } = auth;
 
     const listParam = getQueryParam(req, 'list');
     if (listParam === '1' || listParam === 'true') {
-      const canvases = await getAccessibleCanvases(userId, orgId);
+      const canvases = await getAccessibleCanvases(userId, email);
       const documents = canvases.map(canvas => ({
         id: canvas.id,
         name: canvas.slug + '.yaml', // Backward compatibility
         slug: canvas.slug,
         title: canvas.title,
-        scope_type: canvas.scope_type,
-        org_id: canvas.org_id,
+        group_id: canvas.group_id,
+        group_name: canvas.group_name,
         updatedAt: canvas.updated_at,
         updated_at: canvas.updated_at,
       }));
@@ -89,8 +88,8 @@ async function handleGet(req, res) {
     // Strip .yaml/.yml extension for database lookup (slugs stored without extension)
     docId = docId.replace(/\.ya?ml$/, '');
 
-    const { hasAccess, canvas } = await checkCanvasAccess(userId, orgId, docId);
-    
+    const { hasAccess, canvas, role } = await checkCanvasAccess(userId, email, docId);
+
     if (!hasAccess || !canvas) {
       json(res, 404, { error: `Canvas not found or access denied` });
       return;
@@ -101,6 +100,8 @@ async function handleGet(req, res) {
       .setHeader('Content-Type', YAML_CONTENT_TYPE)
       .setHeader('Content-Disposition', `inline; filename="${docName}"`)
       .setHeader('X-Config-Document', docName)
+      .setHeader('X-Canvas-Group-Id', canvas.group_id)
+      .setHeader('X-Canvas-Role', role)
       .send(canvas.yaml_text);
 
   } catch (error) {
@@ -116,11 +117,12 @@ async function handleGet(req, res) {
 /**
  * POST handler
  * Creates or updates a canvas
+ * Requires group_id for new canvases
  */
 async function handlePost(req, res) {
   try {
     const auth = await requireAuth(req);
-    const { userId, orgId } = auth;
+    const { userId, email } = auth;
 
     const buffer = await readRawBody(req);
     let yamlText = buffer.toString('utf8');
@@ -137,29 +139,12 @@ async function handlePost(req, res) {
       return;
     }
 
-    // Determine scope and title from request
     const docId = getDocumentIdentifier(req);
-    let scopeType = 'personal';
-    let canvasOrgId = null;
-    
-    // If user is in an org context, default to org canvas
-    // Can be overridden by query param
-    const scopeParam = getQueryParam(req, 'scope');
-    if (scopeParam === 'org' && orgId) {
-      scopeType = 'org';
-      canvasOrgId = orgId;
-    } else if (scopeParam === 'personal') {
-      scopeType = 'personal';
-    } else if (orgId) {
-      // Default to org if in org context
-      scopeType = 'org';
-      canvasOrgId = orgId;
-    }
+    const groupId = getQueryParam(req, 'group_id') || getHeader(req, 'x-group-id');
 
     // Extract title from YAML if possible, or use slug
     let title = 'Untitled Canvas';
     try {
-      // Try to extract title from YAML (simple regex approach to avoid requiring js-yaml)
       const titleMatch = yamlText.match(/^title:\s*(.+)$/m);
       if (titleMatch && titleMatch[1]) {
         title = titleMatch[1].trim().replace(/^["']|["']$/g, '');
@@ -180,24 +165,30 @@ async function handlePost(req, res) {
       slug = sanitizeSlug(title) || 'canvas-' + Date.now();
     }
 
-    // Check if canvas exists
-    const existingCanvas = await queryOne(
-      scopeType === 'org'
-        ? `SELECT * FROM canvases WHERE scope_type = $1 AND org_id = $2 AND slug = $3`
-        : `SELECT * FROM canvases WHERE scope_type = $1 AND owner_user_id = $2 AND slug = $3`,
-      scopeType === 'org' ? [scopeType, canvasOrgId, slug] : [scopeType, userId, slug]
-    );
+    // Check if canvas exists (by slug across all groups user has access to)
+    // First try to find in specific group if provided
+    let existingCanvas = null;
+    if (groupId) {
+      existingCanvas = await queryOne(
+        `SELECT * FROM canvases WHERE group_id = $1 AND slug = $2`,
+        [groupId, slug]
+      );
+    } else {
+      // Try to find existing canvas by slug (for updates)
+      const { canvas } = await checkCanvasAccess(userId, email, slug);
+      existingCanvas = canvas;
+    }
 
     if (existingCanvas) {
-      // Update existing canvas
-      const { hasAccess } = await checkCanvasWriteAccess(userId, orgId, existingCanvas.id);
+      // Update existing canvas - check write access
+      const { hasAccess, role } = await checkCanvasWriteAccess(userId, email, existingCanvas.id);
       if (!hasAccess) {
-        json(res, 403, { error: 'Access denied' });
+        json(res, 403, { error: 'Access denied. You do not have permission to edit this canvas.' });
         return;
       }
 
       await query(
-        `UPDATE canvases 
+        `UPDATE canvases
          SET yaml_text = $1, updated_by_user_id = $2, title = $3, updated_at = now()
          WHERE id = $4`,
         [yamlText, userId, title, existingCanvas.id]
@@ -208,17 +199,59 @@ async function handlePost(req, res) {
         document: slug + '.yaml',
         id: existingCanvas.id,
         slug: slug,
+        group_id: existingCanvas.group_id,
         size: yamlText.length
       });
     } else {
-      // Create new canvas
-      const ownerUserId = userId;
-      
+      // Create new canvas - requires group_id
+      if (!groupId) {
+        // Try to use user's first group as default
+        const userGroups = await getUserGroups(userId, email);
+        if (userGroups.length === 0) {
+          json(res, 400, { error: 'No groups available. You must be a member of a group to create canvases.' });
+          return;
+        }
+
+        // Find a group where user is admin
+        const adminGroup = userGroups.find(g => g.role === 'admin' || g.role === 'super_admin');
+        if (!adminGroup) {
+          json(res, 403, { error: 'You do not have permission to create canvases. Ask a group admin for access.' });
+          return;
+        }
+
+        json(res, 400, { error: 'Group ID is required for new canvases. Use group_id query parameter.' });
+        return;
+      }
+
+      // Verify group exists
+      const group = await queryOne(`SELECT * FROM groups WHERE id = $1`, [groupId]);
+      if (!group) {
+        json(res, 404, { error: 'Group not found' });
+        return;
+      }
+
+      // Check user can create canvases in this group (admin only)
+      const canCreate = await canManageCanvases(userId, email, groupId);
+      if (!canCreate) {
+        json(res, 403, { error: 'You do not have permission to create canvases in this group.' });
+        return;
+      }
+
+      // Check slug doesn't already exist in group
+      const existing = await queryOne(
+        `SELECT * FROM canvases WHERE group_id = $1 AND slug = $2`,
+        [groupId, slug]
+      );
+      if (existing) {
+        json(res, 400, { error: 'A canvas with this name already exists in the group' });
+        return;
+      }
+
       const result = await queryOne(
-        `INSERT INTO canvases (scope_type, owner_user_id, org_id, title, slug, yaml_text, created_by_user_id, updated_by_user_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO canvases (group_id, title, slug, yaml_text, created_by_user_id, updated_by_user_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id`,
-        [scopeType, ownerUserId, canvasOrgId, title, slug, yamlText, userId, userId]
+        [groupId, title, slug, yamlText, userId, userId]
       );
 
       json(res, 200, {
@@ -226,6 +259,7 @@ async function handlePost(req, res) {
         document: slug + '.yaml',
         id: result.id,
         slug: slug,
+        group_id: groupId,
         size: yamlText.length
       });
     }
@@ -247,7 +281,7 @@ async function handlePost(req, res) {
 async function handlePut(req, res) {
   try {
     const auth = await requireAuth(req);
-    const { userId, orgId } = auth;
+    const { userId, email } = auth;
 
     const docId = getDocumentIdentifier(req);
     if (!docId) {
@@ -267,25 +301,28 @@ async function handlePut(req, res) {
       return;
     }
 
-    // Check access to existing canvas
-    const { hasAccess, canvas } = await checkCanvasWriteAccess(userId, orgId, docId);
+    // Check access to existing canvas - need admin to rename
+    const { hasAccess, canvas, role } = await checkCanvasAccess(userId, email, docId);
     if (!hasAccess || !canvas) {
       json(res, 404, { error: `Canvas not found or access denied` });
       return;
     }
 
-    // Check if new slug already exists in same scope
+    // Only admins can rename
+    const canManage = await canManageCanvases(userId, email, canvas.group_id);
+    if (!canManage) {
+      json(res, 403, { error: 'Only group admins can rename canvases' });
+      return;
+    }
+
+    // Check if new slug already exists in same group
     const existing = await queryOne(
-      canvas.scope_type === 'org'
-        ? `SELECT * FROM canvases WHERE scope_type = $1 AND org_id = $2 AND slug = $3 AND id != $4`
-        : `SELECT * FROM canvases WHERE scope_type = $1 AND owner_user_id = $2 AND slug = $3 AND id != $4`,
-      canvas.scope_type === 'org'
-        ? [canvas.scope_type, canvas.org_id, newSlug, canvas.id]
-        : [canvas.scope_type, canvas.owner_user_id, newSlug, canvas.id]
+      `SELECT * FROM canvases WHERE group_id = $1 AND slug = $2 AND id != $3`,
+      [canvas.group_id, newSlug, canvas.id]
     );
 
     if (existing) {
-      json(res, 400, { error: 'A canvas with this name already exists' });
+      json(res, 400, { error: 'A canvas with this name already exists in the group' });
       return;
     }
 
@@ -299,7 +336,8 @@ async function handlePut(req, res) {
       success: true,
       document: newSlug + '.yaml',
       previous: canvas.slug + '.yaml',
-      id: canvas.id
+      id: canvas.id,
+      group_id: canvas.group_id
     });
 
   } catch (error) {
@@ -314,12 +352,12 @@ async function handlePut(req, res) {
 
 /**
  * DELETE handler
- * Deletes a canvas
+ * Deletes a canvas (admin only)
  */
 async function handleDelete(req, res) {
   try {
     const auth = await requireAuth(req);
-    const { userId, orgId } = auth;
+    const { userId, email } = auth;
 
     const docId = getDocumentIdentifier(req);
     if (!docId) {
@@ -327,25 +365,27 @@ async function handleDelete(req, res) {
       return;
     }
 
-    // Check access - only owner can delete
-    const { hasAccess, canvas } = await checkCanvasAccess(userId, orgId, docId);
+    // Check access
+    const { hasAccess, canvas } = await checkCanvasAccess(userId, email, docId);
     if (!hasAccess || !canvas) {
       json(res, 404, { error: `Canvas not found or access denied` });
       return;
     }
 
-    // Only owner can delete
-    if (canvas.owner_user_id !== userId) {
-      json(res, 403, { error: 'Only the owner can delete a canvas' });
+    // Only admins can delete
+    const canManage = await canManageCanvases(userId, email, canvas.group_id);
+    if (!canManage) {
+      json(res, 403, { error: 'Only group admins can delete canvases' });
       return;
     }
 
     await query(`DELETE FROM canvases WHERE id = $1`, [canvas.id]);
 
-    json(res, 200, { 
-      success: true, 
+    json(res, 200, {
+      success: true,
       deleted: canvas.slug + '.yaml',
-      id: canvas.id
+      id: canvas.id,
+      group_id: canvas.group_id
     });
 
   } catch (error) {

@@ -1475,3 +1475,227 @@ body {
     color: var(--text-muted);
     opacity: 1;
 }
+
+/* ========================================
+   Group Switcher and Management UI
+   ======================================== */
+
+.group-switcher-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.group-switcher-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--glass-overlay);
+    border-radius: 8px;
+    border: 1px solid var(--glass-border-light);
+}
+
+.group-select {
+    background: transparent;
+    border: none;
+    color: var(--text-inverse);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 8px;
+    cursor: pointer;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+.group-select option {
+    background: var(--surface-primary);
+    color: var(--text-primary);
+}
+
+.group-switcher-empty {
+    color: var(--text-glass-muted);
+    font-size: 14px;
+    padding: 4px 8px;
+}
+
+/* Role Badges */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.role-badge.role-super-admin {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.role-badge.role-admin {
+    background: rgba(23, 162, 184, 0.2);
+    color: #17a2b8;
+    border: 1px solid rgba(23, 162, 184, 0.3);
+}
+
+.role-badge.role-viewer {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+/* Group Management Modal */
+.group-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-muted);
+}
+
+.group-management-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.member-count {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.group-section {
+    margin-bottom: 24px;
+}
+
+.group-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.member-list,
+.invite-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.member-item,
+.invite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--surface-alt);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.member-info,
+.invite-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-id,
+.invite-email {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.member-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.role-select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-primary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* Invite Form */
+.invite-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.invite-form .form-input {
+    flex: 1;
+    min-width: 150px;
+}
+
+.invite-form select.form-input {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 100px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .group-switcher-wrapper {
+        flex-wrap: wrap;
+    }
+
+    .group-select {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .member-item,
+    .invite-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .member-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .invite-form {
+        flex-direction: column;
+    }
+
+    .invite-form .form-input,
+    .invite-form select.form-input {
+        width: 100%;
+    }
+}
+
+/* Role-based UI visibility */
+body[data-can-manage="false"] .admin-only {
+    display: none !important;
+}
+
+body[data-can-manage="false"] .context-menu-trigger[title*="options"] {
+    /* Hide context menus for viewers - they can only view */
+}
+
+/* Disable menu items for viewers */
+body[data-can-manage="false"] [data-action-type="agent-edit"],
+body[data-can-manage="false"] [data-action-type="agent-delete"],
+body[data-can-manage="false"] [data-action-type="agent-add"],
+body[data-can-manage="false"] [data-action-type="group-edit"],
+body[data-can-manage="false"] [data-action-type="group-delete"] {
+    display: none !important;
+}

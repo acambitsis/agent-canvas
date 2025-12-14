@@ -1,5 +1,6 @@
 import { BLANK_DOCUMENT_TEMPLATE, DEFAULT_DOCUMENT_NAME, DOCUMENT_STORAGE_KEY, refreshIcons, state } from './state.js';
 import { authenticatedFetch } from './auth-client.js';
+import { getCurrentGroupId, getUserGroups, canManageCanvasesInCurrentGroup } from './groups-ui.js';
 
 let loadAgentsCallback = async () => {};
 
@@ -153,6 +154,44 @@ function bindDocumentMenuEvents() {
 }
 
 export async function createBlankDocument() {
+    // Check if user can create canvases
+    if (!canManageCanvasesInCurrentGroup()) {
+        alert('You do not have permission to create canvases. Only group admins can create new canvases.');
+        return;
+    }
+
+    // Get current group or prompt for selection
+    let groupId = getCurrentGroupId();
+    const groups = getUserGroups();
+
+    if (!groupId && groups.length === 0) {
+        alert('No groups available. You must be a member of a group to create canvases.');
+        return;
+    }
+
+    // If multiple groups and user is admin in multiple, let them choose
+    const adminGroups = groups.filter(g => g.role === 'admin' || g.role === 'super_admin');
+    if (adminGroups.length > 1) {
+        const groupOptions = adminGroups.map((g, i) => `${i + 1}. ${g.name}`).join('\n');
+        const selection = prompt(`Select a group for the new canvas:\n${groupOptions}\n\nEnter number (1-${adminGroups.length}):`);
+        if (selection === null) return;
+
+        const idx = parseInt(selection, 10) - 1;
+        if (idx >= 0 && idx < adminGroups.length) {
+            groupId = adminGroups[idx].id;
+        } else {
+            alert('Invalid selection');
+            return;
+        }
+    } else if (adminGroups.length === 1) {
+        groupId = adminGroups[0].id;
+    }
+
+    if (!groupId) {
+        alert('No group selected or you do not have admin access to any groups.');
+        return;
+    }
+
     const defaultName = `document-${state.availableDocuments.length + 1}.yaml`;
     const userInput = prompt('Name for the new document (.yaml will be appended if missing):', defaultName);
     if (userInput === null) {
@@ -167,15 +206,19 @@ export async function createBlankDocument() {
         return;
     }
 
-    if (state.availableDocuments.some(doc => doc.name === docName)) {
-        if (!confirm(`"${docName}" already exists. Overwrite it with a blank document?`)) {
+    // Check for existing document in same group
+    const existingInGroup = state.availableDocuments.some(
+        doc => doc.name === docName && doc.group_id === groupId
+    );
+    if (existingInGroup) {
+        if (!confirm(`"${docName}" already exists in this group. Overwrite it?`)) {
             return;
         }
     }
 
     try {
         setDocumentStatusMessage(`Creating "${docName}"...`);
-        await uploadDocumentFromContents(docName, BLANK_DOCUMENT_TEMPLATE);
+        await uploadDocumentFromContents(docName, BLANK_DOCUMENT_TEMPLATE, groupId);
         setDocumentStatusMessage(`Document "${docName}" created.`, 'success');
     } catch (error) {
         console.error('[documents] Blank document creation failed', { docName, error });
@@ -207,8 +250,17 @@ export async function renameCurrentDocument() {
         return;
     }
 
-    if (state.availableDocuments.some(doc => doc.name === newDocName)) {
-        alert(`A document named "${newDocName}" already exists. Choose a different name.`);
+    // Find current document to get its group_id
+    const currentDoc = state.availableDocuments.find(
+        doc => (doc.name || doc.slug || doc.id) === state.currentDocumentName
+    );
+    const currentGroupId = currentDoc?.group_id;
+
+    // Only check for duplicates within the same group
+    if (state.availableDocuments.some(doc =>
+        doc.name === newDocName && doc.group_id === currentGroupId
+    )) {
+        alert(`A document named "${newDocName}" already exists in this group. Choose a different name.`);
         return;
     }
 
@@ -254,14 +306,44 @@ function updateDocumentControlsUI() {
             select.appendChild(option);
             select.disabled = true;
         } else {
+            // Group documents by group_name
+            const groupedDocs = {};
             state.availableDocuments.forEach(doc => {
-                const option = document.createElement('option');
-                const docId = doc.id || doc.slug || doc.name;
-                const docTitle = doc.title || doc.name || doc.slug || doc.id;
-                option.textContent = docTitle;
-                option.value = docId;
-                select.appendChild(option);
+                const groupName = doc.group_name || 'Ungrouped';
+                if (!groupedDocs[groupName]) {
+                    groupedDocs[groupName] = [];
+                }
+                groupedDocs[groupName].push(doc);
             });
+
+            // If only one group, show flat list
+            const groupNames = Object.keys(groupedDocs);
+            if (groupNames.length <= 1) {
+                state.availableDocuments.forEach(doc => {
+                    const option = document.createElement('option');
+                    const docId = doc.id || doc.slug || doc.name;
+                    const docTitle = doc.title || doc.name || doc.slug || doc.id;
+                    option.textContent = docTitle;
+                    option.value = docId;
+                    select.appendChild(option);
+                });
+            } else {
+                // Show grouped list with optgroups
+                groupNames.sort().forEach(groupName => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = groupName;
+                    groupedDocs[groupName].forEach(doc => {
+                        const option = document.createElement('option');
+                        const docId = doc.id || doc.slug || doc.name;
+                        const docTitle = doc.title || doc.name || doc.slug || doc.id;
+                        option.textContent = docTitle;
+                        option.value = docId;
+                        optgroup.appendChild(option);
+                    });
+                    select.appendChild(optgroup);
+                });
+            }
+
             select.disabled = false;
             const currentDocId = state.currentDocumentName;
             if (currentDocId && state.availableDocuments.some(doc => (doc.id || doc.slug || doc.name) === currentDocId)) {
@@ -296,22 +378,40 @@ function updateDocumentControlsUI() {
     }
 
     if (menu) {
+        const uploadBtn = menu.querySelector('button[data-action="upload"]');
+        const blankBtn = menu.querySelector('button[data-action="blank"]');
         const renameBtn = menu.querySelector('button[data-action="rename"]');
         const downloadMenuBtn = menu.querySelector('button[data-action="download"]');
         const deleteBtn = menu.querySelector('button[data-action="delete"]');
         const divider = menu.querySelector('[data-role="menu-divider"]');
         const hasDocument = Boolean(state.currentDocumentName);
         const isLastDocument = state.availableDocuments.length <= 1;
+        const canManage = canManageCanvasesInCurrentGroup();
 
+        // Upload and blank require admin
+        if (uploadBtn) {
+            uploadBtn.disabled = !canManage;
+            uploadBtn.title = canManage ? 'Upload YAML file' : 'Only admins can upload files';
+        }
+        if (blankBtn) {
+            blankBtn.disabled = !canManage;
+            blankBtn.title = canManage ? 'Create new blank document' : 'Only admins can create documents';
+        }
+
+        // Rename requires admin
         if (renameBtn) {
-            renameBtn.disabled = !hasDocument;
+            renameBtn.disabled = !hasDocument || !canManage;
+            renameBtn.title = !canManage ? 'Only admins can rename documents' : 'Rename current document';
         }
         if (downloadMenuBtn) {
             downloadMenuBtn.disabled = !hasDocument;
         }
+        // Delete requires admin
         if (deleteBtn) {
-            deleteBtn.disabled = !hasDocument || isLastDocument;
-            if (isLastDocument && hasDocument) {
+            deleteBtn.disabled = !hasDocument || isLastDocument || !canManage;
+            if (!canManage) {
+                deleteBtn.title = 'Only admins can delete documents';
+            } else if (isLastDocument && hasDocument) {
                 deleteBtn.title = 'Cannot delete the last document';
             } else {
                 deleteBtn.title = 'Delete current document';
@@ -495,15 +595,23 @@ async function handleDocumentFileSelected(event) {
     }
 }
 
-export async function uploadDocumentFromContents(docName, yamlText) {
+export async function uploadDocumentFromContents(docName, yamlText, groupId = null) {
     const payloadSize = typeof yamlText === 'string' ? yamlText.length : 0;
     setDocumentStatusMessage(`Uploading "${docName}"...`);
 
-    const response = await authenticatedFetch(`/api/config?doc=${encodeURIComponent(docName)}`, {
+    // Use provided groupId or current group
+    const targetGroupId = groupId || getCurrentGroupId();
+    let url = `/api/config?doc=${encodeURIComponent(docName)}`;
+    if (targetGroupId) {
+        url += `&group_id=${encodeURIComponent(targetGroupId)}`;
+    }
+
+    const response = await authenticatedFetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'text/yaml',
-            'X-Config-Name': docName
+            'X-Config-Name': docName,
+            ...(targetGroupId ? { 'X-Group-Id': targetGroupId } : {})
         },
         body: yamlText
     });

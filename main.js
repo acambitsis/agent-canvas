@@ -30,7 +30,37 @@ import {
     state,
     toArray
 } from './state.js';
-import { initClerk, authenticatedFetch } from './auth-client.js';
+import { initClerk, authenticatedFetch, acceptPendingInvites } from './auth-client.js';
+import { initializeGroups, getCurrentGroupId, canManageCanvasesInCurrentGroup, renderGroupSwitcher, getCurrentGroupRole } from './groups-ui.js';
+
+// ----- Role-based UI visibility -----
+function updateRoleBasedUI() {
+    const canManage = canManageCanvasesInCurrentGroup();
+    const role = getCurrentGroupRole();
+    const isViewer = role === 'viewer';
+
+    // Update board menu - hide admin-only actions for viewers
+    const boardMenu = document.getElementById('board-menu');
+    if (boardMenu) {
+        const editTitleBtn = boardMenu.querySelector('[data-board-action="edit-title"]');
+        const editYamlBtn = boardMenu.querySelector('[data-board-action="edit-full-yaml"]');
+        const addSectionBtn = boardMenu.querySelector('[data-board-action="add-section"]');
+
+        if (editTitleBtn) {
+            editTitleBtn.style.display = canManage ? '' : 'none';
+        }
+        if (editYamlBtn) {
+            editYamlBtn.style.display = canManage ? '' : 'none';
+        }
+        if (addSectionBtn) {
+            addSectionBtn.style.display = canManage ? '' : 'none';
+        }
+    }
+
+    // Set data attribute on body for CSS-based hiding
+    document.body.dataset.userRole = role || 'viewer';
+    document.body.dataset.canManage = canManage ? 'true' : 'false';
+}
 
 // ----- Loading overlay helpers -----
 function showLoadingOverlay(message = 'Loading...') {
@@ -1461,6 +1491,15 @@ async function bootstrapApp() {
                     afterSignOutUrl: '/login'
                 });
             }
+
+            // Initialize groups (also accepts pending invites)
+            await initializeGroups();
+
+            // Update role-based UI visibility
+            updateRoleBasedUI();
+
+            // Listen for group changes to update UI
+            window.addEventListener('groupChanged', updateRoleBasedUI);
         } else {
             // Not authenticated, redirect to login
             // Prevent redirect loops using sessionStorage
