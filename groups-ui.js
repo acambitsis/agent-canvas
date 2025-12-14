@@ -3,7 +3,7 @@
  * Handles group switcher, group management modal, invites UI
  */
 
-import { authenticatedFetch, acceptPendingInvites } from './auth-client.js';
+import { authenticatedFetch, acceptPendingInvites, getUserId } from './auth-client.js';
 import { refreshIcons, state } from './state.js';
 
 // Group state
@@ -198,6 +198,7 @@ export async function openGroupManagementModal(groupId) {
 
     const group = userGroups.find(g => g.id === groupId);
     const canManage = userRole === 'admin' || userRole === 'super_admin';
+    const currentUserId = await getUserId();
 
     // Build UI
     let html = `
@@ -210,7 +211,7 @@ export async function openGroupManagementModal(groupId) {
     // Members list
     html += '<div class="group-section"><h4>Members</h4><ul class="member-list">';
     members.forEach(member => {
-      const isCurrentUser = member.user_id === window.Clerk?.user?.id;
+      const isCurrentUser = member.user_id === currentUserId;
       const roleLabel = member.role === 'admin' ? 'Admin' : 'Viewer';
       const roleClass = member.role === 'admin' ? 'role-admin' : 'role-viewer';
 

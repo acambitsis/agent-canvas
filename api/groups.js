@@ -7,6 +7,7 @@ import { requireAuth } from './lib/clerk.js';
 import { query, queryOne, queryAll } from './lib/db.js';
 import { getUserGroups, canCreateGroup, canDeleteGroup } from './lib/permissions.js';
 import { isSuperAdmin } from './lib/super-admin.js';
+import { parseJsonBody } from './lib/request-utils.js';
 
 export const config = {
   api: {
@@ -57,15 +58,9 @@ export default async function handler(req, res) {
         return;
       }
 
-      let body = {};
-      try {
-        if (typeof req.body === 'string') {
-          body = JSON.parse(req.body);
-        } else {
-          body = req.body || {};
-        }
-      } catch (e) {
-        json(res, 400, { error: 'Invalid JSON body' });
+      const { body, error: parseError } = parseJsonBody(req);
+      if (parseError) {
+        json(res, 400, { error: parseError });
         return;
       }
 
@@ -120,15 +115,9 @@ export default async function handler(req, res) {
         return;
       }
 
-      let body = {};
-      try {
-        if (typeof req.body === 'string') {
-          body = JSON.parse(req.body);
-        } else {
-          body = req.body || {};
-        }
-      } catch (e) {
-        json(res, 400, { error: 'Invalid JSON body' });
+      const { body, error: parseError } = parseJsonBody(req);
+      if (parseError) {
+        json(res, 400, { error: parseError });
         return;
       }
 

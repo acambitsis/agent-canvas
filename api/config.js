@@ -366,7 +366,7 @@ async function handleDelete(req, res) {
     }
 
     // Check access
-    const { hasAccess, canvas, role } = await checkCanvasAccess(userId, email, docId);
+    const { hasAccess, canvas } = await checkCanvasAccess(userId, email, docId);
     if (!hasAccess || !canvas) {
       json(res, 404, { error: `Canvas not found or access denied` });
       return;

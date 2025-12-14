@@ -22,9 +22,13 @@ function getAppName() {
 }
 
 function getAppUrl() {
-  return process.env.APP_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000';
+  if (process.env.APP_URL) {
+    return process.env.APP_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'http://localhost:3000';
 }
 
 /**

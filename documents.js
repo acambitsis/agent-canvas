@@ -250,8 +250,17 @@ export async function renameCurrentDocument() {
         return;
     }
 
-    if (state.availableDocuments.some(doc => doc.name === newDocName)) {
-        alert(`A document named "${newDocName}" already exists. Choose a different name.`);
+    // Find current document to get its group_id
+    const currentDoc = state.availableDocuments.find(
+        doc => (doc.name || doc.slug || doc.id) === state.currentDocumentName
+    );
+    const currentGroupId = currentDoc?.group_id;
+
+    // Only check for duplicates within the same group
+    if (state.availableDocuments.some(doc =>
+        doc.name === newDocName && doc.group_id === currentGroupId
+    )) {
+        alert(`A document named "${newDocName}" already exists in this group. Choose a different name.`);
         return;
     }
 
