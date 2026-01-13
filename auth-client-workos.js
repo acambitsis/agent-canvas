@@ -6,6 +6,32 @@
 let currentUser = null;
 let currentOrgs = [];
 let isInitialized = false;
+let refreshPromise = null;
+
+/**
+ * Refresh the access token if needed
+ * @returns {Promise<boolean>} True if refresh succeeded or wasn't needed
+ */
+async function refreshTokenIfNeeded() {
+  // Prevent concurrent refresh attempts
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch("/api/auth/refresh", { method: "POST" });
+      return response.ok;
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
 
 /**
  * Initialize authentication - check session and set up user
@@ -23,6 +49,12 @@ export async function initAuth() {
     if (data.authenticated && data.user) {
       currentUser = data.user;
       currentOrgs = data.orgs || [];
+
+      // Proactively refresh token if needed
+      if (data.needsRefresh) {
+        await refreshTokenIfNeeded();
+      }
+
       // Fetch additional org details if needed
       if (currentOrgs.length > 0 && !currentOrgs[0].name) {
         await fetchUserOrgs();
@@ -183,20 +215,33 @@ export function setCurrentOrg(orgId) {
 /**
  * Enhanced fetch wrapper that handles auth errors
  * With WorkOS, authentication uses session cookies (no Bearer token needed)
+ * Automatically attempts token refresh on 401 before redirecting
  * @param {string} url - URL to fetch
  * @param {object} options - Fetch options
  * @returns {Promise<Response>}
  */
 export async function authenticatedFetch(url, options = {}) {
-  const response = await fetch(url, {
+  let response = await fetch(url, {
     ...options,
     credentials: 'include', // Ensure cookies are sent
   });
 
-  // Handle 401 by redirecting to login
+  // On 401, try refreshing the token once
   if (response.status === 401) {
-    window.location.href = '/login';
-    throw new Error('Unauthorized');
+    const refreshed = await refreshTokenIfNeeded();
+    if (refreshed) {
+      // Retry the original request
+      response = await fetch(url, {
+        ...options,
+        credentials: 'include',
+      });
+    }
+
+    // If still 401 after refresh attempt, redirect to login
+    if (response.status === 401) {
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
+    }
   }
 
   return response;

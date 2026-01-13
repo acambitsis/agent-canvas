@@ -8,24 +8,61 @@ import * as jose from 'jose';
 const COOKIE_NAME = 'session';
 const SESSION_MAX_AGE = 604800; // 7 days in seconds
 
+// Cache the derived key to avoid re-deriving on every request
+let cachedKey = null;
+let cachedPassword = null;
+
 /**
- * Get the encryption key from environment
- * Must be at least 32 characters
+ * Get the encryption key from environment using HKDF
+ * Properly derives a 256-bit key regardless of password encoding
  */
-function getEncryptionKey() {
+async function getEncryptionKey() {
   const password = process.env.WORKOS_COOKIE_PASSWORD;
   if (!password || password.length < 32) {
     throw new Error('WORKOS_COOKIE_PASSWORD must be at least 32 characters');
   }
-  // Use first 32 bytes as key for AES-256
-  return new TextEncoder().encode(password.slice(0, 32));
+
+  // Return cached key if password hasn't changed
+  if (cachedKey && cachedPassword === password) {
+    return cachedKey;
+  }
+
+  // Import password as raw key material for HKDF
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'HKDF',
+    false,
+    ['deriveKey']
+  );
+
+  // Derive a proper 256-bit key using HKDF-SHA256
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new TextEncoder().encode('agentcanvas-session-v1'),
+      info: new TextEncoder().encode('encryption'),
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
+
+  // Export as raw bytes for jose
+  const rawKey = await crypto.subtle.exportKey('raw', derivedKey);
+  cachedKey = new Uint8Array(rawKey);
+  cachedPassword = password;
+
+  return cachedKey;
 }
 
 /**
  * Encrypt session data into a JWT
  */
 export async function encryptSession(sessionData) {
-  const key = getEncryptionKey();
+  const key = await getEncryptionKey();
 
   const jwt = await new jose.EncryptJWT(sessionData)
     .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
@@ -43,7 +80,7 @@ export async function decryptSession(token) {
   if (!token) return null;
 
   try {
-    const key = getEncryptionKey();
+    const key = await getEncryptionKey();
     const { payload } = await jose.jwtDecrypt(token, key);
     return payload;
   } catch (error) {

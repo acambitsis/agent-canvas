@@ -74,9 +74,14 @@ export default async function handler(request) {
       return redirect(baseUrl, 'no_organization');
     }
 
+    // WorkOS access tokens typically expire in 15-60 minutes
+    // Store expiration time for proactive refresh (refresh at 50 minutes)
+    const accessTokenExpiresAt = Date.now() + 50 * 60 * 1000;
+
     const sessionData = {
       accessToken: access_token,
       refreshToken: refresh_token,
+      accessTokenExpiresAt,
       user: {
         id: user.id,
         email: user.email,
