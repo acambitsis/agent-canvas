@@ -3,9 +3,42 @@
  * Handle WorkOS OAuth callback
  */
 
-export const config = {
-  runtime: 'edge',
-};
+export const config = { runtime: 'edge' };
+
+function redirect(baseUrl, error) {
+  return Response.redirect(`${baseUrl}/login?error=${error}`, 302);
+}
+
+async function exchangeCodeForTokens(code, apiKey, clientId) {
+  const response = await fetch('https://api.workos.com/user_management/authenticate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      client_id: clientId,
+      code,
+      grant_type: 'authorization_code',
+    }),
+  });
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error('WorkOS token exchange failed:', errorData);
+    return null;
+  }
+  return response.json();
+}
+
+async function fetchUserOrgs(userId, apiKey) {
+  const response = await fetch(
+    `https://api.workos.com/user_management/users/${userId}/organization_memberships`,
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.data || [];
+}
 
 export default async function handler(request) {
   const url = new URL(request.url);
@@ -13,73 +46,26 @@ export default async function handler(request) {
   const error = url.searchParams.get('error');
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
 
-  if (error) {
-    return Response.redirect(`${baseUrl}/login?error=${error}`, 302);
-  }
+  if (error) return redirect(baseUrl, error);
+  if (!code) return redirect(baseUrl, 'missing_code');
 
-  if (!code) {
-    return Response.redirect(`${baseUrl}/login?error=missing_code`, 302);
+  const workosApiKey = process.env.WORKOS_API_KEY;
+  const workosClientId = process.env.WORKOS_CLIENT_ID;
+  if (!workosApiKey || !workosClientId) {
+    return redirect(baseUrl, 'config_error');
   }
 
   try {
-    const workosApiKey = process.env.WORKOS_API_KEY;
-    const workosClientId = process.env.WORKOS_CLIENT_ID;
+    const tokenData = await exchangeCodeForTokens(code, workosApiKey, workosClientId);
+    if (!tokenData) return redirect(baseUrl, 'auth_failed');
 
-    if (!workosApiKey || !workosClientId) {
-      return Response.redirect(`${baseUrl}/login?error=config_error`, 302);
-    }
-
-    // Exchange code for tokens using WorkOS API
-    const tokenResponse = await fetch(
-      'https://api.workos.com/user_management/authenticate',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${workosApiKey}`,
-        },
-        body: JSON.stringify({
-          client_id: workosClientId,
-          code,
-          grant_type: 'authorization_code',
-        }),
-      }
-    );
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      console.error('WorkOS token exchange failed:', errorData);
-      return Response.redirect(`${baseUrl}/login?error=auth_failed`, 302);
-    }
-
-    const tokenData = await tokenResponse.json();
     const { user, access_token, refresh_token } = tokenData;
+    const orgs = await fetchUserOrgs(user.id, workosApiKey);
 
-    // Fetch user's organization memberships
-    let orgs = [];
-    try {
-      const orgsResponse = await fetch(
-        `https://api.workos.com/user_management/users/${user.id}/organization_memberships`,
-        {
-          headers: {
-            Authorization: `Bearer ${workosApiKey}`,
-          },
-        }
-      );
-      if (orgsResponse.ok) {
-        const orgsData = await orgsResponse.json();
-        orgs = orgsData.data || [];
-      }
-    } catch (orgError) {
-      console.error('Failed to fetch organizations:', orgError);
-    }
-
-    // Check if user is in any organization
     if (orgs.length === 0) {
-      return Response.redirect(`${baseUrl}/login?error=no_organization`, 302);
+      return redirect(baseUrl, 'no_organization');
     }
 
-    // Create session data
     const sessionData = {
       accessToken: access_token,
       refreshToken: refresh_token,
@@ -90,16 +76,14 @@ export default async function handler(request) {
         lastName: user.last_name,
         profilePictureUrl: user.profile_picture_url,
       },
-      orgs: orgs.map(om => ({
+      orgs: orgs.map((om) => ({
         id: om.organization_id,
         role: om.role?.slug || 'member',
       })),
     };
 
-    // Encode session as base64 (in production, use proper encryption)
     const sessionToken = btoa(JSON.stringify(sessionData));
 
-    // Set cookie and redirect
     return new Response(null, {
       status: 302,
       headers: {
@@ -109,6 +93,6 @@ export default async function handler(request) {
     });
   } catch (err) {
     console.error('Auth callback error:', err);
-    return Response.redirect(`${baseUrl}/login?error=auth_failed`, 302);
+    return redirect(baseUrl, 'auth_failed');
   }
 }

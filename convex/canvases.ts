@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireAuth, requireOrgAccess, hasOrgAccess } from "./lib/auth";
+import { requireAuth, requireOrgAccess } from "./lib/auth";
 
 /**
  * List all canvases for an organization
@@ -11,12 +11,10 @@ export const list = query({
     const auth = await requireAuth(ctx);
     requireOrgAccess(auth, workosOrgId);
 
-    const canvases = await ctx.db
+    return ctx.db
       .query("canvases")
       .withIndex("by_org", (q) => q.eq("workosOrgId", workosOrgId))
       .collect();
-
-    return canvases;
   },
 });
 

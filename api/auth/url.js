@@ -3,29 +3,26 @@
  * Generate WorkOS authorization URL for login
  */
 
-export const config = {
-  runtime: 'edge',
-};
+export const config = { runtime: 'edge' };
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 export default async function handler(request) {
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   const workosClientId = process.env.WORKOS_CLIENT_ID;
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-
   if (!workosClientId) {
-    return new Response(
-      JSON.stringify({ error: 'WorkOS not configured' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return json({ error: 'WorkOS not configured' }, 500);
   }
 
-  // Build WorkOS authorization URL
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
   const params = new URLSearchParams({
     client_id: workosClientId,
     redirect_uri: `${baseUrl}/api/auth/callback`,
@@ -33,10 +30,5 @@ export default async function handler(request) {
     provider: 'authkit',
   });
 
-  const authUrl = `https://api.workos.com/user_management/authorize?${params}`;
-
-  return new Response(JSON.stringify({ url: authUrl }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return json({ url: `https://api.workos.com/user_management/authorize?${params}` });
 }

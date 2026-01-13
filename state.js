@@ -186,13 +186,8 @@ export function ensureGroupHasId(group, groupIndex = -1, config = state.configDa
 export function loadCollapsedState() {
     try {
         const stored = localStorage.getItem(COLLAPSED_SECTIONS_KEY);
-        if (stored) {
-            state.collapsedSections = JSON.parse(stored);
-        } else {
-            state.collapsedSections = {};
-        }
-    } catch (error) {
-        console.warn('Unable to read collapsed sections:', error);
+        state.collapsedSections = stored ? JSON.parse(stored) : {};
+    } catch {
         state.collapsedSections = {};
     }
 }
@@ -200,55 +195,46 @@ export function loadCollapsedState() {
 export function saveCollapsedState() {
     try {
         localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(state.collapsedSections));
-    } catch (error) {
-        console.warn('Unable to save collapsed sections:', error);
+    } catch { /* ignore */ }
+}
+
+// LocalStorage helpers with fallback
+function getStoredValue(key) {
+    try {
+        return localStorage.getItem(key) || null;
+    } catch {
+        return null;
     }
+}
+
+function setStoredValue(key, value) {
+    try {
+        if (value) {
+            localStorage.setItem(key, value);
+        } else {
+            localStorage.removeItem(key);
+        }
+    } catch { /* ignore */ }
 }
 
 // Organization preference helpers
 export function loadOrgPreference() {
-    try {
-        return localStorage.getItem(CURRENT_ORG_KEY) || null;
-    } catch (error) {
-        console.warn('Unable to read org preference:', error);
-        return null;
-    }
+    return getStoredValue(CURRENT_ORG_KEY);
 }
 
 export function saveOrgPreference(orgId) {
-    try {
-        if (orgId) {
-            localStorage.setItem(CURRENT_ORG_KEY, orgId);
-        } else {
-            localStorage.removeItem(CURRENT_ORG_KEY);
-        }
-        state.currentOrgId = orgId;
-    } catch (error) {
-        console.warn('Unable to save org preference:', error);
-    }
+    setStoredValue(CURRENT_ORG_KEY, orgId);
+    state.currentOrgId = orgId;
 }
 
 // Canvas preference helpers
 export function loadCanvasPreference() {
-    try {
-        return localStorage.getItem(CURRENT_CANVAS_KEY) || null;
-    } catch (error) {
-        console.warn('Unable to read canvas preference:', error);
-        return null;
-    }
+    return getStoredValue(CURRENT_CANVAS_KEY);
 }
 
 export function saveCanvasPreference(canvasId) {
-    try {
-        if (canvasId) {
-            localStorage.setItem(CURRENT_CANVAS_KEY, canvasId);
-        } else {
-            localStorage.removeItem(CURRENT_CANVAS_KEY);
-        }
-        state.currentCanvasId = canvasId;
-    } catch (error) {
-        console.warn('Unable to save canvas preference:', error);
-    }
+    setStoredValue(CURRENT_CANVAS_KEY, canvasId);
+    state.currentCanvasId = canvasId;
 }
 
 // Group agents by phase for rendering

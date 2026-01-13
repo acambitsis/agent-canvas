@@ -3,78 +3,59 @@
  * Get user's organizations from session
  */
 
-export const config = {
-  runtime: 'edge',
-};
+export const config = { runtime: 'edge' };
+
+function parseSession(request) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/session=([^;]+)/);
+  if (!match) return null;
+  try {
+    return JSON.parse(atob(match[1]));
+  } catch {
+    return null;
+  }
+}
+
+function json(data) {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+async function fetchOrgDetails(orgId, apiKey) {
+  const response = await fetch(`https://api.workos.com/organizations/${orgId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
 
 export default async function handler(request) {
-  const cookie = request.headers.get('Cookie') || '';
-  const sessionMatch = cookie.match(/session=([^;]+)/);
-
-  if (!sessionMatch) {
-    return new Response(JSON.stringify({ organizations: [] }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const session = parseSession(request);
+  if (!session) {
+    return json({ organizations: [] });
   }
 
-  try {
-    const sessionData = JSON.parse(atob(sessionMatch[1]));
-    const orgs = sessionData.orgs || [];
+  const orgs = session.orgs || [];
 
-    // If we have org IDs but need more details, fetch from WorkOS
-    if (orgs.length > 0 && !orgs[0].name) {
-      const workosApiKey = process.env.WORKOS_API_KEY;
-
-      if (workosApiKey) {
-        // Fetch organization details
-        const enrichedOrgs = await Promise.all(
-          orgs.map(async (org) => {
-            try {
-              const response = await fetch(
-                `https://api.workos.com/organizations/${org.id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${workosApiKey}`,
-                  },
-                }
-              );
-              if (response.ok) {
-                const orgData = await response.json();
-                return {
-                  id: org.id,
-                  name: orgData.name,
-                  role: org.role,
-                };
-              }
-            } catch (e) {
-              console.error('Failed to fetch org details:', e);
-            }
-            return org;
-          })
-        );
-
-        return new Response(
-          JSON.stringify({ organizations: enrichedOrgs }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-    }
-
-    return new Response(
-      JSON.stringify({ organizations: orgs }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  } catch {
-    return new Response(JSON.stringify({ organizations: [] }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  // If orgs already have names, return as-is
+  if (orgs.length === 0 || orgs[0].name) {
+    return json({ organizations: orgs });
   }
+
+  // Enrich orgs with names from WorkOS API
+  const workosApiKey = process.env.WORKOS_API_KEY;
+  if (!workosApiKey) {
+    return json({ organizations: orgs });
+  }
+
+  const enrichedOrgs = await Promise.all(
+    orgs.map(async (org) => {
+      const details = await fetchOrgDetails(org.id, workosApiKey).catch(() => null);
+      return details ? { id: org.id, name: details.name, role: org.role } : org;
+    })
+  );
+
+  return json({ organizations: enrichedOrgs });
 }

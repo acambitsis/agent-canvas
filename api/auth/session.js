@@ -3,39 +3,34 @@
  * Get current session info
  */
 
-export const config = {
-  runtime: 'edge',
-};
+export const config = { runtime: 'edge' };
+
+function parseSession(request) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/session=([^;]+)/);
+  if (!match) return null;
+  try {
+    return JSON.parse(atob(match[1]));
+  } catch {
+    return null;
+  }
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 export default async function handler(request) {
-  const cookie = request.headers.get('Cookie') || '';
-  const sessionMatch = cookie.match(/session=([^;]+)/);
-
-  if (!sessionMatch) {
-    return new Response(JSON.stringify({ authenticated: false }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const session = parseSession(request);
+  if (!session) {
+    return json({ authenticated: false });
   }
-
-  try {
-    const sessionData = JSON.parse(atob(sessionMatch[1]));
-
-    return new Response(
-      JSON.stringify({
-        authenticated: true,
-        user: sessionData.user,
-        orgs: sessionData.orgs || [],
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  } catch {
-    return new Response(JSON.stringify({ authenticated: false }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  return json({
+    authenticated: true,
+    user: session.user,
+    orgs: session.orgs || [],
+  });
 }

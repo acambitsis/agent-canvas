@@ -1,8 +1,39 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { requireAuth, requireOrgAccess } from "./lib/auth";
-import { internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import { Id, Doc } from "./_generated/dataModel";
+import { QueryCtx, MutationCtx } from "./_generated/server";
+import { AuthContext } from "./lib/auth";
+
+// Helper to verify canvas access and return canvas
+async function getCanvasWithAccess(
+  ctx: QueryCtx | MutationCtx,
+  auth: AuthContext,
+  canvasId: Id<"canvases">
+): Promise<Doc<"canvases">> {
+  const canvas = await ctx.db.get(canvasId);
+  if (!canvas) throw new Error("Canvas not found");
+  requireOrgAccess(auth, canvas.workosOrgId);
+  return canvas;
+}
+
+// Helper to get agent with canvas access verification
+async function getAgentWithAccess(
+  ctx: QueryCtx | MutationCtx,
+  auth: AuthContext,
+  agentId: Id<"agents">
+): Promise<{ agent: Doc<"agents">; canvas: Doc<"canvases"> }> {
+  const agent = await ctx.db.get(agentId);
+  if (!agent) throw new Error("Agent not found");
+  const canvas = await getCanvasWithAccess(ctx, auth, agent.canvasId);
+  return { agent, canvas };
+}
+
+// Helper to extract serializable agent data for history
+function getAgentSnapshot(agent: Doc<"agents">): Record<string, unknown> {
+  const { _id, _creationTime, ...data } = agent;
+  return data;
+}
 
 /**
  * List all agents for a canvas
@@ -11,13 +42,7 @@ export const list = query({
   args: { canvasId: v.id("canvases") },
   handler: async (ctx, { canvasId }) => {
     const auth = await requireAuth(ctx);
-
-    // Verify access to the canvas's org
-    const canvas = await ctx.db.get(canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await getCanvasWithAccess(ctx, auth, canvasId);
 
     const agents = await ctx.db
       .query("agents")
@@ -25,14 +50,11 @@ export const list = query({
       .collect();
 
     // Sort by phaseOrder, then agentOrder
-    agents.sort((a, b) => {
-      if (a.phaseOrder !== b.phaseOrder) {
-        return a.phaseOrder - b.phaseOrder;
-      }
-      return a.agentOrder - b.agentOrder;
-    });
-
-    return agents;
+    return agents.sort((a, b) =>
+      a.phaseOrder !== b.phaseOrder
+        ? a.phaseOrder - b.phaseOrder
+        : a.agentOrder - b.agentOrder
+    );
   },
 });
 
@@ -43,19 +65,7 @@ export const get = query({
   args: { agentId: v.id("agents") },
   handler: async (ctx, { agentId }) => {
     const auth = await requireAuth(ctx);
-
-    const agent = await ctx.db.get(agentId);
-    if (!agent) {
-      throw new Error("Agent not found");
-    }
-
-    // Verify access via canvas
-    const canvas = await ctx.db.get(agent.canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
-
+    const { agent } = await getAgentWithAccess(ctx, auth, agentId);
     return agent;
   },
 });
@@ -85,36 +95,17 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const auth = await requireAuth(ctx);
-
-    // Verify access to the canvas's org
-    const canvas = await ctx.db.get(args.canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await getCanvasWithAccess(ctx, auth, args.canvasId);
 
     const now = Date.now();
-
     const agentId = await ctx.db.insert("agents", {
-      canvasId: args.canvasId,
-      phase: args.phase,
-      phaseOrder: args.phaseOrder,
-      agentOrder: args.agentOrder,
-      name: args.name,
-      objective: args.objective,
-      description: args.description,
-      tools: args.tools,
-      journeySteps: args.journeySteps,
-      demoLink: args.demoLink,
-      videoLink: args.videoLink,
-      metrics: args.metrics,
+      ...args,
       createdBy: auth.workosUserId,
       updatedBy: auth.workosUserId,
       createdAt: now,
       updatedAt: now,
     });
 
-    // Record history
     await ctx.db.insert("agentHistory", {
       agentId,
       changedBy: auth.workosUserId,
@@ -152,47 +143,22 @@ export const update = mutation({
   },
   handler: async (ctx, { agentId, ...updates }) => {
     const auth = await requireAuth(ctx);
-
-    const agent = await ctx.db.get(agentId);
-    if (!agent) {
-      throw new Error("Agent not found");
-    }
-
-    // Verify access via canvas
-    const canvas = await ctx.db.get(agent.canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    const { agent } = await getAgentWithAccess(ctx, auth, agentId);
 
     const now = Date.now();
+    const previousData = getAgentSnapshot(agent);
 
-    // Store previous data for history
-    const previousData = { ...agent };
-    delete (previousData as any)._id;
-    delete (previousData as any)._creationTime;
+    // Filter out undefined values from updates
+    const definedUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== undefined)
+    );
 
-    // Build update object, only including defined values
-    const updateData: Record<string, any> = {
+    await ctx.db.patch(agentId, {
+      ...definedUpdates,
       updatedBy: auth.workosUserId,
       updatedAt: now,
-    };
+    });
 
-    if (updates.phase !== undefined) updateData.phase = updates.phase;
-    if (updates.phaseOrder !== undefined) updateData.phaseOrder = updates.phaseOrder;
-    if (updates.agentOrder !== undefined) updateData.agentOrder = updates.agentOrder;
-    if (updates.name !== undefined) updateData.name = updates.name;
-    if (updates.objective !== undefined) updateData.objective = updates.objective;
-    if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.tools !== undefined) updateData.tools = updates.tools;
-    if (updates.journeySteps !== undefined) updateData.journeySteps = updates.journeySteps;
-    if (updates.demoLink !== undefined) updateData.demoLink = updates.demoLink;
-    if (updates.videoLink !== undefined) updateData.videoLink = updates.videoLink;
-    if (updates.metrics !== undefined) updateData.metrics = updates.metrics;
-
-    await ctx.db.patch(agentId, updateData);
-
-    // Record history
     await ctx.db.insert("agentHistory", {
       agentId,
       changedBy: auth.workosUserId,
@@ -210,39 +176,19 @@ export const remove = mutation({
   args: { agentId: v.id("agents") },
   handler: async (ctx, { agentId }) => {
     const auth = await requireAuth(ctx);
-
-    const agent = await ctx.db.get(agentId);
-    if (!agent) {
-      throw new Error("Agent not found");
-    }
-
-    // Verify access via canvas
-    const canvas = await ctx.db.get(agent.canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    const { agent } = await getAgentWithAccess(ctx, auth, agentId);
 
     const now = Date.now();
 
-    // Store previous data for history
-    const previousData = { ...agent };
-    delete (previousData as any)._id;
-    delete (previousData as any)._creationTime;
-
-    // Record history before deletion
+    // Record history before deletion (history is preserved after agent deletion)
     await ctx.db.insert("agentHistory", {
       agentId,
       changedBy: auth.workosUserId,
       changedAt: now,
       changeType: "delete",
-      previousData,
+      previousData: getAgentSnapshot(agent),
     });
 
-    // Delete associated history (optional - you might want to keep it)
-    // For now, we keep history even after agent deletion
-
-    // Delete the agent
     await ctx.db.delete(agentId);
   },
 });
@@ -259,18 +205,7 @@ export const reorder = mutation({
   },
   handler: async (ctx, { agentId, phase, phaseOrder, agentOrder }) => {
     const auth = await requireAuth(ctx);
-
-    const agent = await ctx.db.get(agentId);
-    if (!agent) {
-      throw new Error("Agent not found");
-    }
-
-    // Verify access via canvas
-    const canvas = await ctx.db.get(agent.canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await getAgentWithAccess(ctx, auth, agentId);
 
     await ctx.db.patch(agentId, {
       phase,
@@ -311,13 +246,7 @@ export const bulkCreate = mutation({
   },
   handler: async (ctx, { canvasId, agents }) => {
     const auth = await requireAuth(ctx);
-
-    // Verify access to the canvas's org
-    const canvas = await ctx.db.get(canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
-    }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await getCanvasWithAccess(ctx, auth, canvasId);
 
     const now = Date.now();
     const createdIds: Id<"agents">[] = [];
@@ -325,24 +254,13 @@ export const bulkCreate = mutation({
     for (const agentData of agents) {
       const agentId = await ctx.db.insert("agents", {
         canvasId,
-        phase: agentData.phase,
-        phaseOrder: agentData.phaseOrder,
-        agentOrder: agentData.agentOrder,
-        name: agentData.name,
-        objective: agentData.objective,
-        description: agentData.description,
-        tools: agentData.tools,
-        journeySteps: agentData.journeySteps,
-        demoLink: agentData.demoLink,
-        videoLink: agentData.videoLink,
-        metrics: agentData.metrics,
+        ...agentData,
         createdBy: auth.workosUserId,
         updatedBy: auth.workosUserId,
         createdAt: now,
         updatedAt: now,
       });
 
-      // Record history
       await ctx.db.insert("agentHistory", {
         agentId,
         changedBy: auth.workosUserId,

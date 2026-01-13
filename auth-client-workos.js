@@ -1,35 +1,11 @@
 /**
- * WorkOS AuthKit + Convex client helper
- * Replaces Clerk authentication
+ * WorkOS AuthKit authentication client
+ * Handles user authentication via WorkOS
  */
 
-import { ConvexClient } from "convex/browser";
-
-let convexClient = null;
 let currentUser = null;
 let currentOrgs = [];
 let isInitialized = false;
-
-/**
- * Initialize the Convex client
- * @param {string} convexUrl - The Convex deployment URL
- * @returns {ConvexClient}
- */
-export function initConvex(convexUrl) {
-  if (convexClient) {
-    return convexClient;
-  }
-  convexClient = new ConvexClient(convexUrl);
-  return convexClient;
-}
-
-/**
- * Get the Convex client instance
- * @returns {ConvexClient|null}
- */
-export function getConvex() {
-  return convexClient;
-}
 
 /**
  * Initialize authentication - check session and set up user
@@ -116,11 +92,9 @@ export function getUserEmail() {
  */
 export function getUserName() {
   if (!currentUser) return "";
-  if (currentUser.firstName && currentUser.lastName) {
-    return `${currentUser.firstName} ${currentUser.lastName}`;
-  }
-  if (currentUser.firstName) return currentUser.firstName;
-  return currentUser.email || "";
+  const { firstName, lastName, email } = currentUser;
+  if (firstName && lastName) return `${firstName} ${lastName}`;
+  return firstName || email || "";
 }
 
 /**
@@ -175,17 +149,6 @@ export async function signOut() {
 }
 
 /**
- * Get auth token for API calls (if needed)
- * For Convex, authentication is handled via the session cookie
- * @returns {Promise<string|null>}
- */
-export async function getAuthToken() {
-  // With WorkOS + Convex, we use session cookies
-  // This function is kept for compatibility but returns null
-  return null;
-}
-
-/**
  * Check if user has access to an organization
  * @param {string} orgId - WorkOS organization ID
  * @returns {boolean}
@@ -214,24 +177,5 @@ export function getCurrentOrg() {
  */
 export function setCurrentOrg(orgId) {
   localStorage.setItem("agentcanvas-current-org", orgId);
-  // Dispatch event for UI updates
-  window.dispatchEvent(
-    new CustomEvent("orgChanged", { detail: { orgId } })
-  );
-}
-
-/**
- * Subscribe to auth state changes
- * @param {function} callback - Called when auth state changes
- * @returns {function} Unsubscribe function
- */
-export function onAuthStateChange(callback) {
-  const handler = () => callback({ user: currentUser, authenticated: !!currentUser });
-  window.addEventListener("authStateChange", handler);
-  return () => window.removeEventListener("authStateChange", handler);
-}
-
-// Emit auth state change
-function emitAuthStateChange() {
-  window.dispatchEvent(new CustomEvent("authStateChange"));
+  window.dispatchEvent(new CustomEvent("orgChanged", { detail: { orgId } }));
 }
