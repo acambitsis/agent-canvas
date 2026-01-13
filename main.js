@@ -1783,6 +1783,6 @@ function bindStaticEventHandlers() {
 document.addEventListener('DOMContentLoaded', bindStaticEventHandlers);
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
-// Logout is now handled by Clerk UserButton component
+// Logout is handled by the user menu dropdown via signOut()
 
 // No global window exports; all handlers are bound below.

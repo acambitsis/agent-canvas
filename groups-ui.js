@@ -3,7 +3,7 @@
  * Handles group switcher, group management modal, invites UI
  */
 
-import { authenticatedFetch, acceptPendingInvites, getUserId } from './auth-client.js';
+import { authenticatedFetch, acceptPendingInvites, getUserId } from './auth-client-workos.js';
 import { refreshIcons, state } from './state.js';
 
 // Group state

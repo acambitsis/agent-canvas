@@ -179,3 +179,37 @@ export function setCurrentOrg(orgId) {
   localStorage.setItem("agentcanvas-current-org", orgId);
   window.dispatchEvent(new CustomEvent("orgChanged", { detail: { orgId } }));
 }
+
+/**
+ * Enhanced fetch wrapper that handles auth errors
+ * With WorkOS, authentication uses session cookies (no Bearer token needed)
+ * @param {string} url - URL to fetch
+ * @param {object} options - Fetch options
+ * @returns {Promise<Response>}
+ */
+export async function authenticatedFetch(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    credentials: 'include', // Ensure cookies are sent
+  });
+
+  // Handle 401 by redirecting to login
+  if (response.status === 401) {
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
+
+  return response;
+}
+
+/**
+ * Accept pending organization invites
+ * With WorkOS, invites are handled through WorkOS AuthKit UI
+ * This is a no-op for backward compatibility
+ * @returns {Promise<{processed: number, groups: Array}>}
+ */
+export async function acceptPendingInvites() {
+  // WorkOS handles invites through its own UI flow
+  // This function is kept for backward compatibility
+  return { processed: 0, groups: [] };
+}

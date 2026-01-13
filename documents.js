@@ -1,5 +1,5 @@
 import { BLANK_DOCUMENT_TEMPLATE, DEFAULT_DOCUMENT_NAME, DOCUMENT_STORAGE_KEY, refreshIcons, state } from './state.js';
-import { authenticatedFetch } from './auth-client.js';
+import { authenticatedFetch } from './auth-client-workos.js';
 import { getCurrentGroupId, getUserGroups, canManageCanvasesInCurrentGroup } from './groups-ui.js';
 
 let loadAgentsCallback = async () => {};
@@ -798,7 +798,7 @@ export async function openShareModal() {
         
         html += '<div class="form-group" id="shareUserGroup">';
         html += '<label id="sharePrincipalLabel">User ID</label>';
-        html += '<input type="text" id="sharePrincipalId" class="form-input" placeholder="Enter Clerk User ID">';
+        html += '<input type="text" id="sharePrincipalId" class="form-input" placeholder="Enter WorkOS User ID">';
         html += '</div>';
 
         if (groups.length > 0) {
