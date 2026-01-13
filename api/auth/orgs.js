@@ -3,25 +3,9 @@
  * Get user's organizations from session
  */
 
+import { parseSession, json } from '../lib/session-utils.js';
+
 export const config = { runtime: 'edge' };
-
-function parseSession(request) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/session=([^;]+)/);
-  if (!match) return null;
-  try {
-    return JSON.parse(atob(match[1]));
-  } catch {
-    return null;
-  }
-}
-
-function json(data) {
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
 
 async function fetchOrgDetails(orgId, apiKey) {
   const response = await fetch(`https://api.workos.com/organizations/${orgId}`, {
@@ -32,7 +16,7 @@ async function fetchOrgDetails(orgId, apiKey) {
 }
 
 export default async function handler(request) {
-  const session = parseSession(request);
+  const session = await parseSession(request);
   if (!session) {
     return json({ organizations: [] });
   }

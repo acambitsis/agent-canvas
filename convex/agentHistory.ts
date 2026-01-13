@@ -57,25 +57,25 @@ export const listByCanvas = query({
       .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))
       .collect();
 
-    // Get history for all agents
-    const allHistory = [];
-    for (const agent of agents) {
-      const history = await ctx.db
-        .query("agentHistory")
-        .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
-        .collect();
-      allHistory.push(...history);
-    }
+    // Fetch history for all agents in parallel
+    const historyArrays = await Promise.all(
+      agents.map((agent) =>
+        ctx.db
+          .query("agentHistory")
+          .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
+          .collect()
+      )
+    );
 
-    // Sort by time descending
-    allHistory.sort((a, b) => b.changedAt - a.changedAt);
-
-    return allHistory;
+    // Flatten and sort by time descending
+    return historyArrays.flat().sort((a, b) => b.changedAt - a.changedAt);
   },
 });
 
 /**
  * Get recent history across all canvases in an org
+ * Note: For orgs with many canvases/agents, consider adding a denormalized
+ * index on agentHistory with workosOrgId for better performance.
  */
 export const listRecent = query({
   args: {
@@ -92,32 +92,42 @@ export const listRecent = query({
       .withIndex("by_org", (q) => q.eq("workosOrgId", workosOrgId))
       .collect();
 
-    // Get all agents in these canvases
-    const allHistory = [];
-    for (const canvas of canvases) {
-      const agents = await ctx.db
-        .query("agents")
-        .withIndex("by_canvas", (q) => q.eq("canvasId", canvas._id))
-        .collect();
+    // Fetch all agents for all canvases in parallel
+    const agentsByCanvas = await Promise.all(
+      canvases.map(async (canvas) => ({
+        canvas,
+        agents: await ctx.db
+          .query("agents")
+          .withIndex("by_canvas", (q) => q.eq("canvasId", canvas._id))
+          .collect(),
+      }))
+    );
 
-      for (const agent of agents) {
+    // Flatten to get all agents with their canvas info
+    const allAgents = agentsByCanvas.flatMap(({ canvas, agents }) =>
+      agents.map((agent) => ({ agent, canvas }))
+    );
+
+    // Fetch history for all agents in parallel
+    const historyWithContext = await Promise.all(
+      allAgents.map(async ({ agent, canvas }) => {
         const history = await ctx.db
           .query("agentHistory")
           .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
           .collect();
-        allHistory.push(
-          ...history.map((h) => ({
-            ...h,
-            canvasId: canvas._id,
-            canvasTitle: canvas.title,
-            agentName: agent.name,
-          }))
-        );
-      }
-    }
+        return history.map((h) => ({
+          ...h,
+          canvasId: canvas._id,
+          canvasTitle: canvas.title,
+          agentName: agent.name,
+        }));
+      })
+    );
 
-    // Sort by time descending and limit
-    allHistory.sort((a, b) => b.changedAt - a.changedAt);
-    return allHistory.slice(0, limit);
+    // Flatten, sort by time descending, and limit
+    return historyWithContext
+      .flat()
+      .sort((a, b) => b.changedAt - a.changedAt)
+      .slice(0, limit);
   },
 });

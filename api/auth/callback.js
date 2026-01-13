@@ -3,6 +3,8 @@
  * Handle WorkOS OAuth callback
  */
 
+import { encryptSession, createSessionCookie } from '../lib/session-utils.js';
+
 export const config = { runtime: 'edge' };
 
 function redirect(baseUrl, error) {
@@ -82,13 +84,14 @@ export default async function handler(request) {
       })),
     };
 
-    const sessionToken = btoa(JSON.stringify(sessionData));
+    // Encrypt session data
+    const sessionToken = await encryptSession(sessionData);
 
     return new Response(null, {
       status: 302,
       headers: {
         Location: baseUrl,
-        'Set-Cookie': `session=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`,
+        'Set-Cookie': createSessionCookie(sessionToken),
       },
     });
   } catch (err) {
