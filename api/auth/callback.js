@@ -46,10 +46,16 @@ export default async function handler(request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
+  const state = url.searchParams.get('state');
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
 
   if (error) return redirect(baseUrl, error);
   if (!code) return redirect(baseUrl, 'missing_code');
+
+  // Validate OAuth state to prevent CSRF
+  const cookies = request.headers.get('Cookie') || '';
+  const savedState = cookies.match(/oauth_state=([^;]+)/)?.[1];
+  if (!state || state !== savedState) return redirect(baseUrl, 'invalid_state');
 
   const workosApiKey = process.env.WORKOS_API_KEY;
   const workosClientId = process.env.WORKOS_CLIENT_ID;
@@ -89,10 +95,11 @@ export default async function handler(request) {
 
     return new Response(null, {
       status: 302,
-      headers: {
-        Location: baseUrl,
-        'Set-Cookie': createSessionCookie(sessionToken),
-      },
+      headers: [
+        ['Location', baseUrl],
+        ['Set-Cookie', createSessionCookie(sessionToken)],
+        ['Set-Cookie', 'oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0'],
+      ],
     });
   } catch (err) {
     console.error('Auth callback error:', err);

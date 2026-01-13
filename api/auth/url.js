@@ -23,12 +23,20 @@ export default async function handler(request) {
   }
 
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const state = crypto.randomUUID();
   const params = new URLSearchParams({
     client_id: workosClientId,
     redirect_uri: `${baseUrl}/api/auth/callback`,
     response_type: 'code',
     provider: 'authkit',
+    state,
   });
 
-  return json({ url: `https://api.workos.com/user_management/authorize?${params}` });
+  return new Response(JSON.stringify({ url: `https://api.workos.com/user_management/authorize?${params}` }), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Set-Cookie': `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`,
+    },
+  });
 }
