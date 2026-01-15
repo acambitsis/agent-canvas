@@ -1,7 +1,6 @@
 import {
     getAvailableTools,
-    getSectionColor,
-    getToolConfig
+    getSectionColor
 } from './config.js';
 import {
     handleDocumentSelection,
@@ -35,11 +34,80 @@ import {
     setCurrentOrgId,
     getCurrentOrg,
     canManageCanvases,
-    getCurrentOrgRole
+    getCurrentOrgRole,
+    loadGroupingPreference,
+    setGroupingTagType,
+    getGroupingTagType
 } from './state.js';
 import { initAuth, signOut, getCurrentUser, getUserName, getUserEmail, isAuthenticated, getIdToken } from './auth-client-workos.js';
-import { initConvexClient, getConvexClient, updateConvexAuth, getDocument, syncOrgMemberships, unsubscribeAll } from './convex-client.js';
+import { initConvexClient, initConvexClientAsync, getConvexClient, updateConvexAuth, getDocument, syncOrgMemberships, unsubscribeAll } from './convex-client.js';
 import { convexToYaml, yamlToConvexAgents } from './yaml-converter.js';
+import { groupAgentsByTag, flattenAgentsFromConfig, filterAgents, searchAgents } from './grouping.js';
+import { TAG_TYPES, getAgentTagDisplay, getToolDisplay } from './types/tags.js';
+
+// Tag type to DOM container ID mapping
+const TAG_SELECTOR_IDS = {
+    department: 'agentDepartmentTags',
+    status: 'agentStatusTags',
+    implementationStatus: 'agentImplementationTags',
+    priority: 'agentPriorityTags'
+};
+
+// ----- Tag selector helpers -----
+function populateTagSelector(containerId, tagType, selectedValue) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const tagDef = TAG_TYPES[tagType];
+    if (!tagDef?.values) {
+        container.innerHTML = '<span class="text-muted">No options available</span>';
+        return;
+    }
+
+    const optionsHTML = tagDef.values.map(option => {
+        const isSelected = option.id === selectedValue;
+        return `
+            <button type="button"
+                class="tag-select__option ${isSelected ? 'is-selected' : ''}"
+                data-tag-type="${tagType}"
+                data-tag-value="${option.id}"
+                style="--tag-color: ${option.color}; --tag-bg: ${option.color}15; --tag-border: ${option.color}40;">
+                ${option.label}
+            </button>
+        `;
+    }).join('');
+
+    // Add "None" option at the beginning
+    const noneSelected = !selectedValue;
+    container.innerHTML = `
+        <button type="button"
+            class="tag-select__option ${noneSelected ? 'is-selected' : ''}"
+            data-tag-type="${tagType}"
+            data-tag-value=""
+            style="--tag-color: var(--text-muted);">
+            None
+        </button>
+        ${optionsHTML}
+    `;
+
+    // Add click handlers
+    container.querySelectorAll('.tag-select__option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Remove selected from all options in this container
+            container.querySelectorAll('.tag-select__option').forEach(b => b.classList.remove('is-selected'));
+            // Add selected to clicked option
+            btn.classList.add('is-selected');
+        });
+    });
+}
+
+function getSelectedTagValue(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return null;
+    const selected = container.querySelector('.tag-select__option.is-selected');
+    return selected?.dataset.tagValue || null;
+}
 
 // Re-export for backward compatibility
 export function getCurrentGroupId() {
@@ -52,10 +120,6 @@ export function getUserGroups() {
 
 export function canManageCanvasesInCurrentGroup() {
     return canManageCanvases();
-}
-
-function getCurrentGroupRole() {
-    return getCurrentOrgRole();
 }
 
 async function initializeGroups() {
@@ -93,28 +157,21 @@ function renderGroupSwitcher() {
 // ----- Role-based UI visibility -----
 function updateRoleBasedUI() {
     const canManage = canManageCanvasesInCurrentGroup();
-    const role = getCurrentGroupRole();
-    const isViewer = role === 'viewer';
+    const role = getCurrentOrgRole();
 
     // Update board menu - hide admin-only actions for viewers
     const boardMenu = document.getElementById('board-menu');
     if (boardMenu) {
-        const editTitleBtn = boardMenu.querySelector('[data-board-action="edit-title"]');
-        const editYamlBtn = boardMenu.querySelector('[data-board-action="edit-full-yaml"]');
-        const addSectionBtn = boardMenu.querySelector('[data-board-action="add-section"]');
+        const adminActions = ['edit-title', 'edit-full-yaml', 'add-section'];
+        const displayValue = canManage ? '' : 'none';
 
-        if (editTitleBtn) {
-            editTitleBtn.style.display = canManage ? '' : 'none';
-        }
-        if (editYamlBtn) {
-            editYamlBtn.style.display = canManage ? '' : 'none';
-        }
-        if (addSectionBtn) {
-            addSectionBtn.style.display = canManage ? '' : 'none';
-        }
+        adminActions.forEach(action => {
+            const btn = boardMenu.querySelector(`[data-board-action="${action}"]`);
+            if (btn) btn.style.display = displayValue;
+        });
     }
 
-    // Set data attribute on body for CSS-based hiding
+    // Set data attributes on body for CSS-based hiding
     document.body.dataset.userRole = role || 'viewer';
     document.body.dataset.canManage = canManage ? 'true' : 'false';
 }
@@ -197,7 +254,7 @@ function updateCollapseAllButton() {
 }
 
 // ----- Modal YAML view helpers -----
-async function updateAgentModalViewUI() {
+function updateAgentModalViewUI() {
     updateDualViewModalUI(modalViewConfigs.agent);
 }
 
@@ -232,6 +289,16 @@ function populateAgentFormFields(agent = {}) {
     const metrics = getAgentMetrics(agent);
     document.getElementById('metricsUsage').value = metrics.usageThisWeek || '';
     document.getElementById('metricsTimeSaved').value = metrics.timeSaved || '';
+
+    // Populate tag selectors with clickable options
+    const tags = agent.tags || {};
+    for (const [tagType, containerId] of Object.entries(TAG_SELECTOR_IDS)) {
+        populateTagSelector(containerId, tagType, tags[tagType]);
+    }
+
+    // Populate phase input if present
+    const phaseInput = document.getElementById('agentPhase');
+    if (phaseInput) phaseInput.value = agent.phase || '';
 
     refreshIcons();
 }
@@ -316,6 +383,23 @@ function buildAgentDraftFromForm() {
     metrics.usageThisWeek = document.getElementById('metricsUsage').value;
     metrics.timeSaved = document.getElementById('metricsTimeSaved').value;
     draft.metrics = metrics;
+
+    // Collect tag values from custom tag selectors
+    const tags = { ...(baseAgent.tags || {}) };
+    for (const [tagType, containerId] of Object.entries(TAG_SELECTOR_IDS)) {
+        const value = getSelectedTagValue(containerId);
+        if (value) {
+            tags[tagType] = value;
+        } else {
+            delete tags[tagType];
+        }
+    }
+
+    draft.tags = Object.keys(tags).length > 0 ? tags : undefined;
+
+    // Phase (for grouping)
+    const phaseInput = document.getElementById('agentPhase');
+    if (phaseInput?.value) draft.phase = phaseInput.value;
 
     return draft;
 }
@@ -616,9 +700,6 @@ async function saveConfig() {
 }
 
 // ----- Rendering helpers -----
-// Generate dynamic CSS for group colors
-// Dynamic CSS generation removed - now using static CSS with data attributes
-
 function renderMenuItems(actions = []) {
     return actions.map(action => {
         if (action.type === 'divider') {
@@ -648,16 +729,6 @@ function renderContextMenuTrigger({ menuId, title, actions, icon = 'more-vertica
 }
 
 // Template Functions
-function createToolChip(toolName) {
-    const toolConfig = getToolConfig(toolName);
-    const colorAttr = toolConfig.colorKey ? `data-color="${toolConfig.colorKey}"` : '';
-    const isUnknown = !toolConfig.colorKey || toolConfig.colorKey === 'gray';
-    const unknownClass = isUnknown ? ' tool-chip-unknown' : '';
-    const icon = isUnknown ? 'alert-circle' : toolConfig.icon;
-
-    return `<span class="chip tool-chip${unknownClass}" ${colorAttr} title="${toolName}"><i data-lucide="${icon}"></i> ${toolName}</span>`;
-}
-
 function createJourneyTooltip(steps) {
     const stepsList = toArray(steps);
     if (stepsList.length === 0) {
@@ -667,211 +738,191 @@ function createJourneyTooltip(steps) {
     return `<div class="journey-tooltip"><strong>User Journey:</strong><br>${stepsHTML}</div>`;
 }
 
-function renderMetricRow({ label, value, fillClass, width }) {
-    return `
-        <div class="metric-row">
-            <div class="metric-label">
-                <span>${label}</span>
-                <span class="metric-value">${value}</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill ${fillClass}" style="width: ${width}%;"></div>
-            </div>
-        </div>`;
-}
-
-function createMetricsTooltip(agent) {
-    const metrics = getAgentMetrics(agent);
-    const usageNum = parseInt(metrics.usageThisWeek, 10) || 0;
-    const usageMax = 100;
-    const usagePercent = Math.min((usageNum / usageMax) * 100, 100);
-
-    const timeSavedNum = parseInt(metrics.timeSaved, 10) || 0;
-    const roiValue = metrics.roiContribution === 'Very High' ? 95 :
-                    metrics.roiContribution === 'High' ? 85 :
-                    metrics.roiContribution === 'Medium' ? 60 : 30;
-
-    const metricRows = [
-        {
-            label: 'Usage This Week',
-            value: metrics.usageThisWeek,
-            fillClass: 'usage',
-            width: usagePercent
-        },
-        {
-            label: 'Time Saved',
-            value: metrics.timeSaved,
-            fillClass: 'time-saved',
-            width: timeSavedNum
-        },
-        {
-            label: 'ROI Contribution',
-            value: metrics.roiContribution,
-            fillClass: 'roi-contribution',
-            width: roiValue
-        }
-    ].map(renderMetricRow).join('');
-
-    return `
-        <div class="metrics-tooltip">
-            <div class="metrics-tooltip-header">
-                <h4><i data-lucide="trending-up"></i>${agent.name}</h4>
-            </div>
-            <div class="metrics-tooltip-content">
-                ${metricRows}
-            </div>
-        </div>`;
-}
-
-function renderAgentIconPanel({ journeyHTML, linkUrl, linkTarget, linkTitle, videoLink, metricsHTML }) {
-    const safeVideoLink = videoLink || '#';
-    const videoTitle = videoLink ? 'Watch video overview' : 'Video not available';
-    return `
-        <div class="icon-panel">
-            <div class="icon-panel-item journey-icon">
-                <i data-lucide="map"></i>
-                ${journeyHTML}
-            </div>
-            <a href="${linkUrl}" ${linkTarget} class="icon-panel-item agent-link-icon" title="${linkTitle}">
-                <i data-lucide="external-link"></i>
-            </a>
-            <a href="${safeVideoLink}" class="icon-panel-item video-icon" title="${videoTitle}">
-                <i data-lucide="video"></i>
-            </a>
-            <div class="icon-panel-item metrics-icon">
-                <i data-lucide="trending-up"></i>
-                ${metricsHTML}
-            </div>
-        </div>`;
-}
-
-function createAgentCard(agent, config, groupIndex, agentIndex) {
+function createAgentCard(agent, groupIndex, agentIndex) {
     const tools = toArray(agent.tools);
     const journeySteps = toArray(agent.journeySteps);
     const metrics = getAgentMetrics(agent);
-    const toolsHTML = tools.map(tool => createToolChip(tool, config)).join('');
-    const journeyHTML = createJourneyTooltip(journeySteps);
-    const metricsHTML = createMetricsTooltip({ ...agent, metrics });
-    const linkUrl = agent.demoLink || '#';
-    const linkTarget = agent.demoLink ? 'target="_blank"' : '';
-    const linkTitle = agent.demoLink ? 'Try Demo' : 'Go to agent';
-    const handoverBadge = agent.badge ? `<span class="badge handover-badge">${agent.badge}</span>` : '';
-    const agentMenuTrigger = renderContextMenuTrigger({
-        menuId: `agent-menu-${groupIndex}-${agentIndex}`,
-        title: 'Agent options',
-        actions: [
-            {
-                icon: 'edit-3',
-                label: 'Edit Agent',
-                dataAttrs: `data-action-type="agent-edit" data-group-index="${groupIndex}" data-agent-index="${agentIndex}"`
-            },
-            { type: 'divider' },
-            {
-                icon: 'trash-2',
-                label: 'Delete Agent',
-                danger: true,
-                dataAttrs: `data-action-type="agent-delete" data-group-index="${groupIndex}" data-agent-index="${agentIndex}"`
-            }
-        ]
-    });
 
-    const iconPanelHTML = renderAgentIconPanel({
-        journeyHTML,
-        linkUrl,
-        linkTarget,
-        linkTitle,
-        videoLink: agent.videoLink,
-        metricsHTML
-    });
+    // Create tool chips with new design
+    const toolsHTML = tools.map(tool => {
+        const toolInfo = getToolDisplay(tool);
+        return `<span class="tool-chip" data-tool="${tool.toLowerCase().replace(/\s+/g, '-')}" style="--chip-color: ${toolInfo.color}; --chip-bg: ${toolInfo.color}15; --chip-border: ${toolInfo.color}40;">
+            <i data-lucide="${toolInfo.icon}"></i> ${toolInfo.label}
+        </span>`;
+    }).join('');
+
+    // Create tag indicators
+    const tagIndicatorsHTML = createTagIndicators(agent);
+
+    // Status color based on status tag
+    const statusTag = agent.tags?.status || 'active';
+    const statusColors = { active: '#10B981', draft: '#64748B', review: '#F59E0B', deprecated: '#EF4444' };
+    const statusColor = statusColors[statusTag] || '#F59E0B';
+
+    // Metrics display
+    const adoptionValue = metrics.usageThisWeek || '0';
+    const timeSavedValue = metrics.timeSaved || '0%';
+
+    // Agent menu trigger (simplified for new design)
+    const agentMenuId = `agent-menu-${groupIndex}-${agentIndex}`;
+
+    // Stagger class for animation
+    const staggerClass = `stagger-${((agentIndex % 8) + 1)}`;
 
     return `
-        <div class="surface-panel agent-card">
-            <div class="agent-number">${agent.agentNumber}</div>
-            <h3 class="agent-title u-flex u-align-center u-gap-sm">
-                <span>${agent.name}${handoverBadge}</span>
-                ${agentMenuTrigger}
-            </h3>
-            <div class="agent-objective">Objective: ${agent.objective}</div>
-            <div class="agent-description">${agent.description}</div>
-            <div class="tools-container">${toolsHTML}</div>
-            ${iconPanelHTML}
-        </div>`;
+        <article class="agent-card ${staggerClass}" data-group-index="${groupIndex}" data-agent-index="${agentIndex}">
+            <div class="agent-card__status-strip" style="--status-color: ${statusColor};"></div>
+
+            <header class="agent-card__header">
+                <span class="agent-card__number">${String(agent.agentNumber || agentIndex + 1).padStart(2, '0')}</span>
+                <div class="agent-card__title">
+                    <h3 class="agent-card__name">${agent.name || 'Untitled Agent'}</h3>
+                </div>
+                <button type="button" class="agent-card__menu" data-menu-trigger="${agentMenuId}" title="Agent options">
+                    <i data-lucide="more-horizontal"></i>
+                </button>
+                <div class="context-menu" id="${agentMenuId}">
+                    <div class="context-menu__item" data-action-type="agent-edit" data-group-index="${groupIndex}" data-agent-index="${agentIndex}">
+                        <i data-lucide="edit-3"></i>
+                        <span>Edit Agent</span>
+                    </div>
+                    <div class="context-menu__divider"></div>
+                    <div class="context-menu__item context-menu__item--danger" data-action-type="agent-delete" data-group-index="${groupIndex}" data-agent-index="${agentIndex}">
+                        <i data-lucide="trash-2"></i>
+                        <span>Delete</span>
+                    </div>
+                </div>
+            </header>
+
+            ${tagIndicatorsHTML ? `<div class="agent-card__tags">${tagIndicatorsHTML}</div>` : ''}
+
+            ${agent.objective ? `<p class="agent-card__objective">${agent.objective}</p>` : ''}
+
+            ${agent.description ? `<p class="agent-card__description">${agent.description}</p>` : ''}
+
+            ${toolsHTML ? `<div class="agent-card__tools">${toolsHTML}</div>` : ''}
+
+            <footer class="agent-card__footer">
+                <div class="agent-card__metrics">
+                    <div class="metric">
+                        <i data-lucide="trending-up"></i>
+                        <span class="metric__value">${adoptionValue}</span>
+                    </div>
+                    <div class="metric">
+                        <i data-lucide="clock"></i>
+                        <span class="metric__value">${timeSavedValue}</span>
+                    </div>
+                </div>
+                <div class="agent-card__actions">
+                    ${journeySteps.length > 0 ? `
+                    <button type="button" class="action-icon journey-trigger" title="View journey steps">
+                        <i data-lucide="map"></i>
+                        ${createJourneyTooltip(journeySteps)}
+                    </button>` : ''}
+                    ${agent.demoLink ? `
+                    <a href="${agent.demoLink}" target="_blank" class="action-icon" title="Try Demo">
+                        <i data-lucide="external-link"></i>
+                    </a>` : ''}
+                    ${agent.videoLink ? `
+                    <a href="${agent.videoLink}" target="_blank" class="action-icon" title="Watch video">
+                        <i data-lucide="video"></i>
+                    </a>` : ''}
+                </div>
+            </footer>
+        </article>`;
 }
 
-function createAgentGroup(group, config, groupIndex) {
-    const color = getSectionColor(groupIndex);
-    const iconType = getGroupFormatting(group, 'iconType');
-    const groupClass = getGroupClass(group);
+// Create tag indicator chips for agent card
+function createTagIndicators(agent) {
+    const tags = agent.tags || {};
 
-    const agentsHTML = group.agents.map((agent, agentIndex) =>
-        createAgentCard(agent, config, groupIndex, agentIndex)
+    // Define which tags to show and their rendering
+    const tagConfigs = [
+        { type: 'department', show: tags.department },
+        { type: 'status', show: tags.status && tags.status !== 'active', useStatusDot: true },
+        { type: 'implementationStatus', show: tags.implementationStatus },
+        { type: 'priority', show: tags.priority, iconless: true }
+    ];
+
+    return tagConfigs
+        .filter(config => config.show)
+        .map(config => {
+            const tagInfo = getAgentTagDisplay(agent, config.type);
+            if (!tagInfo) return '';
+
+            const style = `--tag-color: ${tagInfo.color}; --tag-bg: ${tagInfo.color}15; --tag-border: ${tagInfo.color}40;`;
+            let iconMarkup = '';
+            if (config.useStatusDot) {
+                iconMarkup = `<span class="status-dot" style="--dot-color: ${tagInfo.color};"></span>`;
+            } else if (!config.iconless) {
+                iconMarkup = `<i data-lucide="${tagInfo.icon}"></i>`;
+            }
+
+            return `<span class="tag-indicator" style="${style}">${iconMarkup} ${tagInfo.label}</span>`;
+        })
+        .join('');
+}
+
+function createAgentGroup(group, groupIndex) {
+    // Use group color if provided, otherwise use palette
+    const color = group.color || getSectionColor(groupIndex);
+    const icon = group.icon || 'layers';
+    const groupId = group.id || group.groupId || `group-${groupIndex}`;
+    const groupLabel = group.label || group.groupName || 'Unnamed Group';
+    const agents = group.agents || [];
+    const agentCount = agents.length;
+
+    const agentsHTML = agents.map((agent, agentIndex) =>
+        createAgentCard(agent, groupIndex, agentIndex)
     ).join('');
 
-    const isCollapsed = state.collapsedSections[group.groupId] || false;
+    const isCollapsed = state.collapsedSections[groupId] || false;
     const collapsedClass = isCollapsed ? 'collapsed' : '';
 
     // Create agent name pills for collapsed view
-    const maxPills = 5;
-    const agentPills = group.agents
+    const maxPills = 4;
+    const agentPills = agents
         .slice(0, maxPills)
         .filter(agent => agent && agent.name)
         .map((agent, pillIndex) => {
-            const pillClass = getCollapsedPillClass(pillIndex);
-            return `<span class="chip agent-name-pill ${pillClass}">${agent.name}</span>`;
+            return `<span class="collapsed-pill stagger-${pillIndex + 1}">${agent.name}</span>`;
         })
         .join('');
-    const morePill = group.agents.length > maxPills
-        ? `<span class="chip agent-name-pill more-pill">+${group.agents.length - maxPills} more</span>`
+    const morePill = agents.length > maxPills
+        ? `<span class="collapsed-pill collapsed-pill--more">+${agents.length - maxPills}</span>`
         : '';
-    const agentPillsHTML = `<div class="agent-pills-container">${agentPills}${morePill}</div>`;
-    const sectionMenuTrigger = renderContextMenuTrigger({
+    const collapsedPillsHTML = `<div class="collapsed-pills">${agentPills}${morePill}</div>`;
+
+    // Section menu for admin actions
+    const sectionMenuTrigger = canManageCanvases() ? renderContextMenuTrigger({
         menuId: `section-menu-${groupIndex}`,
-        title: 'Section options',
+        title: 'Group options',
         stopPropagation: true,
         actions: [
-            {
-                icon: 'edit-3',
-                label: 'Edit Section',
-                dataAttrs: `data-action-type="group-edit" data-group-index="${groupIndex}"`
-            },
             {
                 icon: 'plus',
                 label: 'Add Agent',
                 dataAttrs: `data-action-type="agent-add" data-group-index="${groupIndex}"`
-            },
-            { type: 'divider' },
-            {
-                icon: 'trash-2',
-                label: 'Delete Section',
-                danger: true,
-                dataAttrs: `data-action-type="group-delete" data-group-index="${groupIndex}"`
             }
         ]
-    });
+    }) : '';
 
     return `
-        <div class="surface-card agent-group ${groupClass} ${collapsedClass}" data-group-id="${group.groupId}" data-group-index="${groupIndex}" style="--group-accent: ${color};">
-            <div class="group-header" data-collapse-target="${group.groupId}">
-                <div class="group-header-edit">
-                    <div class="u-flex u-align-center u-full-width">
-                        <div class="section-collapse-toggle">
-                            <i data-lucide="chevron-down"></i>
-                        </div>
-                        <div class="group-icon">
-                            <i data-lucide="${iconType}"></i>
-                        </div>
-                        <div class="group-title u-flex u-align-center u-wrap u-gap-md u-flex-1">
-                            <div class="u-flex u-align-center u-wrap u-gap-sm">
-                                <h2>${group.groupName}</h2>
-                                ${sectionMenuTrigger}
-                            </div>
-                            ${agentPillsHTML}
-                        </div>
-                    </div>
+        <div class="agent-group ${collapsedClass}" data-group-id="${groupId}" data-group-index="${groupIndex}" style="--group-color: ${color};">
+            <div class="group-header" data-collapse-target="${groupId}">
+                <button class="collapse-toggle" aria-label="Toggle group">
+                    <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="group-icon" style="background: ${color}15; color: ${color};">
+                    <i data-lucide="${icon}"></i>
                 </div>
+                <h3 class="group-title">${groupLabel}</h3>
+                <span class="group-count">${agentCount}</span>
+                ${collapsedPillsHTML}
+                ${sectionMenuTrigger}
             </div>
             <div class="agents-grid-container">
-                <div class="agents-grid">${agentsHTML}</div>
+                <div class="agents-grid-inner">${agentsHTML}</div>
             </div>
         </div>`;
 }
@@ -879,37 +930,88 @@ function createAgentGroup(group, config, groupIndex) {
 // ----- Primary render pipeline -----
 // Render agent groups (can be called to re-render after edits)
 function renderAgentGroups() {
-    if (!state.configData) return;
+    // Get agents from state (Convex agents or legacy configData)
+    let agents = state.agents || [];
 
-    // Load collapsed state from localStorage
+    // Fallback to legacy configData if no agents in state
+    if (agents.length === 0 && state.configData?.agentGroups) {
+        agents = flattenAgentsFromConfig(state.configData);
+    }
+
+    // Load collapsed state and grouping preference
     loadCollapsedState();
+    loadGroupingPreference();
 
-    // Initialize all groups in state.collapsedSections if not present
-    if (state.configData.agentGroups) {
-        state.configData.agentGroups.forEach(group => {
-            if (state.collapsedSections[group.groupId] === undefined) {
-                state.collapsedSections[group.groupId] = false;
+    // Get current grouping tag type
+    const groupingTag = getGroupingTagType();
+
+    // Apply filters and search
+    let filteredAgents = filterAgents(agents, state.grouping.filters);
+    filteredAgents = searchAgents(filteredAgents, state.grouping.searchQuery);
+
+    // Group agents by selected tag
+    const groups = groupAgentsByTag(filteredAgents, groupingTag);
+    state.computedGroups = groups;
+
+    // Initialize collapsed state for new groups
+    groups.forEach(group => {
+        const groupId = group.id || group.groupId;
+        if (state.collapsedSections[groupId] === undefined) {
+            state.collapsedSections[groupId] = false;
+        }
+    });
+
+    // Update document/canvas title
+    const title = state.currentCanvas?.name || state.configData?.documentTitle || 'AgentCanvas';
+    const titleEl = document.getElementById('documentTitle');
+    if (titleEl) titleEl.textContent = title;
+
+    // Update agent count in header
+    const totalAgents = agents.filter(a => !a.deletedAt).length;
+    const agentCountEl = document.getElementById('agent-count');
+    if (agentCountEl) {
+        agentCountEl.textContent = `${totalAgents} AI Agent${totalAgents !== 1 ? 's' : ''}`;
+    }
+
+    // Update grouping control dropdown to match current selection
+    const groupingDropdown = document.getElementById('groupingDropdown');
+    const groupingValue = document.getElementById('groupingValue');
+    if (groupingDropdown) {
+        // Update active state on dropdown items
+        groupingDropdown.querySelectorAll('.grouping-dropdown__item').forEach(item => {
+            item.classList.toggle('is-active', item.dataset.tagType === groupingTag);
+            if (item.dataset.tagType === groupingTag && groupingValue) {
+                const label = item.querySelector('span')?.textContent || groupingTag;
+                const valueSpan = groupingValue.querySelector('span');
+                if (valueSpan) valueSpan.textContent = label;
             }
         });
     }
 
-    // Update document title
-    const title = state.configData.documentTitle || 'AgentCanvas';
-    document.getElementById('documentTitle').textContent = title;
-
-    // Update agent count
-    const agentGroups = state.configData.agentGroups || [];
-    const totalAgents = agentGroups.reduce((sum, group) => sum + (group.agents?.length || 0), 0);
-    document.getElementById('agent-count').textContent =
-        `${totalAgents} AI Agents`;
-
     // Render all agent groups
     const container = document.getElementById('agentGroupsContainer');
-    const groupsHTML = agentGroups.map((group, index) =>
-        createAgentGroup(group, state.configData, index)
-    ).join('');
+    if (!container) return;
 
-    container.innerHTML = groupsHTML;
+    if (groups.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state__icon">
+                    <i data-lucide="bot"></i>
+                </div>
+                <h3 class="empty-state__title">No agents found</h3>
+                <p class="empty-state__text">
+                    ${state.grouping.searchQuery || Object.keys(state.grouping.filters).length > 0
+                        ? 'Try adjusting your filters or search query.'
+                        : 'Create your first agent to get started.'}
+                </p>
+            </div>
+        `;
+    } else {
+        const groupsHTML = groups.map((group, index) =>
+            createAgentGroup(group, index)
+        ).join('');
+        container.innerHTML = groupsHTML;
+    }
 
     // Initialize Lucide icons
     refreshIcons();
@@ -928,17 +1030,14 @@ async function loadAgents(docName = state.currentDocumentName) {
         const container = document.getElementById('agentGroupsContainer');
         if (container) {
             container.innerHTML =
-                '<p class="empty-state-message">No YAML document selected. Upload or select a document to begin.</p>';
+                '<p class="empty-state-message">No canvas selected. Create or select a canvas to begin.</p>';
         }
         return;
     }
 
     try {
-        const config = await loadConfig(docName);
-
-        // Render agent groups
+        await loadConfig(docName);
         renderAgentGroups();
-
     } catch (error) {
         console.error('Error loading agents:', error);
     }
@@ -946,63 +1045,46 @@ async function loadAgents(docName = state.currentDocumentName) {
 
 registerLoadAgents(loadAgents);
 
-// Tooltip interactions
-// Helper function to attach tooltip handlers
-function attachTooltipHandlers(selector, tooltipClass, extraInit) {
-    const icons = document.querySelectorAll(selector);
+// Setup journey tooltips with positioning
+function setupTooltips() {
+    document.querySelectorAll('.journey-trigger').forEach(trigger => {
+        trigger.addEventListener('mouseenter', function() {
+            const tooltip = this.querySelector('.journey-tooltip');
+            if (!tooltip) return;
 
-    icons.forEach(icon => {
-        icon.addEventListener('mouseenter', function(e) {
-            const tooltip = this.querySelector(tooltipClass);
-            if (tooltip) {
-                document.body.appendChild(tooltip);
-                tooltip.style.display = 'block';
-                tooltip.style.visibility = 'hidden';
-                tooltip.style.left = '-9999px';
+            document.body.appendChild(tooltip);
+            tooltip.style.display = 'block';
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.left = '-9999px';
 
-                const rect = this.getBoundingClientRect();
-                const tooltipWidth = tooltip.offsetWidth;
-                const tooltipHeight = tooltip.offsetHeight;
+            const rect = this.getBoundingClientRect();
+            const tooltipWidth = tooltip.offsetWidth;
+            const tooltipHeight = tooltip.offsetHeight;
 
-                let top = rect.top - tooltipHeight - 10;
-                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            let top = rect.top - tooltipHeight - 10;
+            let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
 
-                if (left < 10) left = 10;
-                if (left + tooltipWidth > window.innerWidth - 10) {
-                    left = window.innerWidth - tooltipWidth - 10;
-                }
-                if (top < 10) top = rect.bottom + 10;
-
-                tooltip.style.top = top + 'px';
-                tooltip.style.left = left + 'px';
-                tooltip.style.visibility = 'visible';
-
-                // Run extra initialization if provided
-                if (extraInit) extraInit(tooltip);
-
-                icon._activeTooltip = tooltip;
-                icon._originalParent = this;
+            if (left < 10) left = 10;
+            if (left + tooltipWidth > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipWidth - 10;
             }
+            if (top < 10) top = rect.bottom + 10;
+
+            tooltip.style.top = `${top}px`;
+            tooltip.style.left = `${left}px`;
+            tooltip.style.visibility = 'visible';
+
+            this._activeTooltip = tooltip;
+            this._originalParent = this;
         });
 
-        icon.addEventListener('mouseleave', function(e) {
+        trigger.addEventListener('mouseleave', function() {
             if (this._activeTooltip) {
                 this._activeTooltip.style.display = 'none';
                 this._originalParent.appendChild(this._activeTooltip);
                 this._activeTooltip = null;
             }
         });
-    });
-}
-
-// Setup Tooltips
-function setupTooltips() {
-    // Journey tooltips
-    attachTooltipHandlers('.journey-icon', '.journey-tooltip');
-
-    // Metrics tooltips (re-initialize Lucide icons)
-    attachTooltipHandlers('.metrics-icon', '.metrics-tooltip', () => {
-        refreshIcons();
     });
 }
 
@@ -1521,30 +1603,26 @@ async function bootstrapApp() {
         const { authenticated, user } = await initAuth();
 
         if (authenticated && user) {
-            // Initialize Convex client with auth
-            if (window.CONVEX_URL) {
-                try {
-                    initConvexClient(window.CONVEX_URL, getIdToken);
-
+            // Initialize Convex client with auth (fetches config from API if needed)
+            try {
+                const convexClient = await initConvexClientAsync(getIdToken);
+                if (convexClient) {
                     // Sync org memberships to Convex for access control
-                    // This is done server-side - Convex verifies with WorkOS API directly
                     try {
                         await syncOrgMemberships();
                     } catch (err) {
                         console.error('Failed to sync org memberships:', err);
                     }
-                } catch (err) {
-                    console.error('Failed to initialize Convex client:', err);
+                } else {
                     setDocumentStatusMessage(
-                        'Warning: Convex backend not configured. Some features may be unavailable. ' +
-                        'Please set VITE_CONVEX_URL environment variable.',
+                        'Warning: Backend not configured. Some features may be unavailable.',
                         'error'
                     );
                 }
-            } else {
-                console.warn('CONVEX_URL not configured - Convex features disabled');
+            } catch (err) {
+                console.error('Failed to initialize Convex client:', err);
                 setDocumentStatusMessage(
-                    'Warning: Backend not configured. Please set VITE_CONVEX_URL environment variable.',
+                    'Warning: Could not connect to backend. Some features may be unavailable.',
                     'error'
                 );
             }
@@ -1632,6 +1710,70 @@ function bindStaticEventHandlers() {
 
     const docSelect = document.getElementById('documentSelect');
     docSelect?.addEventListener('change', handleDocumentSelection);
+
+    // Grouping control - custom dropdown for selecting grouping tag type
+    const groupingControl = document.getElementById('groupingControl');
+    const groupingValue = document.getElementById('groupingValue');
+    const groupingDropdown = document.getElementById('groupingDropdown');
+
+    // Toggle dropdown on click
+    groupingValue?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        groupingControl?.classList.toggle('is-open');
+    });
+
+    // Handle dropdown item selection
+    groupingDropdown?.addEventListener('click', (e) => {
+        const item = e.target.closest('.grouping-dropdown__item');
+        if (!item) return;
+
+        const tagType = item.dataset.tagType;
+        if (!tagType) return;
+
+        // Update active state
+        groupingDropdown.querySelectorAll('.grouping-dropdown__item').forEach(i => i.classList.remove('is-active'));
+        item.classList.add('is-active');
+
+        // Update displayed value
+        const label = item.querySelector('span')?.textContent || tagType;
+        const valueSpan = groupingValue?.querySelector('span');
+        if (valueSpan) valueSpan.textContent = label;
+
+        // Close dropdown
+        groupingControl?.classList.remove('is-open');
+
+        // Update grouping and re-render
+        setGroupingTagType(tagType);
+        renderAgentGroups();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!groupingControl?.contains(e.target)) {
+            groupingControl?.classList.remove('is-open');
+        }
+    });
+
+    // Search input handler
+    const searchInput = document.getElementById('agentSearchInput');
+    let searchDebounce;
+    searchInput?.addEventListener('input', (e) => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            state.grouping.searchQuery = e.target.value;
+            renderAgentGroups();
+        }, 200);
+    });
+
+    // Clear search button
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    clearSearchBtn?.addEventListener('click', () => {
+        if (searchInput) {
+            searchInput.value = '';
+            state.grouping.searchQuery = '';
+            renderAgentGroups();
+        }
+    });
 
     const boardTrigger = document.querySelector('[data-board-trigger="board-menu"]');
     boardTrigger?.addEventListener('click', event => {
@@ -1728,63 +1870,6 @@ function bindStaticEventHandlers() {
         if (collapseTarget) {
             toggleSectionCollapse(collapseTarget);
         }
-    });
-
-    document.addEventListener('click', event => {
-        const action = event.target.closest('[data-board-action]');
-        if (!action) return;
-        if (boardMenu && !boardMenu.contains(event.target) && !boardTrigger.contains(event.target)) return;
-        event.preventDefault();
-        closeAllContextMenus();
-        const type = action.dataset.boardAction;
-        if (type === 'edit-title') {
-            openEditTitleModal();
-        } else if (type === 'add-section') {
-            openAddSectionModal();
-        }
-    });
-
-    document.addEventListener('click', event => {
-        const actionBtn = event.target.closest('[data-action-type]');
-        if (!actionBtn) return;
-        event.preventDefault();
-        closeAllContextMenus();
-        const type = actionBtn.dataset.actionType;
-        const g = actionBtn.dataset.groupIndex !== undefined
-            ? parseInt(actionBtn.dataset.groupIndex, 10)
-            : null;
-        const a = actionBtn.dataset.agentIndex !== undefined
-            ? parseInt(actionBtn.dataset.agentIndex, 10)
-            : null;
-        switch (type) {
-            case 'agent-edit':
-                if (g !== null && a !== null) openEditAgentModal(g, a);
-                break;
-            case 'agent-delete':
-                if (g !== null && a !== null) deleteAgent(g, a);
-                break;
-            case 'agent-add':
-                if (g !== null) openAddAgentModal(g);
-                break;
-            case 'group-edit':
-                if (g !== null) openEditGroupModal(g);
-                break;
-            case 'group-delete':
-                if (g !== null) deleteGroup(g);
-                break;
-            default:
-                break;
-        }
-    });
-
-    document.addEventListener('click', event => {
-        if (event.target.closest('.context-menu')) return;
-        const trigger = event.target.closest('[data-menu-trigger]');
-        if (!trigger) return;
-        const menuId = trigger.dataset.menuTrigger;
-        const stopProp = trigger.dataset.stopProp === 'true';
-        if (stopProp) event.stopPropagation();
-        toggleContextMenu(event, menuId, trigger);
     });
 }
 

@@ -273,7 +273,7 @@ function updateDocumentControlsUI() {
         if (!state.documentListLoaded) {
             meta.textContent = 'Loading documents...';
         } else if (!state.availableDocuments.length) {
-            meta.textContent = 'No YAML documents found. Upload one to get started.';
+            meta.textContent = 'No canvases found. Create one to get started.';
         } else if (state.currentDocumentName) {
             const doc = state.availableDocuments.find(d => (d.id || d.slug || d.name) === state.currentDocumentName);
             if (doc) {
@@ -306,11 +306,11 @@ function updateDocumentControlsUI() {
         // Upload and blank require admin
         if (uploadBtn) {
             uploadBtn.disabled = !canManage;
-            uploadBtn.title = canManage ? 'Upload YAML file' : 'Only admins can upload files';
+            uploadBtn.title = canManage ? 'Import canvas from file' : 'Only admins can import';
         }
         if (blankBtn) {
             blankBtn.disabled = !canManage;
-            blankBtn.title = canManage ? 'Create new blank document' : 'Only admins can create documents';
+            blankBtn.title = canManage ? 'Create new canvas' : 'Only admins can create canvases';
         }
 
         // Rename requires admin
@@ -413,7 +413,7 @@ export async function refreshDocumentList(preferredDocName) {
         state.availableDocuments = [];
         state.documentListLoaded = true;
         setActiveDocumentName(null, { skipPersist: true });
-        setDocumentStatusMessage('Unable to load documents. Upload a YAML file to create one.', 'error');
+        setDocumentStatusMessage('Unable to load canvases. Create a new canvas to get started.', 'error');
     } finally {
         updateDocumentControlsUI();
     }
@@ -497,7 +497,7 @@ async function handleDocumentFileSelected(event) {
         suggestedName = DEFAULT_DOCUMENT_NAME;
     }
 
-    const userInput = prompt('Enter a name for this YAML document (.yaml will be appended if missing):', suggestedName);
+    const userInput = prompt('Enter a name for this canvas:', suggestedName);
     if (userInput === null) {
         return;
     }

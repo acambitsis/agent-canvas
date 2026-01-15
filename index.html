@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgentCanvas</title>
+    <meta name="description" content="AI Agent Workflow Visualization and Configuration">
     <script type="importmap">
         {
             "imports": {
@@ -14,343 +15,407 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <script>
-        // Convex configuration - must be set via environment variable
-        // For Vercel: Set VITE_CONVEX_URL in environment variables
-        // The URL should be injected at build/deploy time or via a config endpoint
-        if (!window.CONVEX_URL) {
-            console.error(
-                'CONVEX_URL not configured. Convex features will be disabled.\n' +
-                'To fix: Set VITE_CONVEX_URL environment variable in Vercel project settings,\n' +
-                'or inject window.CONVEX_URL at build/deploy time.\n' +
-                'Example: https://your-deployment.convex.cloud'
-            );
-        }
+        // Convex configuration is fetched by convex-client.js from /api/config
     </script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-row u-flex u-justify-between u-align-center u-gap-lg u-wrap">
-                <div class="title-section u-flex u-align-center u-gap-md u-wrap">
-                    <h1 id="documentTitle">TPS Operating System</h1>
-                    <div class="context-menu-trigger" data-board-trigger="board-menu" title="Board options">
-                        <i data-lucide="more-vertical"></i>
-                        <div class="context-menu menu-panel" id="board-menu">
-                            <button type="button" class="menu-item" data-board-action="edit-title">
-                                <i data-lucide="edit-3"></i>
-                                Edit Title
-                            </button>
-                            <div class="context-menu-divider menu-divider"></div>
-                            <button type="button" class="menu-item" data-board-action="edit-full-yaml">
-                                <i data-lucide="file-code"></i>
-                                Edit Full YAML
-                            </button>
-                            <div class="context-menu-divider menu-divider"></div>
-                            <button type="button" class="menu-item" data-board-action="add-section">
-                                <i data-lucide="plus"></i>
-                                Add Section
-                            </button>
-                        </div>
-                    </div>
-                    <p id="agent-count" class="agent-count-inline">Loading...</p>
-                </div>
-                <div class="header-actions u-flex u-align-center u-gap-sm">
-                    <div id="groupSwitcherContainer" class="group-switcher-container"></div>
-                    <button type="button" class="btn btn-glass collapse-all-btn" id="collapseAllBtn" title="Collapse/Expand All">
-                        <i id="collapseAllIcon" data-lucide="chevrons-down"></i>
-                        <span id="collapseAllText">Collapse All</span>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <!-- Left: Title and count -->
+            <div class="header-left">
+                <div class="document-title">
+                    <span id="documentTitle" class="document-title-text">AgentCanvas</span>
+                    <button type="button" class="icon-btn" id="boardMenuTrigger" title="Board options">
+                        <i data-lucide="chevron-down"></i>
                     </button>
-                    <div id="user-menu" class="user-menu">
-                        <button type="button" class="btn btn-glass user-menu-btn" id="userMenuBtn" title="User menu">
-                            <i data-lucide="user"></i>
-                            <span id="userDisplayName">User</span>
-                            <i data-lucide="chevron-down" class="user-menu-chevron"></i>
-                        </button>
-                        <div class="menu-panel user-menu-dropdown" id="userMenuDropdown">
-                            <div class="user-menu-header">
-                                <span id="userEmail">user@example.com</span>
-                            </div>
-                            <div class="menu-divider"></div>
-                            <button type="button" class="menu-item" id="signOutBtn" data-action="signout">
-                                <i data-lucide="log-out"></i>
-                                Sign out
-                            </button>
+                    <!-- Board Menu -->
+                    <div class="context-menu" id="board-menu">
+                        <div class="context-menu__item" data-board-action="edit-title">
+                            <i data-lucide="edit-3"></i>
+                            <span>Edit Title</span>
                         </div>
-                    </div>
-                    <div class="document-controls-compact u-flex u-align-center u-gap-sm u-relative">
-                        <select id="documentSelect">
-                            <option value="">Loading...</option>
-                        </select>
-                        <button type="button" class="btn btn-icon" id="documentMenuBtn" aria-haspopup="true" aria-expanded="false" title="Document actions">
-                            <i data-lucide="sliders"></i>
-                        </button>
-                        <div class="document-menu menu-panel" id="documentMenu">
-                            <div class="document-menu-group u-flex u-flex-column u-gap-sm">
-                                <p class="menu-label">Documents</p>
-                                <button type="button" class="menu-item" data-action="upload">
-                                    <i data-lucide="upload"></i>
-                                    Upload YAML
-                                </button>
-                                <button type="button" class="menu-item" data-action="blank">
-                                    <i data-lucide="file-plus"></i>
-                                    New Blank Document
-                                </button>
-                            </div>
-                            <div class="document-menu-divider menu-divider" data-role="menu-divider"></div>
-                            <div class="document-menu-group u-flex u-flex-column u-gap-sm">
-                                <button type="button" class="menu-item" data-action="share">
-                                    <i data-lucide="share-2"></i>
-                                    Share Canvas
-                                </button>
-                                <button type="button" class="menu-item" data-action="rename">
-                                    <i data-lucide="edit-3"></i>
-                                    Rename Current
-                                </button>
-                                <button type="button" class="menu-item" data-action="download">
-                                    <i data-lucide="download"></i>
-                                    Download Current
-                                </button>
-                                <button type="button" class="menu-item danger" data-action="delete">
-                                    <i data-lucide="trash-2"></i>
-                                    Delete Current
-                                </button>
-                            </div>
-                            <div class="document-menu-divider menu-divider"></div>
-                            <div class="document-menu-group u-flex u-flex-column u-gap-sm">
-                                <p class="menu-label">Documentation</p>
-                                <a href="/DOCUMENT_YAML_SPEC.md" target="_blank" rel="noopener noreferrer" class="menu-item menu-link">
-                                    <i data-lucide="file-text"></i>
-                                    Document YAML Spec
-                                </a>
-                                <a href="/AGENT_YAML_SPEC.md" target="_blank" rel="noopener noreferrer" class="menu-item menu-link">
-                                    <i data-lucide="file-code"></i>
-                                    Agent YAML Spec
-                                </a>
-                            </div>
-                            <div class="document-menu-divider menu-divider"></div>
-                            <div class="document-menu-group u-flex u-flex-column u-gap-sm admin-only">
-                                <p class="menu-label">Admin</p>
-                                <a href="/admin.html" class="menu-item menu-link">
-                                    <i data-lucide="shield-check"></i>
-                                    Manage Allowlist
-                                </a>
-                            </div>
+                        <div class="context-menu__divider"></div>
+                        <div class="context-menu__item" data-board-action="edit-full-yaml">
+                            <i data-lucide="file-code"></i>
+                            <span>Edit Raw Data</span>
+                        </div>
+                        <div class="context-menu__divider"></div>
+                        <div class="context-menu__item" data-board-action="add-section">
+                            <i data-lucide="plus"></i>
+                            <span>Add Section</span>
                         </div>
                     </div>
                 </div>
+                <span id="agent-count" class="agent-count-badge">
+                    <i data-lucide="bot"></i>
+                    <span>0 Agents</span>
+                </span>
             </div>
-            <div class="header-meta">
-                <p class="document-meta" id="documentMeta"></p>
-                <p class="document-status" id="documentStatusMessage"></p>
+
+            <!-- Center: Grouping control -->
+            <div class="header-center">
+                <div class="grouping-control u-relative" id="groupingControl">
+                    <span class="grouping-control__label">Group by</span>
+                    <span class="grouping-control__value" id="groupingValue">
+                        <span>Phase</span>
+                        <i data-lucide="chevron-down"></i>
+                    </span>
+                    <!-- Grouping Dropdown -->
+                    <div class="grouping-dropdown" id="groupingDropdown">
+                        <div class="grouping-dropdown__item is-active" data-tag-type="phase">
+                            <i data-lucide="layers"></i>
+                            <span>Phase</span>
+                        </div>
+                        <div class="grouping-dropdown__item" data-tag-type="department">
+                            <i data-lucide="building-2"></i>
+                            <span>Department</span>
+                        </div>
+                        <div class="grouping-dropdown__item" data-tag-type="status">
+                            <i data-lucide="activity"></i>
+                            <span>Status</span>
+                        </div>
+                        <div class="grouping-dropdown__item" data-tag-type="implementationStatus">
+                            <i data-lucide="git-branch"></i>
+                            <span>Implementation</span>
+                        </div>
+                        <div class="grouping-dropdown__item" data-tag-type="priority">
+                            <i data-lucide="flag"></i>
+                            <span>Priority</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="header-btn" id="collapseAllBtn" title="Collapse/Expand All">
+                    <i id="collapseAllIcon" data-lucide="chevrons-down"></i>
+                    <span id="collapseAllText">Collapse</span>
+                </button>
+            </div>
+
+            <!-- Right: Org, User, Documents -->
+            <div class="header-right">
+                <!-- Org Switcher -->
+                <div class="org-switcher u-relative" id="orgSwitcher">
+                    <div class="org-switcher__trigger" id="orgSwitcherTrigger">
+                        <div class="org-switcher__icon">
+                            <i data-lucide="building"></i>
+                        </div>
+                        <span class="org-switcher__name" id="currentOrgName">Organization</span>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="grouping-dropdown" id="orgDropdown">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Document Selector -->
+                <div class="u-relative">
+                    <select id="documentSelect" class="form-select" style="min-width: 160px;">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <!-- Document Menu -->
+                <button type="button" class="header-btn" id="documentMenuBtn" title="Document actions">
+                    <i data-lucide="sliders-horizontal"></i>
+                </button>
+                <div class="context-menu" id="documentMenu">
+                    <div class="context-menu__item" data-action="upload">
+                        <i data-lucide="upload"></i>
+                        <span>Import</span>
+                    </div>
+                    <div class="context-menu__item" data-action="blank">
+                        <i data-lucide="file-plus"></i>
+                        <span>New Canvas</span>
+                    </div>
+                    <div class="context-menu__divider"></div>
+                    <div class="context-menu__item" data-action="rename">
+                        <i data-lucide="edit-3"></i>
+                        <span>Rename</span>
+                    </div>
+                    <div class="context-menu__item" data-action="download">
+                        <i data-lucide="download"></i>
+                        <span>Download</span>
+                    </div>
+                    <div class="context-menu__divider"></div>
+                    <div class="context-menu__item context-menu__item--danger" data-action="delete">
+                        <i data-lucide="trash-2"></i>
+                        <span>Delete</span>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu u-relative" id="userMenuTrigger">
+                    <span class="user-menu__name" id="userDisplayName">User</span>
+                    <div class="user-menu__avatar" id="userAvatar">U</div>
+                </div>
+                <div class="context-menu" id="userMenuDropdown">
+                    <div class="context-menu__item" style="pointer-events: none; opacity: 0.7;">
+                        <i data-lucide="mail"></i>
+                        <span id="userEmail">user@example.com</span>
+                    </div>
+                    <div class="context-menu__divider"></div>
+                    <div class="context-menu__item" id="signOutBtn" data-action="signout">
+                        <i data-lucide="log-out"></i>
+                        <span>Sign out</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <input type="file" id="documentFileInput" class="is-hidden" accept=".yaml,.yml,text/yaml">
+    </header>
 
-        <!-- Agent Groups Container - will be populated by JavaScript -->
-        <div class="agent-groups" id="agentGroupsContainer"></div>
-    </div>
+    <!-- Hidden file input for upload -->
+    <input type="file" id="documentFileInput" class="is-hidden" accept=".yaml,.yml,text/yaml">
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Status message -->
+        <p class="document-status" id="documentStatusMessage"></p>
+
+        <!-- Agent Groups Container -->
+        <div id="agentGroupsContainer"></div>
+    </main>
 
     <!-- Edit Agent Modal -->
-    <div id="agentModal" class="modal">
-        <div class="surface-card modal-content">
-            <div class="modal-header">
-                <h2 id="modalAgentTitle">Edit Agent</h2>
-                <button class="modal-close" id="agentModalClose">
+    <div id="agentModal" class="modal-overlay">
+        <div class="modal modal--large">
+            <div class="modal__header">
+                <h2 class="modal__title" id="modalAgentTitle">Edit Agent</h2>
+                <button type="button" class="modal__close" id="agentModalClose">
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            <form id="agentForm">
-                <div class="modal-view-toggle">
-                    <button type="button" class="btn btn-toggle view-toggle-btn active" id="agentFormToggle">
-                        Form View
-                    </button>
-                    <button type="button" class="btn btn-toggle view-toggle-btn" id="agentYamlToggle">
-                        YAML View
-                    </button>
-                </div>
-
-                <div id="agentFormContent">
-                    <div class="form-group">
-                        <label for="agentName">Agent Name</label>
-                        <input type="text" id="agentName" required>
+            <div class="modal__body">
+                <form id="agentForm">
+                    <!-- View Toggle -->
+                    <div class="modal__tabs">
+                        <button type="button" class="modal__tab is-active" id="agentFormToggle">Form</button>
+                        <button type="button" class="modal__tab" id="agentYamlToggle">Code</button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="agentObjective">Objective</label>
-                        <input type="text" id="agentObjective" required>
-                        <small>Brief summary of what this agent does</small>
+                    <!-- Form View -->
+                    <div id="agentFormContent">
+                        <div class="form-group">
+                            <label class="form-label form-label--required" for="agentName">Agent Name</label>
+                            <input type="text" id="agentName" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="agentObjective">Objective</label>
+                            <input type="text" id="agentObjective" class="form-input" placeholder="Brief summary of what this agent does">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="agentDescription">Description</label>
+                            <textarea id="agentDescription" class="form-textarea" rows="3" placeholder="Detailed description of capabilities"></textarea>
+                        </div>
+
+                        <!-- Tags Section -->
+                        <div class="form-group">
+                            <label class="form-label">Tags</label>
+                            <div class="u-flex u-flex-column u-gap-3">
+                                <!-- Department -->
+                                <div>
+                                    <label class="form-label" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">Department</label>
+                                    <div class="tag-select" id="agentDepartmentTags">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                                <!-- Status -->
+                                <div>
+                                    <label class="form-label" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">Status</label>
+                                    <div class="tag-select" id="agentStatusTags">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                                <!-- Implementation Status -->
+                                <div>
+                                    <label class="form-label" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">Implementation</label>
+                                    <div class="tag-select" id="agentImplementationTags">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                                <!-- Priority -->
+                                <div>
+                                    <label class="form-label" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">Priority</label>
+                                    <div class="tag-select" id="agentPriorityTags">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Tools</label>
+                            <div id="agentTools" class="checkbox-group">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="journeySteps">Journey Steps</label>
+                            <textarea id="journeySteps" class="form-textarea" rows="4" placeholder="Enter one step per line"></textarea>
+                        </div>
+
+                        <div class="u-flex u-gap-3">
+                            <div class="form-group u-flex-1">
+                                <label class="form-label" for="metricsUsage">Usage This Week</label>
+                                <input type="text" id="metricsUsage" class="form-input" placeholder="e.g., 25 uses">
+                            </div>
+                            <div class="form-group u-flex-1">
+                                <label class="form-label" for="metricsTimeSaved">Time Saved</label>
+                                <input type="text" id="metricsTimeSaved" class="form-input" placeholder="e.g., 60%">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="agentDescription">Description</label>
-                        <textarea id="agentDescription" rows="4" required></textarea>
-                        <small>Detailed description of the agent's capabilities</small>
+                    <!-- YAML View -->
+                    <div id="agentYamlContent" class="is-hidden">
+                        <div class="u-flex u-justify-between u-align-center u-gap-2" style="margin-bottom: var(--space-3);">
+                            <button type="button" class="btn btn--sm" id="agentCopyYamlBtn">
+                                <i data-lucide="copy"></i> Copy
+                            </button>
+                            <span class="badge" id="agentYamlStatus"></span>
+                        </div>
+                        <textarea id="agentYamlInput" class="yaml-editor" rows="20" spellcheck="false"></textarea>
+                        <p class="badge badge--error" id="agentYamlError" style="margin-top: var(--space-2);"></p>
                     </div>
-
-                    <div class="form-group">
-                        <label>Tools</label>
-                        <div id="agentTools" class="tool-checkbox-group"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="journeySteps">Journey Steps</label>
-                        <textarea id="journeySteps" rows="5" placeholder="Enter one step per line&#10;Example:&#10;Scope definition&#10;Data gathering&#10;Mapping execution"></textarea>
-                        <small>Enter one step per line</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="metricsUsage">Usage This Week</label>
-                        <input type="text" id="metricsUsage" placeholder="e.g., 25 uses">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="metricsTimeSaved">Time Saved</label>
-                        <input type="text" id="metricsTimeSaved" placeholder="e.g., 60%">
-                    </div>
-                </div>
-
-                <div id="agentYamlContent" class="yaml-editor">
-                    <div class="yaml-toolbar">
-                        <button type="button" class="btn btn-secondary" id="agentCopyYamlBtn">
-                            <i data-lucide="copy"></i> Copy YAML
-                        </button>
-                        <span class="yaml-status" id="agentYamlStatus"></span>
-                    </div>
-                    <textarea id="agentYamlInput" rows="18" spellcheck="false"></textarea>
-                    <div class="yaml-error" id="agentYamlError"></div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-danger" id="deleteAgentBtn">
-                        <i data-lucide="trash-2"></i> Delete
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="agentCancelBtn">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="agentSaveBtn">
-                        <i data-lucide="save"></i> Save
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal__footer">
+                <button type="button" class="btn btn--danger" id="deleteAgentBtn">
+                    <i data-lucide="trash-2"></i> Delete
+                </button>
+                <div class="u-flex-1"></div>
+                <button type="button" class="btn" id="agentCancelBtn">Cancel</button>
+                <button type="button" class="btn btn--primary" id="agentSaveBtn">
+                    <i data-lucide="check"></i> Save
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Edit Group Modal -->
-    <div id="groupModal" class="modal">
-        <div class="surface-card modal-content">
-            <div class="modal-header">
-                <h2 id="modalGroupTitle">Edit Section</h2>
-                <button class="modal-close" id="groupModalClose">
+    <div id="groupModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal__header">
+                <h2 class="modal__title" id="modalGroupTitle">Edit Section</h2>
+                <button type="button" class="modal__close" id="groupModalClose">
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            <form id="groupForm">
-                <div class="modal-view-toggle">
-                    <button type="button" class="btn btn-toggle view-toggle-btn active" id="groupFormToggle">
-                        Form View
-                    </button>
-                    <button type="button" class="btn btn-toggle view-toggle-btn" id="groupYamlToggle">
-                        YAML View
-                    </button>
-                </div>
+            <div class="modal__body">
+                <form id="groupForm">
+                    <!-- View Toggle -->
+                    <div class="modal__tabs">
+                        <button type="button" class="modal__tab is-active" id="groupFormToggle">Form</button>
+                        <button type="button" class="modal__tab" id="groupYamlToggle">Code</button>
+                    </div>
 
-                <div id="groupFormContent">
-                    <div class="form-group">
-                        <label for="groupName">Section Name</label>
-                        <input type="text" id="groupName" required>
-                        <small>The internal section ID is generated automatically from this name.</small>
-                        <div id="groupIdPreview" class="generated-field" role="status" aria-live="polite">
-                            Section ID will be generated automatically.
+                    <!-- Form View -->
+                    <div id="groupFormContent">
+                        <div class="form-group">
+                            <label class="form-label form-label--required" for="groupName">Section Name</label>
+                            <input type="text" id="groupName" class="form-input" required>
+                            <div id="groupIdPreview" class="badge" style="margin-top: var(--space-2);">
+                                ID will be generated
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="groupPhaseTag">Phase Tag (optional)</label>
+                            <input type="text" id="groupPhaseTag" class="form-input" placeholder="e.g., Phase 1">
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="groupPhaseTag">Phase Tag (optional)</label>
-                        <input type="text" id="groupPhaseTag" placeholder="e.g., Pre-Phase, Phase 1">
-                        <small>Tag displayed next to section name</small>
+                    <!-- YAML View -->
+                    <div id="groupYamlContent" class="is-hidden">
+                        <div class="u-flex u-justify-between u-align-center u-gap-2" style="margin-bottom: var(--space-3);">
+                            <button type="button" class="btn btn--sm" id="groupCopyYamlBtn">
+                                <i data-lucide="copy"></i> Copy
+                            </button>
+                            <span class="badge" id="groupYamlStatus"></span>
+                        </div>
+                        <textarea id="groupYamlInput" class="yaml-editor" rows="15" spellcheck="false"></textarea>
+                        <p class="badge badge--error" id="groupYamlError" style="margin-top: var(--space-2);"></p>
                     </div>
-                </div>
-
-                <div id="groupYamlContent" class="yaml-editor">
-                    <div class="yaml-toolbar">
-                        <button type="button" class="btn btn-secondary" id="groupCopyYamlBtn">
-                            <i data-lucide="copy"></i> Copy YAML
-                        </button>
-                        <span class="yaml-status" id="groupYamlStatus"></span>
-                    </div>
-                    <textarea id="groupYamlInput" rows="18" spellcheck="false"></textarea>
-                    <div class="yaml-error" id="groupYamlError"></div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-danger" id="deleteGroupBtn">
-                        <i data-lucide="trash-2"></i> Delete Section
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="groupCancelBtn">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="groupSaveBtn">
-                        <i data-lucide="save"></i> Save
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal__footer">
+                <button type="button" class="btn btn--danger" id="deleteGroupBtn">
+                    <i data-lucide="trash-2"></i> Delete
+                </button>
+                <div class="u-flex-1"></div>
+                <button type="button" class="btn" id="groupCancelBtn">Cancel</button>
+                <button type="button" class="btn btn--primary" id="groupSaveBtn">
+                    <i data-lucide="check"></i> Save
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Edit Title Modal -->
-    <div id="titleModal" class="modal">
-        <div class="surface-card modal-content modal-narrow">
-            <div class="modal-header">
-                <h2>Edit Document Title</h2>
-                <button class="modal-close" id="titleModalClose">
+    <div id="titleModal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal__header">
+                <h2 class="modal__title">Edit Title</h2>
+                <button type="button" class="modal__close" id="titleModalClose">
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            <form id="titleForm">
-                <div class="form-group">
-                    <label for="documentTitleInput">Title</label>
-                    <input type="text" id="documentTitleInput" required placeholder="Enter document title">
-                    <small>This title will be displayed at the top of the page</small>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="titleModalCancel">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="titleModalSave">
-                        <i data-lucide="save"></i> Save
-                    </button>
-                </div>
-            </form>
+            <div class="modal__body">
+                <form id="titleForm">
+                    <div class="form-group">
+                        <label class="form-label form-label--required" for="documentTitleInput">Title</label>
+                        <input type="text" id="documentTitleInput" class="form-input" required placeholder="Enter document title">
+                    </div>
+                </form>
+            </div>
+            <div class="modal__footer">
+                <button type="button" class="btn" id="titleModalCancel">Cancel</button>
+                <button type="button" class="btn btn--primary" id="titleModalSave">
+                    <i data-lucide="check"></i> Save
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Edit Full YAML Modal -->
-    <div id="fullYamlModal" class="modal">
-        <div class="surface-card modal-content modal-large">
-            <div class="modal-header">
-                <h2>Edit Full Dashboard YAML</h2>
-                <button class="modal-close" id="fullYamlModalClose">
+    <div id="fullYamlModal" class="modal-overlay">
+        <div class="modal modal--large">
+            <div class="modal__header">
+                <h2 class="modal__title">Edit Raw Data</h2>
+                <button type="button" class="modal__close" id="fullYamlModalClose">
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            <div class="modal-body">
-                <p class="help-text">Edit the complete dashboard configuration. Required fields: <code>agentGroups</code> (array), each group must have <code>groupName</code> (string) and <code>agents</code> (array), each agent must have <code>name</code> (string). Missing optional fields will be auto-generated.</p>
-                <div class="yaml-editor-container">
-                    <textarea id="fullYamlInput" class="yaml-input"></textarea>
-                    <p class="yaml-error" id="fullYamlError"></p>
-                </div>
+            <div class="modal__body">
+                <p style="color: var(--text-muted); font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                    Edit the complete dashboard configuration. Required: <code>agentGroups</code> array with <code>groupName</code> and <code>agents</code>.
+                </p>
+                <textarea id="fullYamlInput" class="yaml-editor" style="min-height: 400px;"></textarea>
+                <p class="badge badge--error" id="fullYamlError" style="margin-top: var(--space-2);"></p>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="fullYamlCancel">Cancel</button>
-                <button type="button" class="btn btn-primary" id="fullYamlSave">
-                    <i data-lucide="save"></i> Save Full Config
+            <div class="modal__footer">
+                <button type="button" class="btn" id="fullYamlCancel">Cancel</button>
+                <button type="button" class="btn btn--primary" id="fullYamlSave">
+                    <i data-lucide="check"></i> Save
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner">
-            <i data-lucide="loader-2"></i>
-            <p id="loadingMessage">Loading...</p>
+    <div id="loadingOverlay" class="modal-overlay" style="background: var(--bg-primary);">
+        <div class="u-flex u-flex-column u-align-center u-gap-4">
+            <div class="spinner spinner--lg"></div>
+            <p id="loadingMessage" style="color: var(--text-secondary);">Loading...</p>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <script type="module" src="main.js"></script>
 </body>

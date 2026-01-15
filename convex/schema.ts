@@ -48,6 +48,16 @@ export default defineSchema({
         satisfaction: v.number(),
       })
     ),
+    // Typed tag fields for dynamic grouping and filtering
+    tags: v.optional(
+      v.object({
+        department: v.optional(v.string()), // "sales", "engineering", "marketing", etc.
+        status: v.optional(v.string()), // "active", "draft", "deprecated"
+        implementationStatus: v.optional(v.string()), // "planning", "in-progress", "deployed"
+        priority: v.optional(v.string()), // "p0", "p1", "p2", "p3"
+        owner: v.optional(v.string()), // User/team identifier
+      })
+    ),
     payload: v.optional(v.any()), // Portable JSON payload for round-trip fidelity and extensibility
     deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(),
