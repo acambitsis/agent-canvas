@@ -36,7 +36,12 @@ export function initConvexClient(url, getIdToken) {
   if (client && getIdTokenFn === getIdToken) return client;
 
   const convexUrl = url || window.CONVEX_URL;
-  if (!convexUrl) throw new Error("CONVEX_URL not configured");
+  if (!convexUrl) {
+    throw new Error(
+      "CONVEX_URL not configured. Please set VITE_CONVEX_URL environment variable " +
+      "in your Vercel project settings or inject window.CONVEX_URL at build time."
+    );
+  }
 
   client = new ConvexClient(convexUrl);
   getIdTokenFn = getIdToken;
@@ -160,7 +165,8 @@ export async function updateCanvas(canvasId, data) {
 }
 
 export async function deleteCanvas(canvasId) {
-  await requireClient().mutation("canvases:remove", { canvasId });
+  // User has already confirmed deletion in UI, so always pass confirmDelete: true
+  await requireClient().mutation("canvases:remove", { canvasId, confirmDelete: true });
 }
 
 // Agent mutations
@@ -282,7 +288,8 @@ export async function deleteDocument(workosOrgId, slug) {
   if (!canvas) {
     throw new Error("Document not found");
   }
-  await requireClient().mutation("canvases:remove", { canvasId: canvas._id });
+  // User has already confirmed deletion in UI, so always pass confirmDelete: true
+  await requireClient().mutation("canvases:remove", { canvasId: canvas._id, confirmDelete: true });
 }
 
 /**

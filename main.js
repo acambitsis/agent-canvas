@@ -1540,15 +1540,30 @@ async function bootstrapApp() {
         if (authenticated && user) {
             // Initialize Convex client with auth
             if (window.CONVEX_URL) {
-                initConvexClient(window.CONVEX_URL, getIdToken);
-
-                // Sync org memberships to Convex for access control
-                // This is done server-side - Convex verifies with WorkOS API directly
                 try {
-                    await syncOrgMemberships();
+                    initConvexClient(window.CONVEX_URL, getIdToken);
+
+                    // Sync org memberships to Convex for access control
+                    // This is done server-side - Convex verifies with WorkOS API directly
+                    try {
+                        await syncOrgMemberships();
+                    } catch (err) {
+                        console.error('Failed to sync org memberships:', err);
+                    }
                 } catch (err) {
-                    console.error('Failed to sync org memberships:', err);
+                    console.error('Failed to initialize Convex client:', err);
+                    setDocumentStatusMessage(
+                        'Warning: Convex backend not configured. Some features may be unavailable. ' +
+                        'Please set VITE_CONVEX_URL environment variable.',
+                        'error'
+                    );
                 }
+            } else {
+                console.warn('CONVEX_URL not configured - Convex features disabled');
+                setDocumentStatusMessage(
+                    'Warning: Backend not configured. Please set VITE_CONVEX_URL environment variable.',
+                    'error'
+                );
             }
 
             // Clear redirect loop tracking on successful auth

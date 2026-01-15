@@ -16,7 +16,7 @@ export default async function handler(request) {
   // Check if id_token needs refresh (within 10 minutes of expiry)
   const needsRefresh = session.idTokenExpiresAt
     ? Date.now() > session.idTokenExpiresAt
-    : false;
+    : !session.idToken; // Missing id_token needs refresh
 
   return json({
     authenticated: true,
