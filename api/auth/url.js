@@ -25,6 +25,7 @@ export default async function handler(request) {
     response_type: 'code',
     provider: 'authkit',
     state,
+    scope: 'openid profile email',
   });
 
   return new Response(JSON.stringify({ url: `https://api.workos.com/user_management/authorize?${params}` }), {

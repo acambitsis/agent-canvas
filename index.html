@@ -4,11 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgentCanvas</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "convex/browser": "https://esm.sh/convex@1.31.4/browser"
+            }
+        }
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <script>
-        // Convex configuration - set by environment or build process
-        window.CONVEX_URL = window.CONVEX_URL || 'https://your-deployment.convex.cloud';
+        // Convex configuration - must be set via environment variable
+        // For Vercel: Set VITE_CONVEX_URL in environment variables
+        if (!window.CONVEX_URL) {
+            console.error('CONVEX_URL not configured. Please set VITE_CONVEX_URL environment variable.');
+        }
     </script>
     <link rel="stylesheet" href="styles.css">
 </head>

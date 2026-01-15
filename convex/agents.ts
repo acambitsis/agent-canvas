@@ -34,7 +34,7 @@ async function getCanvasWithAccess(
 ): Promise<Doc<"canvases">> {
   const canvas = await ctx.db.get(canvasId);
   if (!canvas) throw new Error("Canvas not found");
-  requireOrgAccess(auth, canvas.workosOrgId);
+  await requireOrgAccess(ctx, auth, canvas.workosOrgId);
   return canvas;
 }
 

@@ -5,12 +5,12 @@
 
 let currentUser = null;
 let currentOrgs = [];
-let currentIdToken = null; // WorkOS OIDC id_token for Convex authentication
+let currentIdToken = null; // WorkOS id_token (JWT) for Convex authentication
 let isInitialized = false;
 let refreshPromise = null;
 
 /**
- * Refresh the access token if needed
+ * Refresh the id_token if needed
  * @returns {Promise<{success: boolean, idToken: string|null}>} Refresh result with new idToken
  */
 async function refreshTokenIfNeeded() {

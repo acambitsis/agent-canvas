@@ -9,7 +9,7 @@ export const list = query({
   args: { workosOrgId: v.string() },
   handler: async (ctx, { workosOrgId }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
     return ctx.db
       .query("canvases")
@@ -31,7 +31,7 @@ export const get = query({
       throw new Error("Canvas not found");
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
     return canvas;
   },
 });
@@ -46,7 +46,7 @@ export const getBySlug = query({
   },
   handler: async (ctx, { workosOrgId, slug }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
     const canvas = await ctx.db
       .query("canvases")
@@ -71,7 +71,7 @@ export const create = mutation({
   },
   handler: async (ctx, { workosOrgId, title, slug, sourceYaml }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
     // Check slug doesn't already exist in org
     const existing = await ctx.db
@@ -118,7 +118,7 @@ export const update = mutation({
       throw new Error("Canvas not found");
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
 
     // If changing slug, check it doesn't conflict
     if (slug && slug !== canvas.slug) {
@@ -160,7 +160,7 @@ export const remove = mutation({
       throw new Error("Canvas not found");
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
 
     // Delete all agents in this canvas
     const agents = await ctx.db

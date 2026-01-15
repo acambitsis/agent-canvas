@@ -23,7 +23,7 @@ export const list = query({
       if (!canvas) {
         throw new Error("Canvas not found");
       }
-      requireOrgAccess(auth, canvas.workosOrgId);
+      await requireOrgAccess(ctx, auth, canvas.workosOrgId);
     }
 
     const history = await ctx.db
@@ -49,7 +49,7 @@ export const listByCanvas = query({
     if (!canvas) {
       throw new Error("Canvas not found");
     }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
 
     // Get all agents in this canvas
     const agents = await ctx.db
@@ -84,7 +84,7 @@ export const listRecent = query({
   },
   handler: async (ctx, { workosOrgId, limit = 50 }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
     // Get all canvases in this org
     const canvases = await ctx.db

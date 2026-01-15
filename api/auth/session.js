@@ -13,9 +13,9 @@ export default async function handler(request) {
     return json({ authenticated: false });
   }
 
-  // Check if access token needs refresh (within 5 minutes of expiry)
-  const needsRefresh = session.accessTokenExpiresAt
-    ? Date.now() > session.accessTokenExpiresAt - 5 * 60 * 1000
+  // Check if id_token needs refresh (within 10 minutes of expiry)
+  const needsRefresh = session.idTokenExpiresAt
+    ? Date.now() > session.idTokenExpiresAt
     : false;
 
   return json({
