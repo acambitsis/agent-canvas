@@ -8,11 +8,11 @@ import { state } from "./state.js";
 
 let client = null;
 const subscriptions = new Map();
-let getIdTokenFn = null; // Function to get current id_token
+let getIdTokenFn = null; // Function to get current id_token (JWT)
 
 /**
  * Create auth callback function from token getter
- * @param {Function} getIdToken - Function that returns the current WorkOS id_token
+ * @param {Function} getIdToken - Function that returns the current WorkOS id_token (JWT)
  * @returns {Function|null} Auth callback or null if no getter provided
  */
 function createAuthCallback(getIdToken) {
@@ -29,14 +29,19 @@ function createAuthCallback(getIdToken) {
 /**
  * Initialize the Convex client
  * @param {string} url - Convex deployment URL
- * @param {Function} getIdToken - Function that returns the current WorkOS id_token
+ * @param {Function} getIdToken - Function that returns the current WorkOS id_token (JWT)
  * @returns {ConvexClient}
  */
 export function initConvexClient(url, getIdToken) {
   if (client && getIdTokenFn === getIdToken) return client;
 
   const convexUrl = url || window.CONVEX_URL;
-  if (!convexUrl) throw new Error("CONVEX_URL not configured");
+  if (!convexUrl) {
+    throw new Error(
+      "CONVEX_URL not configured. Please set VITE_CONVEX_URL environment variable " +
+      "in your Vercel project settings or inject window.CONVEX_URL at build time."
+    );
+  }
 
   client = new ConvexClient(convexUrl);
   getIdTokenFn = getIdToken;
@@ -47,13 +52,18 @@ export function initConvexClient(url, getIdToken) {
 
 /**
  * Update Convex authentication with a new id_token getter
- * @param {Function} getIdToken - Function that returns the current WorkOS id_token
+ * @param {Function|null} getIdToken - Function that returns the current WorkOS id_token (JWT), or null to clear auth
  */
 export function updateConvexAuth(getIdToken) {
   if (!client) return;
 
   getIdTokenFn = getIdToken;
-  client.setAuth(createAuthCallback(getIdToken));
+  if (getIdToken) {
+    client.setAuth(createAuthCallback(getIdToken));
+  } else {
+    // Clear auth by passing null
+    client.setAuth(null);
+  }
 }
 
 /**
@@ -155,7 +165,8 @@ export async function updateCanvas(canvasId, data) {
 }
 
 export async function deleteCanvas(canvasId) {
-  await requireClient().mutation("canvases:remove", { canvasId });
+  // User has already confirmed deletion in UI, so always pass confirmDelete: true
+  await requireClient().mutation("canvases:remove", { canvasId, confirmDelete: true });
 }
 
 // Agent mutations
@@ -201,6 +212,16 @@ export async function updateOrgSettings(workosOrgId, data) {
 
 export async function initOrgSettings(workosOrgId) {
   await requireClient().mutation("orgSettings:initDefaults", { workosOrgId });
+}
+
+// User org membership sync
+
+/**
+ * Sync user's org memberships to Convex
+ * SECURITY: This calls an action that verifies memberships server-side with WorkOS API
+ */
+export async function syncOrgMemberships() {
+  await requireClient().action("users:syncOrgMemberships", {});
 }
 
 // Query helpers
@@ -267,7 +288,8 @@ export async function deleteDocument(workosOrgId, slug) {
   if (!canvas) {
     throw new Error("Document not found");
   }
-  await requireClient().mutation("canvases:remove", { canvasId: canvas._id });
+  // User has already confirmed deletion in UI, so always pass confirmDelete: true
+  await requireClient().mutation("canvases:remove", { canvasId: canvas._id, confirmDelete: true });
 }
 
 /**

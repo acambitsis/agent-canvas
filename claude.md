@@ -38,6 +38,7 @@ vercel --prod
 # Testing
 pnpm test        # watch mode
 pnpm test:run    # single run
+pnpm test:ui     # browser UI
 ```
 
 ## Environment Variables
@@ -60,40 +61,49 @@ BASE_URL=http://localhost:3000
 
 ```
 /
-├── index.html              # Main entry point
-├── main.js                 # Client-side logic
+├── index.html, login.html, callback.html  # HTML pages
+├── main.js                 # Main client-side logic
 ├── styles.css              # Styling
 ├── auth-client-workos.js   # WorkOS auth client
 ├── convex-client.js        # Convex client adapter
+├── config.js, state.js     # Configuration and state
+├── documents.js            # Document/canvas management
+├── modal-utils.js          # Modal UI helpers
+├── yaml-converter.js       # YAML↔agent conversion
 ├── convex/
-│   ├── schema.ts           # Database schema (4 tables)
+│   ├── schema.ts           # Database schema (5 tables)
 │   ├── agents.ts           # Agent CRUD + history
 │   ├── canvases.ts         # Canvas CRUD
 │   ├── orgSettings.ts      # Org configuration
 │   ├── agentHistory.ts     # Audit trail queries
-│   └── lib/auth.ts         # Auth helpers
+│   ├── users.ts            # User org membership sync
+│   ├── auth.config.ts      # Convex auth provider config
+│   └── lib/auth.ts         # Auth helpers (requireAuth, requireOrgAccess)
 ├── api/auth/               # Vercel edge routes
 │   ├── url.js              # Generate WorkOS auth URL
-│   ├── callback.js         # OAuth callback handler
+│   ├── callback.js         # OAuth callback + org membership sync
 │   ├── session.js          # Get current session
 │   ├── refresh.js          # Refresh access token
 │   ├── orgs.js             # Get user organizations
 │   └── logout.js           # Clear session
-└── api/lib/session-utils.js # Session encryption (jose)
+├── api/lib/session-utils.js # Session encryption (jose)
+└── tests/                  # Vitest tests (unit/, integration/)
 ```
 
 ## Convex Schema
 
 ```typescript
-// 4 tables with proper indexes
-orgSettings    // Org-level config (tools, colors, defaults)
-canvases       // Canvas containers per org
-agents         // Individual agents (normalized from YAML)
-agentHistory   // Audit trail for all agent changes
+// 5 tables with proper indexes
+orgSettings          // Org-level config (tools, colors, defaults)
+canvases             // Canvas containers per org
+agents               // Individual agents (normalized from YAML)
+agentHistory         // Audit trail for all agent changes
+userOrgMemberships   // User→org access (synced from WorkOS on login)
 ```
 
 Key patterns:
 - All mutations use `requireAuth()` and `requireOrgAccess()` from `convex/lib/auth.ts`
+- Org access checked via `userOrgMemberships` table (not just JWT claims)
 - Agent changes automatically record history
 - Real-time subscriptions via Convex enable collaborative editing
 
@@ -121,9 +131,9 @@ Manages Convex subscriptions with auto-cleanup
 
 ### Authorization
 ```typescript
-// In Convex functions
-const auth = await requireAuth(ctx);
-requireOrgAccess(auth, workosOrgId);
+// In Convex functions (convex/lib/auth.ts)
+const auth = await requireAuth(ctx);  // Returns {workosUserId, email, isSuperAdmin}
+await requireOrgAccess(ctx, auth, workosOrgId);  // Checks userOrgMemberships table
 ```
 
 ### Real-time Updates

@@ -12,18 +12,18 @@ export const list = query({
 
     // Get the agent to verify access
     const agent = await ctx.db.get(agentId);
-    if (!agent) {
+    if (!agent || agent.deletedAt) {
       // Agent might be deleted, try to get history anyway if super admin
       if (!auth.isSuperAdmin) {
-        throw new Error("Agent not found");
+        throw new Error("NotFound: Agent not found");
       }
     } else {
       // Verify access via canvas
       const canvas = await ctx.db.get(agent.canvasId);
-      if (!canvas) {
-        throw new Error("Canvas not found");
+      if (!canvas || canvas.deletedAt) {
+        throw new Error("NotFound: Canvas not found");
       }
-      requireOrgAccess(auth, canvas.workosOrgId);
+      await requireOrgAccess(ctx, auth, canvas.workosOrgId);
     }
 
     const history = await ctx.db
@@ -46,12 +46,12 @@ export const listByCanvas = query({
 
     // Verify access to the canvas's org
     const canvas = await ctx.db.get(canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
+    if (!canvas || canvas.deletedAt) {
+      throw new Error("NotFound: Canvas not found");
     }
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
 
-    // Get all agents in this canvas
+    // Get all agents in this canvas (include soft-deleted for history)
     const agents = await ctx.db
       .query("agents")
       .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))
@@ -84,12 +84,13 @@ export const listRecent = query({
   },
   handler: async (ctx, { workosOrgId, limit = 50 }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
-    // Get all canvases in this org
+    // Get all non-deleted canvases in this org
     const canvases = await ctx.db
       .query("canvases")
       .withIndex("by_org", (q) => q.eq("workosOrgId", workosOrgId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
     // Fetch all agents for all canvases in parallel

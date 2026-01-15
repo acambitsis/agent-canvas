@@ -1,19 +1,22 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAuth, requireOrgAccess } from "./lib/auth";
+import { getAgentSnapshot } from "./lib/helpers";
+import { validateSlug, validateTitle } from "./lib/validation";
 
 /**
- * List all canvases for an organization
+ * List all canvases for an organization (excludes soft-deleted)
  */
 export const list = query({
   args: { workosOrgId: v.string() },
   handler: async (ctx, { workosOrgId }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
     return ctx.db
       .query("canvases")
       .withIndex("by_org", (q) => q.eq("workosOrgId", workosOrgId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
   },
 });
@@ -27,17 +30,17 @@ export const get = query({
     const auth = await requireAuth(ctx);
 
     const canvas = await ctx.db.get(canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
+    if (!canvas || canvas.deletedAt) {
+      throw new Error("NotFound: Canvas not found");
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
     return canvas;
   },
 });
 
 /**
- * Get a canvas by slug within an org
+ * Get a canvas by slug within an org (excludes soft-deleted)
  */
 export const getBySlug = query({
   args: {
@@ -46,13 +49,14 @@ export const getBySlug = query({
   },
   handler: async (ctx, { workosOrgId, slug }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
     const canvas = await ctx.db
       .query("canvases")
       .withIndex("by_org_slug", (q) =>
         q.eq("workosOrgId", workosOrgId).eq("slug", slug)
       )
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .first();
 
     return canvas;
@@ -71,18 +75,23 @@ export const create = mutation({
   },
   handler: async (ctx, { workosOrgId, title, slug, sourceYaml }) => {
     const auth = await requireAuth(ctx);
-    requireOrgAccess(auth, workosOrgId);
+    await requireOrgAccess(ctx, auth, workosOrgId);
 
-    // Check slug doesn't already exist in org
+    // Validate inputs
+    validateTitle(title);
+    validateSlug(slug);
+
+    // Check slug doesn't already exist in org (exclude soft-deleted)
     const existing = await ctx.db
       .query("canvases")
       .withIndex("by_org_slug", (q) =>
         q.eq("workosOrgId", workosOrgId).eq("slug", slug)
       )
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .first();
 
     if (existing) {
-      throw new Error("A canvas with this slug already exists");
+      throw new Error("Validation: A canvas with this slug already exists");
     }
 
     const now = Date.now();
@@ -114,23 +123,28 @@ export const update = mutation({
     const auth = await requireAuth(ctx);
 
     const canvas = await ctx.db.get(canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
+    if (!canvas || canvas.deletedAt) {
+      throw new Error("NotFound: Canvas not found");
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
 
-    // If changing slug, check it doesn't conflict
+    // Validate inputs (only validate provided fields)
+    if (title !== undefined) validateTitle(title);
+    if (slug !== undefined) validateSlug(slug);
+
+    // If changing slug, check it doesn't conflict (exclude soft-deleted)
     if (slug && slug !== canvas.slug) {
       const existing = await ctx.db
         .query("canvases")
         .withIndex("by_org_slug", (q) =>
           q.eq("workosOrgId", canvas.workosOrgId).eq("slug", slug)
         )
+        .filter((q) => q.eq(q.field("deletedAt"), undefined))
         .first();
 
       if (existing) {
-        throw new Error("A canvas with this slug already exists");
+        throw new Error("Validation: A canvas with this slug already exists");
       }
     }
 
@@ -148,41 +162,64 @@ export const update = mutation({
 });
 
 /**
- * Delete a canvas and all its agents
+ * Delete a canvas and all its agents (soft delete)
+ * Preserves history records for audit trail
  */
 export const remove = mutation({
-  args: { canvasId: v.id("canvases") },
-  handler: async (ctx, { canvasId }) => {
+  args: {
+    canvasId: v.id("canvases"),
+    confirmDelete: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { canvasId, confirmDelete }) => {
     const auth = await requireAuth(ctx);
 
     const canvas = await ctx.db.get(canvasId);
-    if (!canvas) {
-      throw new Error("Canvas not found");
+    if (!canvas || canvas.deletedAt) {
+      throw new Error("NotFound: Canvas not found");
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
 
-    // Delete all agents in this canvas
+    // Get non-deleted agents in this canvas
     const agents = await ctx.db
       .query("agents")
       .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
-    for (const agent of agents) {
-      // Delete agent history first
-      const history = await ctx.db
-        .query("agentHistory")
-        .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
-        .collect();
-
-      for (const entry of history) {
-        await ctx.db.delete(entry._id);
-      }
-
-      await ctx.db.delete(agent._id);
+    // Require confirmation if canvas has agents
+    if (agents.length > 0 && !confirmDelete) {
+      throw new Error(
+        "Validation: Canvas has agents. Pass confirmDelete: true to confirm deletion."
+      );
     }
 
-    // Delete the canvas
-    await ctx.db.delete(canvasId);
+    const now = Date.now();
+
+    // Soft delete all agents (preserve history records)
+    for (const agent of agents) {
+      // Record deletion in history
+      await ctx.db.insert("agentHistory", {
+        agentId: agent._id,
+        changedBy: auth.workosUserId,
+        changedAt: now,
+        changeType: "delete",
+        previousData: getAgentSnapshot(agent),
+      });
+
+      // Soft delete the agent
+      await ctx.db.patch(agent._id, {
+        deletedAt: now,
+        updatedBy: auth.workosUserId,
+        updatedAt: now,
+      });
+    }
+
+    // Soft delete the canvas
+    await ctx.db.patch(canvasId, {
+      deletedAt: now,
+      updatedBy: auth.workosUserId,
+      updatedAt: now,
+    });
   },
 });

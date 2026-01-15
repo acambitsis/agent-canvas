@@ -19,6 +19,7 @@ export default defineSchema({
     title: v.string(),
     slug: v.string(), // Document name/identifier
     sourceYaml: v.optional(v.string()), // Optional original YAML for import/export
+    deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(), // WorkOS user ID
     updatedBy: v.string(),
     createdAt: v.number(),
@@ -48,6 +49,7 @@ export default defineSchema({
       })
     ),
     payload: v.optional(v.any()), // Portable JSON payload for round-trip fidelity and extensibility
+    deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(),
     updatedBy: v.string(),
     createdAt: v.number(),
@@ -68,4 +70,15 @@ export default defineSchema({
   })
     .index("by_agent", ["agentId"])
     .index("by_agent_time", ["agentId", "changedAt"]),
+
+  // User org memberships - synced from WorkOS on login
+  userOrgMemberships: defineTable({
+    workosUserId: v.string(),
+    workosOrgId: v.string(),
+    role: v.string(), // e.g., "admin", "member"
+    syncedAt: v.number(),
+  })
+    .index("by_user", ["workosUserId"])
+    .index("by_org", ["workosOrgId"])
+    .index("by_user_org", ["workosUserId", "workosOrgId"]),
 });

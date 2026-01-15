@@ -227,6 +227,48 @@ export function saveOrgPreference(orgId) {
     state.currentOrgId = orgId;
 }
 
+// Organization state management (single source of truth)
+export function getCurrentOrgId() {
+    return state.currentOrgId;
+}
+
+export function getUserOrgs() {
+    return state.userOrgs || [];
+}
+
+export function setUserOrgs(orgs) {
+    state.userOrgs = orgs || [];
+}
+
+export function setCurrentOrgId(orgId) {
+    saveOrgPreference(orgId); // This sets state.currentOrgId and persists to localStorage
+    window.dispatchEvent(new CustomEvent('orgChanged', { detail: { orgId } }));
+}
+
+export function getCurrentOrg() {
+    const orgId = getCurrentOrgId();
+    if (!orgId) {
+        return getUserOrgs()[0] || null;
+    }
+    return getUserOrgs().find(org => org.id === orgId) || getUserOrgs()[0] || null;
+}
+
+export function isSuperAdmin() {
+    return getUserOrgs().some(org => org.role === 'super_admin');
+}
+
+export function getCurrentOrgRole() {
+    if (isSuperAdmin()) return 'admin';
+    const org = getCurrentOrg();
+    return org?.role || 'viewer';
+}
+
+export function canManageCanvases() {
+    if (isSuperAdmin()) return true;
+    const org = getCurrentOrg();
+    return org?.role === 'admin';
+}
+
 // Canvas preference helpers
 export function loadCanvasPreference() {
     return getStoredValue(CURRENT_CANVAS_KEY);
@@ -235,6 +277,16 @@ export function loadCanvasPreference() {
 export function saveCanvasPreference(canvasId) {
     setStoredValue(CURRENT_CANVAS_KEY, canvasId);
     state.currentCanvasId = canvasId;
+}
+
+// Document preference helpers
+export function loadDocumentPreference() {
+    return getStoredValue(DOCUMENT_STORAGE_KEY);
+}
+
+export function saveDocumentPreference(name) {
+    setStoredValue(DOCUMENT_STORAGE_KEY, name);
+    state.currentDocumentName = name;
 }
 
 // Group agents by phase for rendering

@@ -3,7 +3,7 @@
  * Handle WorkOS OAuth callback
  */
 
-import { encryptSession, createSessionCookie, clearOAuthStateCookie } from '../lib/session-utils.js';
+import { clearOAuthStateCookie, createSessionCookie, encryptSession } from '../lib/session-utils.js';
 
 export const config = { runtime: 'edge' };
 
@@ -18,10 +18,10 @@ async function exchangeCodeForTokens(code, apiKey, clientId) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       client_id: clientId,
+      client_secret: apiKey,
       code,
       grant_type: 'authorization_code',
     }),
@@ -36,7 +36,7 @@ async function exchangeCodeForTokens(code, apiKey, clientId) {
 
 async function fetchUserOrgs(userId, apiKey) {
   const response = await fetch(
-    `https://api.workos.com/user_management/users/${userId}/organization_memberships`,
+    `https://api.workos.com/user_management/organization_memberships?user_id=${userId}`,
     { headers: { Authorization: `Bearer ${apiKey}` } }
   );
   if (!response.ok) return [];
@@ -70,21 +70,29 @@ export default async function handler(request) {
     if (!tokenData) return redirect(baseUrl, 'auth_failed');
 
     const { user, access_token, refresh_token, id_token } = tokenData;
+    
+    // id_token is required for Convex authentication (JWT)
+    if (!id_token) {
+      console.error('WorkOS did not return id_token - check that openid scope is requested');
+      return redirect(baseUrl, 'auth_failed');
+    }
+
     const orgs = await fetchUserOrgs(user.id, workosApiKey);
 
     if (orgs.length === 0) {
       return redirect(baseUrl, 'no_organization');
     }
 
-    // WorkOS access tokens typically expire in 15-60 minutes
-    // Store expiration time for proactive refresh (refresh at 50 minutes)
-    const accessTokenExpiresAt = Date.now() + 50 * 60 * 1000;
+    // Calculate token expiry from expires_in if provided, otherwise default to 50 minutes
+    // id_token typically expires in 1 hour, refresh proactively at 50 minutes
+    const expiresIn = tokenData.expires_in ? parseInt(tokenData.expires_in) * 1000 : 50 * 60 * 1000;
+    const idTokenExpiresAt = Date.now() + expiresIn - (10 * 60 * 1000); // Refresh 10 min before expiry
 
     const sessionData = {
-      accessToken: access_token,
+      accessToken: access_token, // Keep for WorkOS API calls if needed
       refreshToken: refresh_token,
-      idToken: id_token, // OIDC id_token for Convex authentication
-      accessTokenExpiresAt,
+      idToken: id_token, // JWT token for Convex authentication
+      idTokenExpiresAt,
       user: {
         id: user.id,
         email: user.email,

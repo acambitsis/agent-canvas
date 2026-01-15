@@ -29,10 +29,10 @@ export default async function handler(request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${workosApiKey}`,
       },
       body: JSON.stringify({
         client_id: workosClientId,
+        client_secret: workosApiKey,
         refresh_token: session.refreshToken,
         grant_type: 'refresh_token',
       }),
@@ -47,22 +47,26 @@ export default async function handler(request) {
     const tokenData = await response.json();
     const { access_token, refresh_token, id_token } = tokenData;
 
-    // WorkOS access tokens typically expire in 15-60 minutes
-    // Update expiration time for proactive refresh (refresh at 50 minutes)
-    const accessTokenExpiresAt = Date.now() + 50 * 60 * 1000;
+    // id_token is required for Convex authentication
+    if (!id_token) {
+      console.error('WorkOS did not return id_token on refresh');
+      return json({ error: 'Refresh failed - no id_token' }, 401);
+    }
 
-    // Update session with new tokens, preserve user and org data
+    // Calculate token expiry from expires_in if provided, otherwise default to 50 minutes
+    const expiresIn = tokenData.expires_in ? parseInt(tokenData.expires_in) * 1000 : 50 * 60 * 1000;
+    const idTokenExpiresAt = Date.now() + expiresIn - (10 * 60 * 1000); // Refresh 10 min before expiry
+
     const newSession = {
       ...session,
       accessToken: access_token,
-      refreshToken: refresh_token || session.refreshToken, // Keep old if not rotated
-      idToken: id_token || session.idToken, // Update id_token if provided, otherwise keep existing
-      accessTokenExpiresAt, // Update expiration time
+      refreshToken: refresh_token || session.refreshToken,
+      idToken: id_token, // Update id_token for Convex
+      idTokenExpiresAt,
     };
 
     const sessionToken = await encryptSession(newSession);
 
-    // Return idToken in response to avoid requiring a second fetch
     return new Response(JSON.stringify({ success: true, idToken: newSession.idToken }), {
       status: 200,
       headers: {
