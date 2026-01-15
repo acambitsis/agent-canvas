@@ -3,7 +3,7 @@
  * Handle WorkOS OAuth callback
  */
 
-import { encryptSession, createSessionCookie, clearOAuthStateCookie } from '../lib/session-utils.js';
+import { clearOAuthStateCookie, createSessionCookie, encryptSession } from '../lib/session-utils.js';
 
 export const config = { runtime: 'edge' };
 
