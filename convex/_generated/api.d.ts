@@ -12,6 +12,8 @@ import type * as agentHistory from "../agentHistory.js";
 import type * as agents from "../agents.js";
 import type * as canvases from "../canvases.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_helpers from "../lib/helpers.js";
+import type * as lib_validation from "../lib/validation.js";
 import type * as orgSettings from "../orgSettings.js";
 import type * as users from "../users.js";
 
@@ -26,6 +28,8 @@ declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   canvases: typeof canvases;
   "lib/auth": typeof lib_auth;
+  "lib/helpers": typeof lib_helpers;
+  "lib/validation": typeof lib_validation;
   orgSettings: typeof orgSettings;
   users: typeof users;
 }>;

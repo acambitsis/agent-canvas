@@ -9,8 +9,10 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
+    "@types/node": "^25.0.8",
     "@vitest/ui": "^1.0.0",
     "jsdom": "^23.0.0",
+    "typescript": "^5.9.3",
     "vitest": "^1.0.0"
   },
   "scripts": {

@@ -58,6 +58,10 @@ export async function requireSuperAdmin(
 /**
  * Check if user has access to an organization
  * Looks up membership in the userOrgMemberships table
+ *
+ * NOTE: This function requires database access, so it cannot be used in actions.
+ * Actions should call a mutation/query that performs the access check, or use
+ * the syncOrgMemberships action which verifies access via WorkOS API directly.
  */
 export async function hasOrgAccess(
   ctx: QueryCtx | MutationCtx,
