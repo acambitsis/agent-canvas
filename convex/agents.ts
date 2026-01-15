@@ -12,6 +12,16 @@ import {
 } from "./lib/validation";
 
 // Shared agent input validator for bulk operations
+const tagsValidator = v.optional(
+  v.object({
+    department: v.optional(v.string()),
+    status: v.optional(v.string()),
+    implementationStatus: v.optional(v.string()),
+    priority: v.optional(v.string()),
+    owner: v.optional(v.string()),
+  })
+);
+
 const agentInputValidator = v.object({
   phase: v.string(),
   phaseOrder: v.number(),
@@ -29,6 +39,7 @@ const agentInputValidator = v.object({
       satisfaction: v.number(),
     })
   ),
+  tags: tagsValidator,
   payload: v.optional(v.any()),
 });
 
@@ -133,6 +144,7 @@ export const create = mutation({
         satisfaction: v.number(),
       })
     ),
+    tags: tagsValidator,
     payload: v.optional(v.any()), // Portable JSON payload
   },
   handler: async (ctx, args) => {
@@ -184,6 +196,7 @@ export const update = mutation({
         satisfaction: v.number(),
       })
     ),
+    tags: tagsValidator,
     payload: v.optional(v.any()), // Portable JSON payload
   },
   handler: async (ctx, { agentId, ...updates }) => {
@@ -271,6 +284,91 @@ export const reorder = mutation({
       updatedBy: auth.workosUserId,
       updatedAt: Date.now(),
     });
+  },
+});
+
+/**
+ * Rename a phase (a "section" in the UI) by updating agents.phase.
+ * Optionally normalizes phaseOrder across phases in the canvas.
+ */
+export const renamePhase = mutation({
+  args: {
+    canvasId: v.id("canvases"),
+    fromPhase: v.string(),
+    toPhase: v.string(),
+  },
+  handler: async (ctx, { canvasId, fromPhase, toPhase }) => {
+    const auth = await requireAuth(ctx);
+    await getCanvasWithAccess(ctx, auth, canvasId);
+
+    validatePhase(fromPhase);
+    validatePhase(toPhase);
+
+    if (fromPhase === toPhase) {
+      return { updatedCount: 0 };
+    }
+
+    const now = Date.now();
+
+    const agents = await ctx.db
+      .query("agents")
+      .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+
+    const toRename = agents.filter((a) => a.phase === fromPhase);
+    if (toRename.length === 0) {
+      return { updatedCount: 0 };
+    }
+
+    // Apply phase rename
+    for (const agent of toRename) {
+      await ctx.db.insert("agentHistory", {
+        agentId: agent._id,
+        changedBy: auth.workosUserId,
+        changedAt: now,
+        changeType: "update",
+        previousData: getAgentSnapshot(agent),
+      });
+
+      await ctx.db.patch(agent._id, {
+        phase: toPhase,
+        updatedBy: auth.workosUserId,
+        updatedAt: now,
+      });
+    }
+
+    // Normalize phaseOrder across phases (stable by previous min phaseOrder, then name)
+    const agentsAfter = agents.map((a) =>
+      a.phase === fromPhase ? { ...a, phase: toPhase } : a
+    );
+    const phaseMinOrder = new Map<string, number>();
+    for (const a of agentsAfter) {
+      const phase = a.phase || "Uncategorized";
+      const current = phaseMinOrder.get(phase);
+      const order = Number.isFinite(a.phaseOrder) ? a.phaseOrder : 0;
+      phaseMinOrder.set(phase, current === undefined ? order : Math.min(current, order));
+    }
+
+    const orderedPhases = Array.from(phaseMinOrder.entries()).sort(
+      (a, b) => a[1] - b[1] || a[0].localeCompare(b[0])
+    );
+    const phaseOrderMap = new Map<string, number>();
+    orderedPhases.forEach(([phase], idx) => phaseOrderMap.set(phase, idx));
+
+    for (const a of agentsAfter) {
+      const phase = a.phase || "Uncategorized";
+      const desired = phaseOrderMap.get(phase) ?? 0;
+      if (a.phaseOrder !== desired) {
+        await ctx.db.patch(a._id, {
+          phaseOrder: desired,
+          updatedBy: auth.workosUserId,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return { updatedCount: toRename.length };
   },
 });
 

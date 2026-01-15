@@ -155,3 +155,61 @@ export function json(data, status = 200) {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+// Cache for static JWT signing key (RS256)
+let privateKeyCache = null;
+
+/**
+ * Get the static RSA private key from environment variable
+ * This key must match the public key embedded in Convex auth config
+ */
+async function getStaticPrivateKey() {
+  if (privateKeyCache) {
+    return privateKeyCache;
+  }
+
+  const privateKeyJwk = process.env.JWT_PRIVATE_KEY;
+  if (!privateKeyJwk) {
+    throw new Error('JWT_PRIVATE_KEY must be set in environment variables');
+  }
+
+  try {
+    const jwk = JSON.parse(privateKeyJwk);
+    privateKeyCache = await jose.importJWK(jwk, 'RS256');
+    return privateKeyCache;
+  } catch (error) {
+    throw new Error('Invalid JWT_PRIVATE_KEY format: ' + error.message);
+  }
+}
+
+/**
+ * Generate a signed JWT (id_token) for Convex authentication using RS256
+ * Uses a static key pair - the public key is embedded in Convex auth config
+ * @param {object} user - WorkOS user object
+ * @returns {Promise<string>} Signed JWT
+ */
+export async function generateIdToken(user) {
+  const privateKey = await getStaticPrivateKey();
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+
+  const jwt = await new jose.SignJWT({
+    // Standard OIDC claims
+    sub: user.id,
+    email: user.email,
+    email_verified: user.email_verified || true,
+    name: [user.first_name, user.last_name].filter(Boolean).join(' ') || undefined,
+    given_name: user.first_name,
+    family_name: user.last_name,
+    picture: user.profile_picture_url,
+    // Custom claims for Convex
+    workosUserId: user.id,
+  })
+    .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: 'agentcanvas-static-1' })
+    .setIssuer(baseUrl)
+    .setAudience('convex')
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(privateKey);
+
+  return jwt;
+}

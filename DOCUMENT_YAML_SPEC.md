@@ -1,5 +1,7 @@
 # Document YAML Specification
 
+**Deprecated**: AgentCanvas is Convex-native. YAML is supported only as a **one-way legacy import** format.
+
 Complete specification for generating full AgentCanvas YAML documents. For individual agent specifications, see [AGENT_YAML_SPEC.md](./AGENT_YAML_SPEC.md).
 
 ## Overview

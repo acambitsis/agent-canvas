@@ -51,9 +51,19 @@ export function bindToggleMenu({ buttonEl, menuEl, openClass = 'open', onAction,
         const actionButton = event.target.closest(actionSelector);
         if (actionButton) {
             event.preventDefault();
-            const action = actionButton.dataset.action;
-            closeMenuInternal();
-            onAction(action);
+            // Extract action value from any data-* attribute in the selector
+            // Supports: data-action, data-board-action, data-tag-type, data-org-id, etc.
+            let action = null;
+            for (const key of Object.keys(actionButton.dataset)) {
+                if (actionButton.dataset[key]) {
+                    action = actionButton.dataset[key];
+                    break;
+                }
+            }
+            if (action) {
+                closeMenuInternal();
+                onAction(action);
+            }
             return;
         }
 

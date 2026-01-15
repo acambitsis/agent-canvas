@@ -3,7 +3,7 @@
  * Handle WorkOS OAuth callback
  */
 
-import { clearOAuthStateCookie, createSessionCookie, encryptSession } from '../lib/session-utils.js';
+import { clearOAuthStateCookie, createSessionCookie, encryptSession, generateIdToken } from '../lib/session-utils.js';
 
 export const config = { runtime: 'edge' };
 
@@ -70,11 +70,17 @@ export default async function handler(request) {
     if (!tokenData) return redirect(baseUrl, 'auth_failed');
 
     const { user, access_token, refresh_token, id_token } = tokenData;
-    
-    // id_token is required for Convex authentication (JWT)
-    if (!id_token) {
-      console.error('WorkOS did not return id_token - check that openid scope is requested');
-      return redirect(baseUrl, 'auth_failed');
+
+    // Debug: log what WorkOS returned
+    console.log('WorkOS token response keys:', Object.keys(tokenData));
+    console.log('WorkOS returned id_token:', !!id_token, 'length:', id_token?.length || 0);
+
+    // Use WorkOS id_token if provided, otherwise generate our own JWT for Convex
+    let idTokenForConvex = id_token;
+    if (!idTokenForConvex) {
+      console.log('WorkOS did not return id_token - generating custom JWT for Convex');
+      idTokenForConvex = await generateIdToken(user);
+      console.log('Generated custom id_token, length:', idTokenForConvex.length);
     }
 
     const orgs = await fetchUserOrgs(user.id, workosApiKey);
@@ -91,7 +97,7 @@ export default async function handler(request) {
     const sessionData = {
       accessToken: access_token, // Keep for WorkOS API calls if needed
       refreshToken: refresh_token,
-      idToken: id_token, // JWT token for Convex authentication
+      idToken: idTokenForConvex, // JWT token for Convex authentication (WorkOS or custom)
       idTokenExpiresAt,
       user: {
         id: user.id,

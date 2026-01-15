@@ -3,7 +3,7 @@
  * Refresh WorkOS access token using refresh token
  */
 
-import { parseSession, encryptSession, createSessionCookie, json } from '../lib/session-utils.js';
+import { parseSession, encryptSession, createSessionCookie, json, generateIdToken } from '../lib/session-utils.js';
 
 export const config = { runtime: 'edge' };
 
@@ -47,10 +47,13 @@ export default async function handler(request) {
     const tokenData = await response.json();
     const { access_token, refresh_token, id_token } = tokenData;
 
-    // id_token is required for Convex authentication
-    if (!id_token) {
-      console.error('WorkOS did not return id_token on refresh');
-      return json({ error: 'Refresh failed - no id_token' }, 401);
+    // Use WorkOS id_token if provided, otherwise generate our own JWT
+    // WorkOS typically doesn't return id_token on refresh (standard OIDC behavior)
+    let idTokenForConvex = id_token;
+    if (!idTokenForConvex) {
+      console.log('WorkOS did not return id_token on refresh - generating custom JWT');
+      // Use the user data from the existing session to generate a new token
+      idTokenForConvex = await generateIdToken(session.user);
     }
 
     // Calculate token expiry from expires_in if provided, otherwise default to 50 minutes
@@ -61,7 +64,7 @@ export default async function handler(request) {
       ...session,
       accessToken: access_token,
       refreshToken: refresh_token || session.refreshToken,
-      idToken: id_token, // Update id_token for Convex
+      idToken: idTokenForConvex, // Update id_token for Convex (WorkOS or custom)
       idTokenExpiresAt,
     };
 

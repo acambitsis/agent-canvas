@@ -32,26 +32,24 @@ export const state = {
     agentModalOriginal: null,
     groupModalOriginal: null,
     documentMenuBound: false,
-    collapsedSections: {}
+    collapsedSections: {},
+
+    // Grouping and filtering state
+    grouping: {
+        activeTagType: 'phase',  // Currently selected grouping tag
+        sortOrder: 'asc',        // Group sort order
+        filters: {},             // Active filters: { tagType: [values] }
+        searchQuery: ''          // Search filter
+    },
+
+    // Computed groups cache (result of grouping computation)
+    computedGroups: []
 };
 
-export const DEFAULT_DOCUMENT_NAME = 'config.yaml';
-export const DOCUMENT_STORAGE_KEY = 'agentcanvas-active-doc';
 export const COLLAPSED_SECTIONS_KEY = 'agentcanvas-collapsed-sections';
 export const CURRENT_ORG_KEY = 'agentcanvas-current-org';
 export const CURRENT_CANVAS_KEY = 'agentcanvas-current-canvas';
-
-export const BLANK_DOCUMENT_TEMPLATE = [
-    '# AgentCanvas configuration',
-    'sectionDefaults:',
-    '  iconType: target',
-    '  showInFlow: true',
-    '  isSupport: false',
-    'agentGroups:',
-    '  - groupName: New Section',
-    '    agents: []',
-    ''
-].join('\n');
+export const GROUPING_PREFERENCE_KEY = 'agentcanvas-grouping-pref';
 
 const defaultAgentMetrics = {
     usageThisWeek: '0',
@@ -68,7 +66,25 @@ const COLLAPSED_PILL_CLASSES = [
 ];
 
 export function getAgentMetrics(agent = {}) {
-    return { ...defaultAgentMetrics, ...(agent.metrics || {}) };
+    const metrics = agent?.metrics || {};
+    const payloadMetrics = agent?.payload?.metrics || {};
+
+    // Convex-native numeric metrics: { adoption, satisfaction }
+    if (
+        metrics &&
+        typeof metrics === 'object' &&
+        (typeof metrics.adoption === 'number' || typeof metrics.satisfaction === 'number')
+    ) {
+        return {
+            ...defaultAgentMetrics,
+            usageThisWeek: String(metrics.adoption ?? defaultAgentMetrics.usageThisWeek),
+            timeSaved: String(metrics.satisfaction ?? defaultAgentMetrics.timeSaved),
+            roiContribution: payloadMetrics.roiContribution || defaultAgentMetrics.roiContribution
+        };
+    }
+
+    // Legacy/UI metrics shape: { usageThisWeek, timeSaved, roiContribution }
+    return { ...defaultAgentMetrics, ...payloadMetrics, ...(metrics || {}) };
 }
 
 export function toArray(value) {
@@ -279,17 +295,7 @@ export function saveCanvasPreference(canvasId) {
     state.currentCanvasId = canvasId;
 }
 
-// Document preference helpers
-export function loadDocumentPreference() {
-    return getStoredValue(DOCUMENT_STORAGE_KEY);
-}
-
-export function saveDocumentPreference(name) {
-    setStoredValue(DOCUMENT_STORAGE_KEY, name);
-    state.currentDocumentName = name;
-}
-
-// Group agents by phase for rendering
+// Group agents by phase for rendering (legacy - use grouping.js for dynamic grouping)
 export function groupAgentsByPhase(agents = state.agents) {
     const phases = new Map();
 
@@ -316,4 +322,54 @@ export function groupAgentsByPhase(agents = state.agents) {
     }
 
     return sortedPhases;
+}
+
+// Grouping preference helpers
+export function loadGroupingPreference() {
+    try {
+        const stored = localStorage.getItem(GROUPING_PREFERENCE_KEY);
+        if (stored) {
+            const pref = JSON.parse(stored);
+            state.grouping = { ...state.grouping, ...pref };
+        }
+    } catch { /* ignore */ }
+    return state.grouping;
+}
+
+export function saveGroupingPreference() {
+    try {
+        localStorage.setItem(GROUPING_PREFERENCE_KEY, JSON.stringify(state.grouping));
+    } catch { /* ignore */ }
+}
+
+export function setGroupingTagType(tagType) {
+    state.grouping.activeTagType = tagType;
+    saveGroupingPreference();
+    window.dispatchEvent(new CustomEvent('groupingChanged', { detail: { tagType } }));
+}
+
+export function getGroupingTagType() {
+    return state.grouping.activeTagType || 'phase';
+}
+
+export function setGroupingFilter(tagType, values) {
+    if (!values || values.length === 0) {
+        delete state.grouping.filters[tagType];
+    } else {
+        state.grouping.filters[tagType] = values;
+    }
+    saveGroupingPreference();
+    window.dispatchEvent(new CustomEvent('filterChanged', { detail: { tagType, values } }));
+}
+
+export function clearGroupingFilters() {
+    state.grouping.filters = {};
+    state.grouping.searchQuery = '';
+    saveGroupingPreference();
+    window.dispatchEvent(new CustomEvent('filterChanged', { detail: {} }));
+}
+
+export function setSearchQuery(query) {
+    state.grouping.searchQuery = query;
+    window.dispatchEvent(new CustomEvent('searchChanged', { detail: { query } }));
 }

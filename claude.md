@@ -14,7 +14,7 @@ This file provides guidance to Claude Code when working with this repository.
 - **Backend**: Convex (real-time backend-as-a-service)
 - **Auth**: WorkOS AuthKit (magic link, social login, SSO)
 - **Hosting**: Vercel (static files + edge API routes for auth)
-- **Libraries**: `js-yaml` (CDN), `lucide` (CDN), `jose` (session encryption), `convex`
+- **Libraries**: `lucide` (CDN), `jose` (session encryption), `convex` (and `js-yaml` lazy-loaded for legacy YAML import only)
 
 ## Development Commands
 

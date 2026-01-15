@@ -1,9 +1,9 @@
 import { getCurrentOrg } from './state.js';
-import { deleteDocument, getConvexClient, getDocument, listDocuments, renameDocument, saveDocument } from './convex-client.js';
+import { createCanvas, deleteCanvas, listDocuments, updateCanvas } from './convex-client.js';
 import { canManageCanvasesInCurrentGroup, getCurrentGroupId, getUserGroups } from './main.js';
-import { BLANK_DOCUMENT_TEMPLATE, DEFAULT_DOCUMENT_NAME, DOCUMENT_STORAGE_KEY, refreshIcons, state, loadDocumentPreference, saveDocumentPreference } from './state.js';
-import { convexToYaml } from './yaml-converter.js';
+import { refreshIcons, slugifyIdentifier, state, loadCanvasPreference, saveCanvasPreference } from './state.js';
 import { bindToggleMenu, closeMenu } from './menu-utils.js';
+import { importLegacyYamlToNative } from './legacy-yaml-import.js';
 
 let loadAgentsCallback = async () => {};
 let documentMenuCleanup = null;
@@ -12,14 +12,21 @@ export function registerLoadAgents(fn) {
     loadAgentsCallback = typeof fn === 'function' ? fn : loadAgentsCallback;
 }
 
-export function setActiveDocumentName(name, options = {}) {
-    state.currentDocumentName = name || null;
+export function setActiveCanvasId(canvasId, options = {}) {
+    state.currentCanvasId = canvasId || null;
+    // Legacy alias during migration; will be removed once all code is canvasId-native.
+    state.currentDocumentName = state.currentCanvasId;
 
     if (!options.skipPersist) {
-        saveDocumentPreference(state.currentDocumentName);
+        saveCanvasPreference(state.currentCanvasId);
     }
 
     updateDocumentControlsUI();
+}
+
+// Backward-compatible export (call sites still use "document" naming)
+export function setActiveDocumentName(name, options = {}) {
+    return setActiveCanvasId(name, options);
 }
 
 function getDocumentSelectElement() {
@@ -52,7 +59,6 @@ function handleDocumentMenuAction(action) {
         blank: createBlankDocument,
         share: () => alert('Canvas access is controlled by organization membership. Invite users to your organization via WorkOS dashboard.'),
         rename: renameCurrentDocument,
-        download: downloadCurrentDocument,
         delete: deleteCurrentDocument
     };
 
@@ -69,7 +75,8 @@ function bindDocumentMenuEvents() {
     documentMenuCleanup = bindToggleMenu({
         buttonEl: button,
         menuEl: menu,
-        onAction: handleDocumentMenuAction
+        onAction: handleDocumentMenuAction,
+        actionSelector: '[data-action]'
     });
 
     state.documentMenuBound = true;
@@ -114,61 +121,56 @@ export async function createBlankDocument() {
         return;
     }
 
-    const defaultName = `document-${state.availableDocuments.length + 1}.yaml`;
-    const userInput = prompt('Name for the new document (.yaml will be appended if missing):', defaultName);
-    if (userInput === null) {
-        return;
-    }
-
-    let docName;
     try {
-        docName = sanitizeDocumentNameForClient(userInput);
-    } catch (error) {
-        alert(error.message);
-        return;
-    }
+        const defaultTitle = `Canvas ${state.availableDocuments.length + 1}`;
+        const userInput = prompt('Title for the new canvas:', defaultTitle);
+        if (userInput === null) return;
 
-    // Check for existing document in same group
-    const existingInGroup = state.availableDocuments.some(
-        doc => doc.name === docName && doc.group_id === groupId
-    );
-    if (existingInGroup) {
-        if (!confirm(`"${docName}" already exists in this group. Overwrite it?`)) {
-            return;
-        }
-    }
+        const title = sanitizeCanvasTitle(userInput);
+        const existingSlugs = new Set(
+            state.availableDocuments
+                .filter(doc => doc.group_id === groupId)
+                .map(doc => doc.slug)
+                .filter(Boolean)
+        );
+        const slug = generateUniqueCanvasSlug(title, existingSlugs);
 
-    try {
-        setDocumentStatusMessage(`Creating "${docName}"...`);
-        await uploadDocumentFromContents(docName, BLANK_DOCUMENT_TEMPLATE, groupId);
-        setDocumentStatusMessage(`Document "${docName}" created.`, 'success');
+        setDocumentStatusMessage(`Creating "${title}"...`);
+        const canvasId = await createCanvas({ workosOrgId: groupId, title, slug });
+        await refreshDocumentList(canvasId);
+        setActiveCanvasId(canvasId);
+        await loadAgentsCallback(canvasId);
+        setDocumentStatusMessage(`Canvas "${title}" created.`, 'success');
     } catch (error) {
-        console.error('[documents] Blank document creation failed', { docName, error });
-        setDocumentStatusMessage('Failed to create document.', 'error');
+        console.error('[documents] Blank canvas creation failed', { error });
+        setDocumentStatusMessage('Failed to create canvas.', 'error');
     }
 }
 
 export async function renameCurrentDocument() {
-    if (!state.currentDocumentName) {
-        alert('Select a document before renaming.');
+    if (!state.currentCanvasId) {
+        alert('Select a canvas before renaming.');
         return;
     }
 
-    const userInput = prompt('Enter a new name (.yaml will be appended if missing):', state.currentDocumentName);
+    const currentDoc = state.availableDocuments.find(d => d.id === state.currentCanvasId);
+    const currentTitle = currentDoc?.title || currentDoc?.name || currentDoc?.slug || 'Untitled canvas';
+
+    const userInput = prompt('Enter a new canvas title:', currentTitle);
     if (userInput === null) {
         return;
     }
 
-    let newDocName;
+    let newTitle;
     try {
-        newDocName = sanitizeDocumentNameForClient(userInput);
+        newTitle = sanitizeCanvasTitle(userInput);
     } catch (error) {
         alert(error.message);
         return;
     }
 
-    if (newDocName === state.currentDocumentName) {
-        setDocumentStatusMessage('Document name unchanged.');
+    if (newTitle === currentTitle) {
+        setDocumentStatusMessage('Canvas title unchanged.');
         return;
     }
 
@@ -178,24 +180,16 @@ export async function renameCurrentDocument() {
         return;
     }
 
-    // Check for duplicates within the same org
-    if (state.availableDocuments.some(doc =>
-        (doc.name === newDocName || doc.slug === newDocName) && doc.group_id === currentOrg.id
-    )) {
-        alert(`A document named "${newDocName}" already exists in this organization. Choose a different name.`);
-        return;
-    }
-
     try {
-        setDocumentStatusMessage(`Renaming to "${newDocName}"...`);
-        await renameDocument(currentOrg.id, state.currentDocumentName, newDocName);
+        setDocumentStatusMessage(`Renaming to "${newTitle}"...`);
+        await updateCanvas(state.currentCanvasId, { title: newTitle });
 
-        await refreshDocumentList(newDocName);
-        await loadAgentsCallback(newDocName);
-        setDocumentStatusMessage(`Renamed to "${newDocName}".`, 'success');
+        await refreshDocumentList(state.currentCanvasId);
+        await loadAgentsCallback(state.currentCanvasId);
+        setDocumentStatusMessage(`Renamed to "${newTitle}".`, 'success');
     } catch (error) {
         console.error('Rename failed:', error);
-        alert('Failed to rename document: ' + (error.message || 'Unknown error'));
+        alert('Failed to rename canvas: ' + (error.message || 'Unknown error'));
         setDocumentStatusMessage('Rename failed.', 'error');
     }
 }
@@ -260,9 +254,9 @@ function updateDocumentControlsUI() {
             }
 
             select.disabled = false;
-            const currentDocId = state.currentDocumentName;
-            if (currentDocId && state.availableDocuments.some(doc => (doc.id || doc.slug || doc.name) === currentDocId)) {
-                select.value = currentDocId;
+            const currentCanvasId = state.currentCanvasId;
+            if (currentCanvasId && state.availableDocuments.some(doc => (doc.id || doc.slug || doc.name) === currentCanvasId)) {
+                select.value = currentCanvasId;
             } else if (state.availableDocuments.length > 0) {
                 select.value = state.availableDocuments[0].id || state.availableDocuments[0].slug || state.availableDocuments[0].name;
             }
@@ -273,9 +267,9 @@ function updateDocumentControlsUI() {
         if (!state.documentListLoaded) {
             meta.textContent = 'Loading documents...';
         } else if (!state.availableDocuments.length) {
-            meta.textContent = 'No YAML documents found. Upload one to get started.';
-        } else if (state.currentDocumentName) {
-            const doc = state.availableDocuments.find(d => (d.id || d.slug || d.name) === state.currentDocumentName);
+            meta.textContent = 'No canvases found. Create one to get started.';
+        } else if (state.currentCanvasId) {
+            const doc = state.availableDocuments.find(d => (d.id || d.slug || d.name) === state.currentCanvasId);
             if (doc) {
                 const sizeText = typeof doc.size === 'number' ? formatBytes(doc.size) : '';
                 const updatedText = doc.updated_at || doc.updatedAt ? new Date(doc.updated_at || doc.updatedAt).toLocaleString() : '';
@@ -293,24 +287,24 @@ function updateDocumentControlsUI() {
     }
 
     if (menu) {
-        const uploadBtn = menu.querySelector('button[data-action="upload"]');
-        const blankBtn = menu.querySelector('button[data-action="blank"]');
-        const renameBtn = menu.querySelector('button[data-action="rename"]');
-        const downloadMenuBtn = menu.querySelector('button[data-action="download"]');
-        const deleteBtn = menu.querySelector('button[data-action="delete"]');
+        const uploadBtn = menu.querySelector('[data-action="upload"]');
+        const blankBtn = menu.querySelector('[data-action="blank"]');
+        const renameBtn = menu.querySelector('[data-action="rename"]');
+        const downloadMenuBtn = menu.querySelector('[data-action="download"]');
+        const deleteBtn = menu.querySelector('[data-action="delete"]');
         const divider = menu.querySelector('[data-role="menu-divider"]');
-        const hasDocument = Boolean(state.currentDocumentName);
+        const hasDocument = Boolean(state.currentCanvasId);
         const isLastDocument = state.availableDocuments.length <= 1;
         const canManage = canManageCanvasesInCurrentGroup();
 
         // Upload and blank require admin
         if (uploadBtn) {
             uploadBtn.disabled = !canManage;
-            uploadBtn.title = canManage ? 'Upload YAML file' : 'Only admins can upload files';
+            uploadBtn.title = canManage ? 'Import canvas from file' : 'Only admins can import';
         }
         if (blankBtn) {
             blankBtn.disabled = !canManage;
-            blankBtn.title = canManage ? 'Create new blank document' : 'Only admins can create documents';
+            blankBtn.title = canManage ? 'Create new canvas' : 'Only admins can create canvases';
         }
 
         // Rename requires admin
@@ -354,22 +348,25 @@ export function setDocumentStatusMessage(message, type = 'info') {
     statusEl.dataset.state = type;
 }
 
-export function sanitizeDocumentNameForClient(name) {
-    if (!name) {
-        throw new Error('Document name is required.');
-    }
-    let normalized = name.trim();
-    if (!normalized.endsWith('.yaml')) {
-        normalized += '.yaml';
-    }
-    const isValid = /^[A-Za-z0-9._-]+\.yaml$/.test(normalized);
-    if (!isValid) {
-        throw new Error('Invalid document name. Use letters, numbers, dots, dashes, or underscores.');
+function sanitizeCanvasTitle(title) {
+    const normalized = (title || '').trim();
+    if (!normalized) {
+        throw new Error('Canvas title is required.');
     }
     return normalized;
 }
 
-export async function refreshDocumentList(preferredDocName) {
+function generateUniqueCanvasSlug(title, existingSlugs) {
+    const base = slugifyIdentifier(title) || 'canvas';
+    let candidate = base;
+    let suffix = 2;
+    while (existingSlugs.has(candidate)) {
+        candidate = `${base}-${suffix++}`;
+    }
+    return candidate;
+}
+
+export async function refreshDocumentList(preferredCanvasRef) {
     try {
         setDocumentStatusMessage('Loading documents...');
         
@@ -395,27 +392,29 @@ export async function refreshDocumentList(preferredDocName) {
         
         state.documentListLoaded = true;
 
-        const docNames = state.availableDocuments.map(doc => doc.name || doc.slug || doc.id);
-        let nextDoc = preferredDocName || state.currentDocumentName || loadDocumentPreference();
+        const canvasIds = state.availableDocuments.map(doc => doc.id);
+        let nextCanvas = preferredCanvasRef || state.currentCanvasId || loadCanvasPreference();
 
-        if (!nextDoc && docNames.length) {
-            nextDoc = docNames.includes(DEFAULT_DOCUMENT_NAME) ? DEFAULT_DOCUMENT_NAME : docNames[0];
+        if (!nextCanvas && canvasIds.length) {
+            nextCanvas = canvasIds[0];
         }
 
-        if (nextDoc && !docNames.includes(nextDoc) && docNames.length) {
-            nextDoc = docNames[0];
+        if (nextCanvas && !canvasIds.includes(nextCanvas) && canvasIds.length) {
+            nextCanvas = canvasIds[0];
         }
 
-        setActiveDocumentName(nextDoc, { skipPersist: false });
+        setActiveCanvasId(nextCanvas, { skipPersist: false });
         setDocumentStatusMessage('');
     } catch (error) {
         console.error('Error listing documents:', error);
         state.availableDocuments = [];
         state.documentListLoaded = true;
-        setActiveDocumentName(null, { skipPersist: true });
-        setDocumentStatusMessage('Unable to load documents. Upload a YAML file to create one.', 'error');
+        setActiveCanvasId(null, { skipPersist: true });
+        setDocumentStatusMessage('Unable to load canvases. Create a new canvas to get started.', 'error');
     } finally {
         updateDocumentControlsUI();
+        // Notify main.js to update the sidebar canvas list
+        window.dispatchEvent(new CustomEvent('documentsChanged'));
     }
 }
 
@@ -432,7 +431,7 @@ export async function initializeDocumentControls() {
 
 export async function handleDocumentSelection(event) {
     const selectedDoc = event.target.value;
-    if (!selectedDoc || selectedDoc === state.currentDocumentName) {
+    if (!selectedDoc || selectedDoc === state.currentCanvasId) {
         return;
     }
 
@@ -453,19 +452,22 @@ export async function handleDocumentSelection(event) {
     }
 
     // Store previous document name to revert on error
-    const previousDocName = state.currentDocumentName;
+    const previousCanvasId = state.currentCanvasId;
     
     try {
+        const selectedMeta = state.availableDocuments.find(d => (d.id || d.slug || d.name) === selectedDoc);
+        const displayName = selectedMeta?.title || selectedMeta?.name || selectedMeta?.slug || selectedDoc;
+
         // Update UI state without persisting yet
-        setActiveDocumentName(selectedDoc, { skipPersist: true });
+        setActiveCanvasId(selectedDoc, { skipPersist: true });
         await loadAgentsCallback(selectedDoc);
         // Only persist after successful load
-        setActiveDocumentName(selectedDoc, { skipPersist: false });
-        setDocumentStatusMessage(`Loaded "${selectedDoc}".`, 'success');
+        setActiveCanvasId(selectedDoc, { skipPersist: false });
+        setDocumentStatusMessage(`Loaded "${displayName}".`, 'success');
     } catch (error) {
         console.error('Error loading document:', error);
-        // Revert to previous document name on error
-        setActiveDocumentName(previousDocName, { skipPersist: false });
+        // Revert to previous canvas on error
+        setActiveCanvasId(previousCanvasId, { skipPersist: false });
         setDocumentStatusMessage(`Failed to load "${selectedDoc}".`, 'error');
     } finally {
         docSelect.disabled = false;
@@ -490,37 +492,33 @@ async function handleDocumentFileSelected(event) {
         return;
     }
 
-    let suggestedName = file.name || DEFAULT_DOCUMENT_NAME;
-    try {
-        suggestedName = sanitizeDocumentNameForClient(suggestedName);
-    } catch {
-        suggestedName = DEFAULT_DOCUMENT_NAME;
-    }
-
-    const userInput = prompt('Enter a name for this YAML document (.yaml will be appended if missing):', suggestedName);
-    if (userInput === null) {
-        return;
-    }
-
-    let docName;
-    try {
-        docName = sanitizeDocumentNameForClient(userInput);
-    } catch (error) {
-        alert(error.message);
-        return;
-    }
-
     try {
         const contents = await file.text();
-        await uploadDocumentFromContents(docName, contents);
+
+        // Try to suggest a title from YAML contents, falling back to filename.
+        const filenameBase = (file.name || 'import.yaml')
+            .replace(/\.ya?ml$/i, '')
+            .trim();
+        let suggestedTitle = filenameBase || 'Imported Canvas';
+        try {
+            const parsed = window.jsyaml?.load?.(contents);
+            if (parsed?.documentTitle) suggestedTitle = String(parsed.documentTitle);
+        } catch {
+            // ignore parse errors here; importer will validate
+        }
+
+        const userTitle = prompt('Title for imported canvas:', suggestedTitle);
+        if (userTitle === null) return;
+
+        await uploadDocumentFromContents(userTitle, contents);
     } catch (error) {
         console.error('Upload failed:', error);
         alert('Failed to upload document: ' + (error.message || 'Unknown error'));
     }
 }
 
-export async function uploadDocumentFromContents(docName, yamlText, groupId = null) {
-    setDocumentStatusMessage(`Uploading "${docName}"...`);
+export async function uploadDocumentFromContents(titleInput, yamlText, groupId = null) {
+    setDocumentStatusMessage('Importing legacy YAML...');
 
     // Use provided groupId or current org
     const currentOrg = getCurrentOrg();
@@ -529,77 +527,30 @@ export async function uploadDocumentFromContents(docName, yamlText, groupId = nu
         throw new Error('No organization selected');
     }
 
-    // Parse YAML to get title
-    let title = docName;
-    try {
-        const parsed = window.jsyaml.load(yamlText);
-        if (parsed && parsed.documentTitle) {
-            title = parsed.documentTitle;
-        }
-    } catch (e) {
-        // Use docName as title if parsing fails
-    }
+    const existingSlugs = new Set(
+        state.availableDocuments
+            .filter(doc => doc.group_id === targetOrgId)
+            .map(doc => doc.slug)
+            .filter(Boolean)
+    );
 
-    await saveDocument(targetOrgId, docName, title, yamlText);
+    const result = await importLegacyYamlToNative({
+        workosOrgId: targetOrgId,
+        yamlText,
+        overrideTitle: titleInput,
+        existingSlugs
+    });
 
-    await refreshDocumentList(docName);
-    setActiveDocumentName(docName);
-    await loadAgentsCallback(docName);
+    await refreshDocumentList(result.canvasId);
+    setActiveCanvasId(result.canvasId);
+    await loadAgentsCallback(result.canvasId);
 
-    setDocumentStatusMessage(`Document "${docName}" uploaded and loaded.`, 'success');
-}
-
-export async function downloadCurrentDocument() {
-    if (!state.currentDocumentName) {
-        alert('No document selected to download.');
-        return;
-    }
-
-    try {
-        const currentOrg = getCurrentOrg();
-        if (!currentOrg) {
-            throw new Error('No organization selected');
-        }
-
-        const canvas = await getDocument(currentOrg.id, state.currentDocumentName);
-        if (!canvas) {
-            throw new Error('Document not found');
-        }
-
-        // Use sourceYaml if available, otherwise regenerate from agents
-        let yamlText = canvas.sourceYaml;
-        
-        if (!yamlText) {
-            // Regenerate YAML from agents and org settings
-            const agents = await getConvexClient().query("agents:list", { canvasId: canvas._id });
-            const orgSettings = await getConvexClient().query("orgSettings:get", { workosOrgId: currentOrg.id }).catch(() => null);
-            
-            const yamlDoc = convexToYaml(canvas, agents, orgSettings);
-            yamlText = window.jsyaml.dump(yamlDoc);
-        }
-        
-        if (!yamlText || yamlText.trim() === '') {
-            throw new Error('Document has no content to download');
-        }
-        
-        const blob = new Blob([yamlText], { type: 'text/yaml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = state.currentDocumentName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error('Download failed:', error);
-        alert('Failed to download document: ' + (error.message || 'Unknown error'));
-    }
+    setDocumentStatusMessage(`Imported "${result.title}" (${result.agentCount} agents).`, 'success');
 }
 
 export async function deleteCurrentDocument() {
-    if (!state.currentDocumentName) {
-        alert('No document selected to delete.');
+    if (!state.currentCanvasId) {
+        alert('No canvas selected to delete.');
         return;
     }
 
@@ -609,7 +560,7 @@ export async function deleteCurrentDocument() {
     }
 
     const confirmed = confirm(
-        `Are you sure you want to permanently delete "${state.currentDocumentName}"?\n\n` +
+        `Are you sure you want to permanently delete this canvas?\n\n` +
         `This action cannot be undone.`
     );
 
@@ -624,20 +575,20 @@ export async function deleteCurrentDocument() {
     }
 
     try {
-        setDocumentStatusMessage(`Deleting "${state.currentDocumentName}"...`);
-        await deleteDocument(currentOrg.id, state.currentDocumentName);
+        setDocumentStatusMessage('Deleting canvas...');
+        await deleteCanvas(state.currentCanvasId);
 
         // Store deleted document name before refreshDocumentList changes state.currentDocumentName
-        const deletedDocName = state.currentDocumentName;
-        const remainingDocs = state.availableDocuments.filter(doc => (doc.name || doc.slug || doc.id) !== deletedDocName);
-        const nextDoc = remainingDocs.length > 0 ? (remainingDocs[0].name || remainingDocs[0].slug || remainingDocs[0].id) : null;
+        const deletedCanvasId = state.currentCanvasId;
+        const remainingDocs = state.availableDocuments.filter(doc => (doc.id || doc.slug || doc.name) !== deletedCanvasId);
+        const nextCanvasId = remainingDocs.length > 0 ? (remainingDocs[0].id || remainingDocs[0].slug || remainingDocs[0].name) : null;
 
-        await refreshDocumentList(nextDoc);
-        if (nextDoc) {
-            await loadAgentsCallback(nextDoc);
-            setDocumentStatusMessage(`Document "${deletedDocName}" deleted successfully.`, 'success');
+        await refreshDocumentList(nextCanvasId);
+        if (nextCanvasId) {
+            await loadAgentsCallback(nextCanvasId);
+            setDocumentStatusMessage('Canvas deleted successfully.', 'success');
         } else {
-            setDocumentStatusMessage('Document deleted. No documents remaining.', 'success');
+            setDocumentStatusMessage('Canvas deleted. No canvases remaining.', 'success');
         }
 
     } catch (error) {

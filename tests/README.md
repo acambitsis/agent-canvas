@@ -1,28 +1,17 @@
 # Test Suite
 
-Ultra high-value tests for AgentCanvas. These 4 tests cover the critical paths that prevent data loss, security breaches, and silent data corruption.
+AgentCanvas is now **Convex-native**. YAML is supported only as a **one-way legacy importer**.
 
 ## Tests
 
-1. **Round-Trip Data Integrity** (`integration/round-trip.test.js`)
-   - Tests complete save/load workflow
-   - Verifies data persists through YAML parse/serialize cycle
-   - Most critical test - if this fails, users lose data
-
-2. **API Authentication Enforcement** (`integration/auth.test.js`)
-   - Tests that all endpoints reject unauthenticated requests
-   - Verifies password validation and trimming
-   - Security-critical test
-
-3. **Form ↔ YAML Synchronization** (`unit/form-yaml-sync.test.js`)
-   - Tests bidirectional sync between form fields and YAML editor
-   - Verifies round-trip data preservation
-   - Prevents silent data corruption
-
-4. **Document Name Sanitization** (`unit/sanitization.test.js`)
-   - Tests input validation for document names
-   - Prevents path traversal attacks
-   - Security and stability critical
+- **Legacy YAML import** (`unit/legacy-import.test.js`)
+  - Verifies YAML → (canvas + agents) conversion and that we don't persist YAML.
+- **Convex subscription lifecycle** (`unit/convex-subscriptions.test.js`)
+  - Ensures subscription replacement/cleanup logic works.
+- **Validation** (`unit/validation.test.js`)
+  - Mirrors core validation behavior.
+- **Auth/session** (`integration/workos-auth.test.js`, `integration/session-encryption.test.js`)
+  - Security-critical flows.
 
 ## Running Tests
 
@@ -45,14 +34,13 @@ pnpm test:ui
 ```
 tests/
 ├── setup.js                    # Test environment setup (jsdom, mocks)
-├── fixtures/
-│   └── valid-config.yaml       # Test data fixture
 ├── integration/
-│   ├── round-trip.test.js      # Test #1: Data persistence
-│   └── auth.test.js            # Test #2: Authentication
+│   ├── session-encryption.test.js
+│   └── workos-auth.test.js
 └── unit/
-    ├── form-yaml-sync.test.js  # Test #3: Modal sync
-    └── sanitization.test.js    # Test #4: Document name validation
+    ├── convex-subscriptions.test.js
+    ├── legacy-import.test.js
+    └── validation.test.js
 ```
 
 ## Test Environment
@@ -65,13 +53,7 @@ tests/
   - localStorage
   - DOM APIs
 
-## Coverage
+## Notes
 
-These 4 tests cover:
-- ✅ Complete data pipeline (load → save)
-- ✅ Security perimeter (auth + input validation)
-- ✅ Core user workflow (editing)
-- ✅ Storage layer integrity
-
-Everything else (UI rendering, tooltips, collapse state, icons) is cosmetic. These 4 are the foundation.
+- These tests intentionally avoid UI rendering specifics; they focus on **data integrity** and **security-sensitive logic**.
 

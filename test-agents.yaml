@@ -1,0 +1,100 @@
+documentTitle: AI Agent Workflow
+agentGroups:
+  - groupName: Sales
+    groupNumber: 0
+    agents:
+      - name: Lead Qualifier
+        agentNumber: 1
+        objective: Automatically qualify inbound leads
+        description: Analyzes incoming leads based on company size, industry, and engagement signals to prioritize sales outreach.
+        tools:
+          - RAG
+          - Forms
+          - Email
+        journeySteps:
+          - Receive new lead data
+          - Enrich with company information
+          - Score based on qualification criteria
+          - Route to appropriate sales rep
+        tags:
+          department: sales
+          status: active
+          implementationStatus: deployed
+          priority: p1
+      - name: Proposal Generator
+        agentNumber: 2
+        objective: Generate customized sales proposals
+        description: Creates tailored proposals using customer data and product catalog.
+        tools:
+          - RAG
+          - Forms
+          - Code
+        journeySteps:
+          - Pull customer requirements
+          - Match with product offerings
+          - Generate proposal draft
+          - Send for review
+        tags:
+          department: sales
+          status: active
+          implementationStatus: deployed
+          priority: p2
+  - groupName: Engineering
+    groupNumber: 1
+    agents:
+      - name: Code Reviewer
+        agentNumber: 1
+        objective: Automated code review and suggestions
+        description: Reviews pull requests for code quality, security issues, and best practices.
+        tools:
+          - Code
+          - RAG
+        journeySteps:
+          - Receive PR notification
+          - Analyze code changes
+          - Check against guidelines
+          - Post review comments
+        tags:
+          department: engineering
+          status: active
+          implementationStatus: testing
+          priority: p1
+      - name: Doc Generator
+        agentNumber: 2
+        objective: Auto-generate technical documentation
+        description: Creates and updates documentation from code comments and architecture.
+        tools:
+          - Code
+          - RAG
+          - Deep Research
+        journeySteps:
+          - Scan codebase changes
+          - Extract documentation updates
+          - Generate markdown docs
+          - Create PR with changes
+        tags:
+          department: engineering
+          status: draft
+          implementationStatus: development
+          priority: p3
+  - groupName: Support
+    groupNumber: 2
+    agents:
+      - name: Ticket Classifier
+        agentNumber: 1
+        objective: Classify and route support tickets
+        description: Analyzes incoming tickets and routes to appropriate teams.
+        tools:
+          - RAG
+          - Email
+          - Slack
+        journeySteps:
+          - Receive new ticket
+          - Analyze content and sentiment
+          - Classify priority and type
+          - Route to team
+        tags:
+          department: support
+          status: active
+          implementationStatus: deployed
+          priority: p0

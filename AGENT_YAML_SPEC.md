@@ -1,5 +1,7 @@
 # Agent YAML Specification
 
+**Deprecated**: AgentCanvas is Convex-native. YAML is supported only as a **one-way legacy import** format.
+
 ```yaml
 # REQUIRED
 name: string              # Non-empty, trimmed

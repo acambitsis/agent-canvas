@@ -77,6 +77,15 @@ export async function initAuth() {
         }
       }
 
+      // If we still don't have an idToken after refresh attempt, force re-authentication
+      // This can happen with old sessions created before idToken storage was added
+      if (!currentIdToken) {
+        console.warn('No idToken available after refresh - forcing re-authentication');
+        clearAuthState();
+        isInitialized = true;
+        return { authenticated: false, user: null };
+      }
+
       // Fetch additional org details if needed
       if (currentOrgs.length > 0 && !currentOrgs[0].name) {
         await fetchUserOrgs();

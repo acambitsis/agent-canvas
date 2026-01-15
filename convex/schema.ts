@@ -18,7 +18,6 @@ export default defineSchema({
     workosOrgId: v.string(),
     title: v.string(),
     slug: v.string(), // Document name/identifier
-    sourceYaml: v.optional(v.string()), // Optional original YAML for import/export
     deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(), // WorkOS user ID
     updatedBy: v.string(),
@@ -46,6 +45,16 @@ export default defineSchema({
       v.object({
         adoption: v.number(),
         satisfaction: v.number(),
+      })
+    ),
+    // Typed tag fields for dynamic grouping and filtering
+    tags: v.optional(
+      v.object({
+        department: v.optional(v.string()), // "sales", "engineering", "marketing", etc.
+        status: v.optional(v.string()), // "active", "draft", "deprecated"
+        implementationStatus: v.optional(v.string()), // "planning", "in-progress", "deployed"
+        priority: v.optional(v.string()), // "p0", "p1", "p2", "p3"
+        owner: v.optional(v.string()), // User/team identifier
       })
     ),
     payload: v.optional(v.any()), // Portable JSON payload for round-trip fidelity and extensibility

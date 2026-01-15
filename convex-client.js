@@ -9,6 +9,30 @@ import { state } from "./state.js";
 let client = null;
 const subscriptions = new Map();
 let getIdTokenFn = null; // Function to get current id_token (JWT)
+let configLoaded = false;
+
+/**
+ * Fetch Convex URL from API config endpoint
+ * @returns {Promise<string|null>}
+ */
+async function fetchConvexUrl() {
+  if (window.CONVEX_URL) return window.CONVEX_URL;
+
+  try {
+    const response = await fetch('/api/config');
+    if (response.ok) {
+      const config = await response.json();
+      if (config.convexUrl) {
+        window.CONVEX_URL = config.convexUrl;
+        console.log('Convex URL configured from API:', config.convexUrl);
+        return config.convexUrl;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch config from API:', e.message);
+  }
+  return null;
+}
 
 /**
  * Create auth callback function from token getter
@@ -27,7 +51,29 @@ function createAuthCallback(getIdToken) {
 }
 
 /**
- * Initialize the Convex client
+ * Initialize the Convex client (async version - fetches config from API if needed)
+ * @param {Function} getIdToken - Function that returns the current WorkOS id_token (JWT)
+ * @returns {Promise<ConvexClient|null>}
+ */
+export async function initConvexClientAsync(getIdToken) {
+  if (client && getIdTokenFn === getIdToken) return client;
+
+  const convexUrl = await fetchConvexUrl();
+  if (!convexUrl) {
+    console.warn('CONVEX_URL not configured - Convex features disabled');
+    return null;
+  }
+
+  client = new ConvexClient(convexUrl);
+  getIdTokenFn = getIdToken;
+  client.setAuth(createAuthCallback(getIdToken));
+  configLoaded = true;
+
+  return client;
+}
+
+/**
+ * Initialize the Convex client (sync version - uses existing window.CONVEX_URL)
  * @param {string} url - Convex deployment URL
  * @param {Function} getIdToken - Function that returns the current WorkOS id_token (JWT)
  * @returns {ConvexClient}
@@ -185,6 +231,8 @@ export async function createAgent(data) {
     demoLink: data.demoLink,
     videoLink: data.videoLink,
     metrics: data.metrics,
+    tags: data.tags,
+    payload: data.payload,
   });
 }
 
@@ -230,6 +278,10 @@ export async function getCanvasBySlug(workosOrgId, slug) {
   return requireClient().query("canvases:getBySlug", { workosOrgId, slug });
 }
 
+export async function getCanvas(canvasId) {
+  return requireClient().query("canvases:get", { canvasId });
+}
+
 export async function getAgentHistory(agentId) {
   return requireClient().query("agentHistory:list", { agentId });
 }
@@ -257,7 +309,7 @@ export async function getDocument(workosOrgId, slug) {
 /**
  * Create or update a document (canvas)
  */
-export async function saveDocument(workosOrgId, slug, title, sourceYaml) {
+export async function saveDocument(workosOrgId, slug, title) {
   // Try to get existing canvas
   const existing = await requireClient().query("canvases:getBySlug", { workosOrgId, slug });
   
@@ -266,7 +318,6 @@ export async function saveDocument(workosOrgId, slug, title, sourceYaml) {
     await requireClient().mutation("canvases:update", {
       canvasId: existing._id,
       title,
-      sourceYaml,
     });
     return existing._id;
   } else {
@@ -275,7 +326,6 @@ export async function saveDocument(workosOrgId, slug, title, sourceYaml) {
       workosOrgId,
       title: title || slug,
       slug,
-      sourceYaml,
     });
   }
 }
