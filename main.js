@@ -31,7 +31,7 @@ import {
     toArray
 } from './state.js';
 import { initAuth, signOut, getCurrentUser, getUserName, getUserEmail, getUserOrgs, getCurrentOrg, setCurrentOrg, isAuthenticated, getIdToken } from './auth-client-workos.js';
-import { initConvexClient, getConvexClient, updateConvexAuth, getDocument, syncOrgMemberships } from './convex-client.js';
+import { initConvexClient, getConvexClient, updateConvexAuth, getDocument, syncOrgMemberships, unsubscribeAll } from './convex-client.js';
 import { convexToYaml, yamlToConvexAgents } from './yaml-converter.js';
 
 // Organization/group state (uses WorkOS orgs from auth)
@@ -1795,3 +1795,7 @@ function bindStaticEventHandlers() {
 
 document.addEventListener('DOMContentLoaded', bindStaticEventHandlers);
 document.addEventListener('DOMContentLoaded', bootstrapApp);
+
+// Cleanup subscriptions on page unload to prevent memory leaks
+window.addEventListener('beforeunload', unsubscribeAll);
+window.addEventListener('pagehide', unsubscribeAll);

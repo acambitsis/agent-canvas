@@ -1,9 +1,15 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireAuth, requireOrgAccess } from "./lib/auth";
-import { Id, Doc } from "./_generated/dataModel";
-import { QueryCtx, MutationCtx } from "./_generated/server";
-import { AuthContext } from "./lib/auth";
+import { Doc, Id } from "./_generated/dataModel";
+import { MutationCtx, QueryCtx } from "./_generated/server";
+import { AuthContext, requireAuth, requireOrgAccess } from "./lib/auth";
+import { getAgentSnapshot } from "./lib/helpers";
+import {
+  validateAgentName,
+  validateMetrics,
+  validateOptionalUrl,
+  validatePhase,
+} from "./lib/validation";
 
 // Shared agent input validator for bulk operations
 const agentInputValidator = v.object({
@@ -33,7 +39,9 @@ async function getCanvasWithAccess(
   canvasId: Id<"canvases">
 ): Promise<Doc<"canvases">> {
   const canvas = await ctx.db.get(canvasId);
-  if (!canvas) throw new Error("Canvas not found");
+  if (!canvas || canvas.deletedAt) {
+    throw new Error("NotFound: Canvas not found");
+  }
   await requireOrgAccess(ctx, auth, canvas.workosOrgId);
   return canvas;
 }
@@ -45,19 +53,30 @@ async function getAgentWithAccess(
   agentId: Id<"agents">
 ): Promise<{ agent: Doc<"agents">; canvas: Doc<"canvases"> }> {
   const agent = await ctx.db.get(agentId);
-  if (!agent) throw new Error("Agent not found");
+  if (!agent || agent.deletedAt) {
+    throw new Error("NotFound: Agent not found");
+  }
   const canvas = await getCanvasWithAccess(ctx, auth, agent.canvasId);
   return { agent, canvas };
 }
 
-// Helper to extract serializable agent data for history
-function getAgentSnapshot(agent: Doc<"agents">): Record<string, unknown> {
-  const { _id, _creationTime, ...data } = agent;
-  return data;
+// Shared validation for agent data
+function validateAgentData(data: {
+  name: string;
+  phase: string;
+  metrics?: { adoption: number; satisfaction: number };
+  demoLink?: string;
+  videoLink?: string;
+}): void {
+  validateAgentName(data.name);
+  validatePhase(data.phase);
+  validateMetrics(data.metrics);
+  validateOptionalUrl(data.demoLink, "demoLink");
+  validateOptionalUrl(data.videoLink, "videoLink");
 }
 
 /**
- * List all agents for a canvas
+ * List all agents for a canvas (excludes soft-deleted)
  */
 export const list = query({
   args: { canvasId: v.id("canvases") },
@@ -68,6 +87,7 @@ export const list = query({
     const agents = await ctx.db
       .query("agents")
       .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
     // Sort by phaseOrder, then agentOrder
@@ -119,6 +139,8 @@ export const create = mutation({
     const auth = await requireAuth(ctx);
     await getCanvasWithAccess(ctx, auth, args.canvasId);
 
+    validateAgentData(args);
+
     const now = Date.now();
     const agentId = await ctx.db.insert("agents", {
       ...args,
@@ -168,6 +190,13 @@ export const update = mutation({
     const auth = await requireAuth(ctx);
     const { agent } = await getAgentWithAccess(ctx, auth, agentId);
 
+    // Validate provided fields
+    if (updates.name !== undefined) validateAgentName(updates.name);
+    if (updates.phase !== undefined) validatePhase(updates.phase);
+    validateMetrics(updates.metrics);
+    validateOptionalUrl(updates.demoLink, "demoLink");
+    validateOptionalUrl(updates.videoLink, "videoLink");
+
     const now = Date.now();
     const previousData = getAgentSnapshot(agent);
 
@@ -193,7 +222,7 @@ export const update = mutation({
 });
 
 /**
- * Delete an agent
+ * Delete an agent (soft delete)
  */
 export const remove = mutation({
   args: { agentId: v.id("agents") },
@@ -203,7 +232,7 @@ export const remove = mutation({
 
     const now = Date.now();
 
-    // Record history before deletion (history is preserved after agent deletion)
+    // Record history before deletion
     await ctx.db.insert("agentHistory", {
       agentId,
       changedBy: auth.workosUserId,
@@ -212,7 +241,12 @@ export const remove = mutation({
       previousData: getAgentSnapshot(agent),
     });
 
-    await ctx.db.delete(agentId);
+    // Soft delete instead of hard delete
+    await ctx.db.patch(agentId, {
+      deletedAt: now,
+      updatedBy: auth.workosUserId,
+      updatedAt: now,
+    });
   },
 });
 
@@ -252,6 +286,9 @@ export const bulkCreate = mutation({
     const auth = await requireAuth(ctx);
     await getCanvasWithAccess(ctx, auth, canvasId);
 
+    // Validate all agents before inserting any
+    agents.forEach(validateAgentData);
+
     const now = Date.now();
     const createdIds: Id<"agents">[] = [];
 
@@ -282,7 +319,7 @@ export const bulkCreate = mutation({
 
 /**
  * Atomically replace all agents for a canvas
- * Deletes existing agents and creates new ones in a single transaction
+ * Soft-deletes existing agents and creates new ones in a single transaction
  */
 export const bulkReplace = mutation({
   args: {
@@ -293,15 +330,19 @@ export const bulkReplace = mutation({
     const auth = await requireAuth(ctx);
     await getCanvasWithAccess(ctx, auth, canvasId);
 
+    // Validate all agents before making any changes
+    agents.forEach(validateAgentData);
+
     const now = Date.now();
 
-    // Get existing agents and record their deletion in history
+    // Get existing non-deleted agents
     const existingAgents = await ctx.db
       .query("agents")
       .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
-    // Record history for deletions
+    // Record history and soft-delete existing agents
     for (const agent of existingAgents) {
       await ctx.db.insert("agentHistory", {
         agentId: agent._id,
@@ -310,11 +351,13 @@ export const bulkReplace = mutation({
         changeType: "delete",
         previousData: getAgentSnapshot(agent),
       });
-    }
 
-    // Delete existing agents
-    for (const agent of existingAgents) {
-      await ctx.db.delete(agent._id);
+      // Soft delete instead of hard delete
+      await ctx.db.patch(agent._id, {
+        deletedAt: now,
+        updatedBy: auth.workosUserId,
+        updatedAt: now,
+      });
     }
 
     // Create new agents

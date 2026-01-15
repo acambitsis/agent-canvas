@@ -37,7 +37,7 @@ export async function requireAuth(
 ): Promise<AuthContext> {
   const auth = await getAuth(ctx);
   if (!auth) {
-    throw new Error("Authentication required");
+    throw new Error("Auth: Authentication required");
   }
   return auth;
 }
@@ -50,7 +50,7 @@ export async function requireSuperAdmin(
 ): Promise<AuthContext> {
   const auth = await requireAuth(ctx);
   if (!auth.isSuperAdmin) {
-    throw new Error("Super admin access required");
+    throw new Error("Auth: Super admin access required");
   }
   return auth;
 }
@@ -87,6 +87,6 @@ export async function requireOrgAccess(
   workosOrgId: string
 ): Promise<void> {
   if (!(await hasOrgAccess(ctx, auth, workosOrgId))) {
-    throw new Error("Organization access denied");
+    throw new Error("Auth: Organization access denied");
   }
 }
