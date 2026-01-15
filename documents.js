@@ -1,41 +1,22 @@
-import { getCurrentOrg } from './auth-client-workos.js';
+import { getCurrentOrg } from './state.js';
 import { deleteDocument, getConvexClient, getDocument, listDocuments, renameDocument, saveDocument } from './convex-client.js';
 import { canManageCanvasesInCurrentGroup, getCurrentGroupId, getUserGroups } from './main.js';
-import { BLANK_DOCUMENT_TEMPLATE, DEFAULT_DOCUMENT_NAME, DOCUMENT_STORAGE_KEY, refreshIcons, state } from './state.js';
+import { BLANK_DOCUMENT_TEMPLATE, DEFAULT_DOCUMENT_NAME, DOCUMENT_STORAGE_KEY, refreshIcons, state, loadDocumentPreference, saveDocumentPreference } from './state.js';
 import { convexToYaml } from './yaml-converter.js';
+import { bindToggleMenu, closeMenu } from './menu-utils.js';
 
 let loadAgentsCallback = async () => {};
+let documentMenuCleanup = null;
 
 export function registerLoadAgents(fn) {
     loadAgentsCallback = typeof fn === 'function' ? fn : loadAgentsCallback;
-}
-
-function getStoredDocumentPreference() {
-    try {
-        return localStorage.getItem(DOCUMENT_STORAGE_KEY);
-    } catch (error) {
-        console.warn('Unable to read document preference:', error);
-        return null;
-    }
-}
-
-function persistDocumentPreference(name) {
-    try {
-        if (name) {
-            localStorage.setItem(DOCUMENT_STORAGE_KEY, name);
-        } else {
-            localStorage.removeItem(DOCUMENT_STORAGE_KEY);
-        }
-    } catch (error) {
-        console.warn('Unable to persist document preference:', error);
-    }
 }
 
 export function setActiveDocumentName(name, options = {}) {
     state.currentDocumentName = name || null;
 
     if (!options.skipPersist) {
-        persistDocumentPreference(state.currentDocumentName);
+        saveDocumentPreference(state.currentDocumentName);
     }
 
     updateDocumentControlsUI();
@@ -60,55 +41,23 @@ function getDocumentMenuElement() {
 export function closeDocumentMenu() {
     const menu = getDocumentMenuElement();
     const button = document.getElementById('documentMenuBtn');
-    if (menu) {
-        menu.classList.remove('open');
-    }
-    if (button) {
-        button.setAttribute('aria-expanded', 'false');
-    }
-}
-
-function toggleDocumentMenu(event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    const menu = getDocumentMenuElement();
-    const button = document.getElementById('documentMenuBtn');
-    if (!menu || !button) return;
-    const willOpen = !menu.classList.contains('open');
-    if (willOpen) {
-        menu.classList.add('open');
-        button.setAttribute('aria-expanded', 'true');
-    } else {
-        closeDocumentMenu();
+    if (menu && button) {
+        closeMenu(menu, button);
     }
 }
 
 function handleDocumentMenuAction(action) {
-    switch (action) {
-        case 'upload':
-            triggerDocumentUpload();
-            break;
-        case 'blank':
-            createBlankDocument();
-            break;
-        case 'share':
-            // Sharing is handled by WorkOS org membership - all org members can access org canvases
-            alert('Canvas access is controlled by organization membership. Invite users to your organization via WorkOS dashboard.');
-            break;
-        case 'rename':
-            renameCurrentDocument();
-            break;
-        case 'download':
-            downloadCurrentDocument();
-            break;
-        case 'delete':
-            deleteCurrentDocument();
-            break;
-        default:
-            break;
-    }
+    const actions = {
+        upload: triggerDocumentUpload,
+        blank: createBlankDocument,
+        share: () => alert('Canvas access is controlled by organization membership. Invite users to your organization via WorkOS dashboard.'),
+        rename: renameCurrentDocument,
+        download: downloadCurrentDocument,
+        delete: deleteCurrentDocument
+    };
+
+    const handler = actions[action];
+    if (handler) handler();
 }
 
 function bindDocumentMenuEvents() {
@@ -117,32 +66,10 @@ function bindDocumentMenuEvents() {
     const button = document.getElementById('documentMenuBtn');
     if (!menu || !button) return;
 
-    button.addEventListener('click', toggleDocumentMenu);
-    menu.addEventListener('click', event => {
-        const actionButton = event.target.closest('button[data-action]');
-        if (actionButton) {
-            event.preventDefault();
-            const action = actionButton.dataset.action;
-            closeDocumentMenu();
-            handleDocumentMenuAction(action);
-            return;
-        }
-        
-        const menuLink = event.target.closest('a.menu-link');
-        if (menuLink) {
-            closeDocumentMenu();
-            // Allow default navigation behavior (opens in new tab)
-        }
-    });
-
-    document.addEventListener('click', event => {
-        const menuEl = getDocumentMenuElement();
-        const toggleBtn = document.getElementById('documentMenuBtn');
-        if (!menuEl || !menuEl.classList.contains('open')) return;
-        if (menuEl.contains(event.target) || toggleBtn.contains(event.target)) {
-            return;
-        }
-        closeDocumentMenu();
+    documentMenuCleanup = bindToggleMenu({
+        buttonEl: button,
+        menuEl: menu,
+        onAction: handleDocumentMenuAction
     });
 
     state.documentMenuBound = true;
@@ -469,7 +396,7 @@ export async function refreshDocumentList(preferredDocName) {
         state.documentListLoaded = true;
 
         const docNames = state.availableDocuments.map(doc => doc.name || doc.slug || doc.id);
-        let nextDoc = preferredDocName || state.currentDocumentName || getStoredDocumentPreference();
+        let nextDoc = preferredDocName || state.currentDocumentName || loadDocumentPreference();
 
         if (!nextDoc && docNames.length) {
             nextDoc = docNames.includes(DEFAULT_DOCUMENT_NAME) ? DEFAULT_DOCUMENT_NAME : docNames[0];

@@ -3,8 +3,10 @@
  * Handles user authentication via WorkOS
  */
 
+import { setUserOrgs, setCurrentOrgId, loadOrgPreference, getCurrentOrg as getCurrentOrgFromState } from './state.js';
+
 let currentUser = null;
-let currentOrgs = [];
+let currentOrgs = []; // Synced with state.js - state.js is the single source of truth
 let currentIdToken = null; // WorkOS id_token (JWT) for Convex authentication
 let isInitialized = false;
 let refreshPromise = null;
@@ -56,6 +58,17 @@ export async function initAuth() {
       currentOrgs = data.orgs || [];
       currentIdToken = data.idToken || null; // Store id_token for Convex
 
+      // Sync orgs to state.js (single source of truth)
+      setUserOrgs(currentOrgs);
+
+      // Set current org from preference or first available
+      const storedOrgId = loadOrgPreference();
+      if (storedOrgId && currentOrgs.some(org => org.id === storedOrgId)) {
+        setCurrentOrgId(storedOrgId);
+      } else if (currentOrgs.length > 0) {
+        setCurrentOrgId(currentOrgs[0].id);
+      }
+
       // Proactively refresh token if needed
       if (data.needsRefresh) {
         const refreshResult = await refreshTokenIfNeeded();
@@ -88,10 +101,13 @@ async function fetchUserOrgs() {
     if (response.ok) {
       const data = await response.json();
       currentOrgs = data.organizations || [];
+      // Sync to state.js
+      setUserOrgs(currentOrgs);
     }
   } catch (error) {
     console.error("Failed to fetch organizations:", error);
     currentOrgs = [];
+    setUserOrgs([]);
   }
 }
 
@@ -141,6 +157,7 @@ export function getUserName() {
 /**
  * Get user's organizations
  * @returns {Array}
+ * @deprecated Use getUserOrgs() from state.js instead
  */
 export function getUserOrgs() {
   return currentOrgs;
@@ -218,24 +235,19 @@ export function hasOrgAccess(orgId) {
 /**
  * Get the current/selected organization
  * @returns {object|null}
+ * @deprecated Use getCurrentOrg() from state.js instead
  */
 export function getCurrentOrg() {
-  // Return the first org or a stored preference
-  const storedOrgId = localStorage.getItem("agentcanvas-current-org");
-  if (storedOrgId) {
-    const org = currentOrgs.find((o) => o.id === storedOrgId);
-    if (org) return org;
-  }
-  return currentOrgs[0] || null;
+  return getCurrentOrgFromState();
 }
 
 /**
  * Set the current organization
  * @param {string} orgId - WorkOS organization ID
+ * @deprecated Use setCurrentOrgId() from state.js instead
  */
 export function setCurrentOrg(orgId) {
-  localStorage.setItem("agentcanvas-current-org", orgId);
-  window.dispatchEvent(new CustomEvent("orgChanged", { detail: { orgId } }));
+  setCurrentOrgId(orgId);
 }
 
 /**

@@ -15,6 +15,7 @@ import {
     copyTextToClipboard,
     setElementText
 } from './modal-utils.js';
+import { bindToggleMenu } from './menu-utils.js';
 import {
     deepClone,
     DEFAULT_DOCUMENT_NAME,
@@ -28,67 +29,56 @@ import {
     refreshIcons,
     saveCollapsedState,
     state,
-    toArray
+    toArray,
+    getCurrentOrgId,
+    getUserOrgs as getUserOrgsFromState,
+    setCurrentOrgId,
+    getCurrentOrg,
+    canManageCanvases,
+    getCurrentOrgRole
 } from './state.js';
-import { initAuth, signOut, getCurrentUser, getUserName, getUserEmail, getUserOrgs, getCurrentOrg, setCurrentOrg, isAuthenticated, getIdToken } from './auth-client-workos.js';
+import { initAuth, signOut, getCurrentUser, getUserName, getUserEmail, isAuthenticated, getIdToken } from './auth-client-workos.js';
 import { initConvexClient, getConvexClient, updateConvexAuth, getDocument, syncOrgMemberships, unsubscribeAll } from './convex-client.js';
 import { convexToYaml, yamlToConvexAgents } from './yaml-converter.js';
 
-// Organization/group state (uses WorkOS orgs from auth)
-let currentGroupId = null;
-let userGroups = [];
-let isSuperAdmin = false;
-
+// Re-export for backward compatibility
 export function getCurrentGroupId() {
-    return currentGroupId;
+    return getCurrentOrgId();
 }
 
 export function getUserGroups() {
-    return userGroups;
+    return getUserOrgsFromState();
 }
 
 export function canManageCanvasesInCurrentGroup() {
-    if (isSuperAdmin) return true;
-    const group = userGroups.find(g => g.id === currentGroupId);
-    return group?.role === 'admin';
+    return canManageCanvases();
 }
 
 function getCurrentGroupRole() {
-    if (isSuperAdmin) return 'admin';
-    const group = userGroups.find(g => g.id === currentGroupId);
-    return group?.role || 'viewer';
+    return getCurrentOrgRole();
 }
 
 async function initializeGroups() {
-    const orgs = getUserOrgs();
-    userGroups = orgs.map(org => ({
-        id: org.id,
-        name: org.name || org.id,
-        role: org.role || 'member',
-    }));
-
-    // Check for super_admin role
-    isSuperAdmin = orgs.some(org => org.role === 'super_admin');
-
-    // Set current group from preference or first available
-    const currentOrg = getCurrentOrg();
-    currentGroupId = currentOrg?.id || (orgs[0]?.id || null);
+    const orgs = getUserOrgsFromState();
 
     // Render group switcher (simplified)
     renderGroupSwitcher();
 
-    return userGroups;
+    return orgs;
 }
 
 function renderGroupSwitcher() {
     const container = document.getElementById('groupSwitcherContainer');
-    if (!container || userGroups.length <= 1) return;
+    const orgs = getUserOrgsFromState();
+    const currentOrgId = getCurrentOrgId();
+    
+    if (!container || orgs.length <= 1) return;
 
     container.innerHTML = `
         <select id="groupSelect" class="group-select">
-            ${userGroups.map(g => `
-                <option value="${g.id}" ${g.id === currentGroupId ? 'selected' : ''}>
-                    ${g.name}
+            ${orgs.map(org => `
+                <option value="${org.id}" ${org.id === currentOrgId ? 'selected' : ''}>
+                    ${org.name || org.id}
                 </option>
             `).join('')}
         </select>
@@ -96,9 +86,7 @@ function renderGroupSwitcher() {
 
     const select = container.querySelector('#groupSelect');
     select?.addEventListener('change', (e) => {
-        currentGroupId = e.target.value;
-        setCurrentOrg(currentGroupId);
-        window.dispatchEvent(new CustomEvent('groupChanged', { detail: { groupId: currentGroupId } }));
+        setCurrentOrgId(e.target.value);
     });
 }
 
@@ -1482,6 +1470,7 @@ function saveFullYaml() {
 }
 
 // ----- Context menu handlers -----
+// Context menus are dynamically created, so we keep custom handlers but use shared pattern
 function toggleContextMenu(event, menuId, triggerEl = null) {
     event?.stopPropagation();
 
@@ -1489,15 +1478,7 @@ function toggleContextMenu(event, menuId, triggerEl = null) {
     const trigger = triggerEl || event?.currentTarget;
 
     // Close all other menus first
-    document.querySelectorAll('.context-menu.open').forEach(m => {
-        if (m.id !== menuId) {
-            m.classList.remove('open');
-            // Remove active state from all triggers
-            document.querySelectorAll('.context-menu-trigger.active').forEach(t => {
-                t.classList.remove('active');
-            });
-        }
-    });
+    closeAllContextMenus(menuId);
 
     // Toggle current menu
     const isOpen = menu.classList.toggle('open');
@@ -1514,9 +1495,11 @@ function toggleContextMenu(event, menuId, triggerEl = null) {
     refreshIcons();
 }
 
-function closeAllContextMenus() {
+function closeAllContextMenus(excludeMenuId = null) {
     document.querySelectorAll('.context-menu.open').forEach(menu => {
-        menu.classList.remove('open');
+        if (!excludeMenuId || menu.id !== excludeMenuId) {
+            menu.classList.remove('open');
+        }
     });
     document.querySelectorAll('.context-menu-trigger.active').forEach(trigger => {
         trigger.classList.remove('active');
@@ -1584,8 +1567,8 @@ async function bootstrapApp() {
             // Update role-based UI visibility
             updateRoleBasedUI();
 
-            // Listen for group changes to update UI
-            window.addEventListener('groupChanged', updateRoleBasedUI);
+            // Listen for org changes to update UI
+            window.addEventListener('orgChanged', updateRoleBasedUI);
         } else {
             // Not authenticated, redirect to login
             // Prevent redirect loops using sessionStorage
@@ -1613,27 +1596,24 @@ async function bootstrapApp() {
 function bindUserMenuEvents() {
     const userMenuBtn = document.getElementById('userMenuBtn');
     const userMenuDropdown = document.getElementById('userMenuDropdown');
-    const signOutBtn = document.getElementById('signOutBtn');
 
     if (userMenuBtn && userMenuDropdown) {
-        userMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userMenuDropdown.classList.toggle('open');
-        });
-
-        // Close on click outside
-        document.addEventListener('click', () => {
-            userMenuDropdown.classList.remove('open');
-        });
-    }
-
-    if (signOutBtn) {
-        signOutBtn.addEventListener('click', async () => {
-            // Clear Convex auth before signing out
-            updateConvexAuth(null);
-            await signOut();
+        bindToggleMenu({
+            buttonEl: userMenuBtn,
+            menuEl: userMenuDropdown,
+            onAction: (action) => {
+                if (action === 'signout') {
+                    handleSignOut();
+                }
+            }
         });
     }
+}
+
+async function handleSignOut() {
+    // Clear Convex auth before signing out
+    updateConvexAuth(null);
+    await signOut();
 }
 
 const groupNameInput = document.getElementById('groupName');
