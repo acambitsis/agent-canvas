@@ -1,8 +1,7 @@
-import { getCurrentOrg, canManageCanvases, getCurrentOrgId, getUserOrgs } from './state.js';
 import { createCanvas, deleteCanvas, listDocuments, updateCanvas } from './convex-client.js';
-import { refreshIcons, slugifyIdentifier, state, loadCanvasPreference, saveCanvasPreference } from './state.js';
-import { bindToggleMenu, closeMenu } from './menu-utils.js';
 import { importLegacyYamlToNative } from './legacy-yaml-import.js';
+import { bindToggleMenu, closeMenu } from './menu-utils.js';
+import { canManageCanvases, getCurrentOrg, getCurrentOrgId, getUserOrgs, loadCanvasPreference, refreshIcons, saveCanvasPreference, slugifyIdentifier, state } from './state.js';
 
 let loadAgentsCallback = async () => {};
 let canvasMenuCleanup = null;
