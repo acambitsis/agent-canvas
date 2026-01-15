@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Convex client helpers used by legacy importer
-vi.mock('../../convex-client.js', () => {
+vi.mock('../../client/convex-client.js', () => {
   return {
     createCanvas: vi.fn(async () => 'canvas_123'),
     bulkCreateAgents: vi.fn(async () => []),
   };
 });
 
-import { createCanvas, bulkCreateAgents } from '../../convex-client.js';
-import { importLegacyYamlToNative } from '../../legacy-yaml-import.js';
+import { createCanvas, bulkCreateAgents } from '../../client/convex-client.js';
+import { importLegacyYamlToNative } from '../../client/legacy-yaml-import.js';
 
 describe('Legacy YAML importer (one-way)', () => {
   beforeEach(() => {

@@ -63,15 +63,18 @@ BASE_URL=http://localhost:3000
 ```
 /
 ├── index.html, login.html, callback.html  # HTML pages
-├── main.js                 # Main client-side logic
 ├── styles.css              # Styling
-├── auth-client-workos.js   # WorkOS auth client
-├── convex-client.js        # Convex client adapter
-├── config.js, state.js     # Configuration and state
-├── documents.js            # Document/canvas management
-├── modal-utils.js          # Modal UI helpers
-├── yaml-converter.js       # YAML↔agent conversion
-├── convex/
+├── client/                 # Browser-side JavaScript (ES modules)
+│   ├── main.js             # Main client-side logic
+│   ├── auth-client-workos.js   # WorkOS auth client
+│   ├── convex-client.js        # Convex client adapter
+│   ├── config.js, state.js     # Configuration and state
+│   ├── documents.js            # Document/canvas management
+│   ├── grouping.js              # Agent grouping logic
+│   ├── legacy-yaml-import.js   # Legacy YAML import (one-way)
+│   ├── menu-utils.js           # Menu UI helpers
+│   └── modal-utils.js          # Modal UI helpers
+├── convex/                  # Convex backend (TypeScript)
 │   ├── schema.ts           # Database schema (5 tables)
 │   ├── agents.ts           # Agent CRUD + history
 │   ├── canvases.ts         # Canvas CRUD
@@ -80,15 +83,17 @@ BASE_URL=http://localhost:3000
 │   ├── users.ts            # User org membership sync
 │   ├── auth.config.ts      # Convex auth provider config
 │   └── lib/auth.ts         # Auth helpers (requireAuth, requireOrgAccess)
-├── api/auth/               # Vercel edge routes
-│   ├── url.js              # Generate WorkOS auth URL
-│   ├── callback.js         # OAuth callback + org membership sync
-│   ├── session.js          # Get current session
-│   ├── refresh.js          # Refresh access token
-│   ├── orgs.js             # Get user organizations
-│   └── logout.js           # Clear session
-├── api/lib/session-utils.js # Session encryption (jose)
-└── tests/                  # Vitest tests (unit/, integration/)
+├── api/                     # Vercel edge routes
+│   ├── auth/               # Auth endpoints
+│   │   ├── url.js          # Generate WorkOS auth URL
+│   │   ├── callback.js     # OAuth callback + org membership sync
+│   │   ├── session.js      # Get current session
+│   │   ├── refresh.js       # Refresh access token
+│   │   ├── orgs.js         # Get user organizations
+│   │   └── logout.js       # Clear session
+│   ├── config.js           # App configuration endpoint
+│   └── lib/session-utils.js # Session encryption (jose)
+└── tests/                   # Vitest tests (unit/, integration/)
 ```
 
 ## Convex Schema
