@@ -5,7 +5,7 @@ import { bindToggleMenu, closeMenu } from './menu-utils.js';
 import { importLegacyYamlToNative } from './legacy-yaml-import.js';
 
 let loadAgentsCallback = async () => {};
-let documentMenuCleanup = null;
+let canvasMenuCleanup = null;
 
 export function registerLoadAgents(fn) {
     loadAgentsCallback = typeof fn === 'function' ? fn : loadAgentsCallback;
@@ -18,7 +18,7 @@ export function setActiveCanvasId(canvasId, options = {}) {
         saveCanvasPreference(state.currentCanvasId);
     }
 
-    updateDocumentControlsUI();
+    updateCanvasControlsUI();
 }
 
 // Backward-compatible export (call sites still use "document" naming)
@@ -26,60 +26,63 @@ export function setActiveDocumentName(name, options = {}) {
     return setActiveCanvasId(name, options);
 }
 
-function getDocumentSelectElement() {
+function getCanvasSelectElement() {
     return document.getElementById('documentSelect');
 }
 
-function getDocumentMetaElement() {
+function getCanvasMetaElement() {
     return document.getElementById('documentMeta');
 }
 
-function getDocumentStatusElement() {
+function getCanvasStatusElement() {
     return document.getElementById('documentStatusMessage');
 }
 
-function getDocumentMenuElement() {
+function getCanvasMenuElement() {
     return document.getElementById('documentMenu');
 }
 
-export function closeDocumentMenu() {
-    const menu = getDocumentMenuElement();
+export function closeCanvasMenu() {
+    const menu = getCanvasMenuElement();
     const button = document.getElementById('documentMenuBtn');
     if (menu && button) {
         closeMenu(menu, button);
     }
 }
 
-function handleDocumentMenuAction(action) {
+// Backward-compatible alias
+export const closeDocumentMenu = closeCanvasMenu;
+
+function handleCanvasMenuAction(action) {
     const actions = {
-        upload: triggerDocumentUpload,
-        blank: createBlankDocument,
+        upload: triggerCanvasUpload,
+        blank: createBlankCanvas,
         share: () => alert('Canvas access is controlled by organization membership. Invite users to your organization via WorkOS dashboard.'),
-        rename: renameCurrentDocument,
-        delete: deleteCurrentDocument
+        rename: renameCurrentCanvas,
+        delete: deleteCurrentCanvas
     };
 
     const handler = actions[action];
     if (handler) handler();
 }
 
-function bindDocumentMenuEvents() {
-    if (state.documentMenuBound) return;
-    const menu = getDocumentMenuElement();
+function bindCanvasMenuEvents() {
+    if (state.canvasMenuBound) return;
+    const menu = getCanvasMenuElement();
     const button = document.getElementById('documentMenuBtn');
     if (!menu || !button) return;
 
-    documentMenuCleanup = bindToggleMenu({
+    canvasMenuCleanup = bindToggleMenu({
         buttonEl: button,
         menuEl: menu,
-        onAction: handleDocumentMenuAction,
+        onAction: handleCanvasMenuAction,
         actionSelector: '[data-action]'
     });
 
-    state.documentMenuBound = true;
+    state.canvasMenuBound = true;
 }
 
-export async function createBlankDocument() {
+export async function createBlankCanvas() {
     // Check if user can create canvases
     if (!canManageCanvases()) {
         alert('You do not have permission to create canvases. Only org admins can create new canvases.');
@@ -132,19 +135,19 @@ export async function createBlankDocument() {
         );
         const slug = generateUniqueCanvasSlug(title, existingSlugs);
 
-        setDocumentStatusMessage(`Creating "${title}"...`);
+        setCanvasStatusMessage(`Creating "${title}"...`);
         const canvasId = await createCanvas({ workosOrgId: groupId, title, slug });
-        await refreshDocumentList(canvasId);
+        await refreshCanvasList(canvasId);
         setActiveCanvasId(canvasId);
         await loadAgentsCallback(canvasId);
-        setDocumentStatusMessage(`Canvas "${title}" created.`, 'success');
+        setCanvasStatusMessage(`Canvas "${title}" created.`, 'success');
     } catch (error) {
-        console.error('[documents] Blank canvas creation failed', { error });
-        setDocumentStatusMessage('Failed to create canvas.', 'error');
+        console.error('[canvases] Blank canvas creation failed', { error });
+        setCanvasStatusMessage('Failed to create canvas.', 'error');
     }
 }
 
-export async function renameCurrentDocument() {
+export async function renameCurrentCanvas() {
     if (!state.currentCanvasId) {
         alert('Select a canvas before renaming.');
         return;
@@ -167,7 +170,7 @@ export async function renameCurrentDocument() {
     }
 
     if (newTitle === currentTitle) {
-        setDocumentStatusMessage('Canvas title unchanged.');
+        setCanvasStatusMessage('Canvas title unchanged.');
         return;
     }
 
@@ -178,28 +181,28 @@ export async function renameCurrentDocument() {
     }
 
     try {
-        setDocumentStatusMessage(`Renaming to "${newTitle}"...`);
+        setCanvasStatusMessage(`Renaming to "${newTitle}"...`);
         await updateCanvas(state.currentCanvasId, { title: newTitle });
 
-        await refreshDocumentList(state.currentCanvasId);
+        await refreshCanvasList(state.currentCanvasId);
         await loadAgentsCallback(state.currentCanvasId);
-        setDocumentStatusMessage(`Renamed to "${newTitle}".`, 'success');
+        setCanvasStatusMessage(`Renamed to "${newTitle}".`, 'success');
     } catch (error) {
         console.error('Rename failed:', error);
         alert('Failed to rename canvas: ' + (error.message || 'Unknown error'));
-        setDocumentStatusMessage('Rename failed.', 'error');
+        setCanvasStatusMessage('Rename failed.', 'error');
     }
 }
 
-function updateDocumentControlsUI() {
-    const select = getDocumentSelectElement();
-    const meta = getDocumentMetaElement();
-    const menu = getDocumentMenuElement();
+function updateCanvasControlsUI() {
+    const select = getCanvasSelectElement();
+    const meta = getCanvasMetaElement();
+    const menu = getCanvasMenuElement();
 
     if (select) {
         select.innerHTML = '';
 
-        if (!state.documentListLoaded) {
+        if (!state.canvasListLoaded) {
             const option = document.createElement('option');
             option.textContent = 'Loading...';
             option.value = '';
@@ -261,8 +264,8 @@ function updateDocumentControlsUI() {
     }
 
     if (meta) {
-        if (!state.documentListLoaded) {
-            meta.textContent = 'Loading documents...';
+        if (!state.canvasListLoaded) {
+            meta.textContent = 'Loading canvases...';
         } else if (!state.availableDocuments.length) {
             meta.textContent = 'No canvases found. Create one to get started.';
         } else if (state.currentCanvasId) {
@@ -274,12 +277,12 @@ function updateDocumentControlsUI() {
                     updatedText && `Last updated ${updatedText}`,
                     sizeText && sizeText
                 ].filter(Boolean).join(' • ');
-                meta.textContent = details || 'Document details unavailable.';
+                meta.textContent = details || 'Canvas details unavailable.';
             } else {
-                meta.textContent = 'Document details unavailable.';
+                meta.textContent = 'Canvas details unavailable.';
             }
         } else {
-            meta.textContent = 'Select a document to see details.';
+            meta.textContent = 'Select a canvas to see details.';
         }
     }
 
@@ -338,8 +341,8 @@ function formatBytes(bytes = 0) {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
 }
 
-export function setDocumentStatusMessage(message, type = 'info') {
-    const statusEl = getDocumentStatusElement();
+export function setCanvasStatusMessage(message, type = 'info') {
+    const statusEl = getCanvasStatusElement();
     if (!statusEl) return;
     statusEl.textContent = message || '';
     statusEl.dataset.state = type;
@@ -363,9 +366,9 @@ function generateUniqueCanvasSlug(title, existingSlugs) {
     return candidate;
 }
 
-export async function refreshDocumentList(preferredCanvasRef) {
+export async function refreshCanvasList(preferredCanvasRef) {
     try {
-        setDocumentStatusMessage('Loading documents...');
+        setCanvasStatusMessage('Loading canvases...');
         
         const currentOrg = getCurrentOrg();
         if (!currentOrg) {
@@ -387,7 +390,7 @@ export async function refreshDocumentList(preferredCanvasRef) {
             group_name: currentOrg.name || currentOrg.id,
         }));
         
-        state.documentListLoaded = true;
+        state.canvasListLoaded = true;
 
         const canvasIds = state.availableDocuments.map(doc => doc.id);
         let nextCanvas = preferredCanvasRef || state.currentCanvasId || loadCanvasPreference();
@@ -401,32 +404,43 @@ export async function refreshDocumentList(preferredCanvasRef) {
         }
 
         setActiveCanvasId(nextCanvas, { skipPersist: false });
-        setDocumentStatusMessage('');
+        setCanvasStatusMessage('');
     } catch (error) {
-        console.error('Error listing documents:', error);
+        console.error('Error listing canvases:', error);
         state.availableDocuments = [];
-        state.documentListLoaded = true;
+        state.canvasListLoaded = true;
         setActiveCanvasId(null, { skipPersist: true });
-        setDocumentStatusMessage('Unable to load canvases. Create a new canvas to get started.', 'error');
+        setCanvasStatusMessage('Unable to load canvases. Create a new canvas to get started.', 'error');
     } finally {
-        updateDocumentControlsUI();
+        updateCanvasControlsUI();
         // Notify main.js to update the sidebar canvas list
-        window.dispatchEvent(new CustomEvent('documentsChanged'));
+        window.dispatchEvent(new CustomEvent('canvasesChanged'));
     }
 }
 
-export async function initializeDocumentControls() {
+export async function initializeCanvasControls() {
     const fileInput = document.getElementById('documentFileInput');
     if (fileInput && !fileInput.dataset.bound) {
-        fileInput.addEventListener('change', handleDocumentFileSelected);
+        fileInput.addEventListener('change', handleCanvasFileSelected);
         fileInput.dataset.bound = 'true';
     }
 
-    bindDocumentMenuEvents();
-    await refreshDocumentList();
+    bindCanvasMenuEvents();
+    await refreshCanvasList();
 }
 
-export async function handleDocumentSelection(event) {
+// Backward-compatible exports
+export const initializeDocumentControls = initializeCanvasControls;
+export const handleDocumentSelection = handleCanvasSelection;
+export const refreshDocumentList = refreshCanvasList;
+export const createBlankDocument = createBlankCanvas;
+export const renameCurrentDocument = renameCurrentCanvas;
+export const deleteCurrentDocument = deleteCurrentCanvas;
+export const triggerDocumentUpload = triggerCanvasUpload;
+export const uploadDocumentFromContents = uploadCanvasFromContents;
+export const setDocumentStatusMessage = setCanvasStatusMessage;
+
+export async function handleCanvasSelection(event) {
     const selectedDoc = event.target.value;
     if (!selectedDoc || selectedDoc === state.currentCanvasId) {
         return;
@@ -460,12 +474,12 @@ export async function handleDocumentSelection(event) {
         await loadAgentsCallback(selectedDoc);
         // Only persist after successful load
         setActiveCanvasId(selectedDoc, { skipPersist: false });
-        setDocumentStatusMessage(`Loaded "${displayName}".`, 'success');
+        setCanvasStatusMessage(`Loaded "${displayName}".`, 'success');
     } catch (error) {
-        console.error('Error loading document:', error);
+        console.error('Error loading canvas:', error);
         // Revert to previous canvas on error
         setActiveCanvasId(previousCanvasId, { skipPersist: false });
-        setDocumentStatusMessage(`Failed to load "${selectedDoc}".`, 'error');
+        setCanvasStatusMessage(`Failed to load "${selectedDoc}".`, 'error');
     } finally {
         docSelect.disabled = false;
         if (overlay) {
@@ -474,14 +488,14 @@ export async function handleDocumentSelection(event) {
     }
 }
 
-export function triggerDocumentUpload() {
+export function triggerCanvasUpload() {
     const input = document.getElementById('documentFileInput');
     if (input) {
         input.click();
     }
 }
 
-async function handleDocumentFileSelected(event) {
+async function handleCanvasFileSelected(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
 
@@ -508,15 +522,15 @@ async function handleDocumentFileSelected(event) {
         const userTitle = prompt('Title for imported canvas:', suggestedTitle);
         if (userTitle === null) return;
 
-        await uploadDocumentFromContents(userTitle, contents);
+        await uploadCanvasFromContents(userTitle, contents);
     } catch (error) {
         console.error('Upload failed:', error);
         alert('Failed to upload document: ' + (error.message || 'Unknown error'));
     }
 }
 
-export async function uploadDocumentFromContents(titleInput, yamlText, groupId = null) {
-    setDocumentStatusMessage('Importing legacy YAML...');
+export async function uploadCanvasFromContents(titleInput, yamlText, groupId = null) {
+    setCanvasStatusMessage('Importing legacy YAML...');
 
     // Use provided groupId or current org
     const currentOrg = getCurrentOrg();
@@ -539,14 +553,14 @@ export async function uploadDocumentFromContents(titleInput, yamlText, groupId =
         existingSlugs
     });
 
-    await refreshDocumentList(result.canvasId);
+    await refreshCanvasList(result.canvasId);
     setActiveCanvasId(result.canvasId);
     await loadAgentsCallback(result.canvasId);
 
-    setDocumentStatusMessage(`Imported "${result.title}" (${result.agentCount} agents).`, 'success');
+    setCanvasStatusMessage(`Imported "${result.title}" (${result.agentCount} agents).`, 'success');
 }
 
-export async function deleteCurrentDocument() {
+export async function deleteCurrentCanvas() {
     if (!state.currentCanvasId) {
         alert('No canvas selected to delete.');
         return;
@@ -573,26 +587,26 @@ export async function deleteCurrentDocument() {
     }
 
     try {
-        setDocumentStatusMessage('Deleting canvas...');
+        setCanvasStatusMessage('Deleting canvas...');
         await deleteCanvas(state.currentCanvasId);
 
-        // Store deleted document name before refreshDocumentList changes state.currentDocumentName
+        // Store deleted canvas ID before refreshCanvasList changes state
         const deletedCanvasId = state.currentCanvasId;
         const remainingDocs = state.availableDocuments.filter(doc => (doc.id || doc.slug || doc.name) !== deletedCanvasId);
         const nextCanvasId = remainingDocs.length > 0 ? (remainingDocs[0].id || remainingDocs[0].slug || remainingDocs[0].name) : null;
 
-        await refreshDocumentList(nextCanvasId);
+        await refreshCanvasList(nextCanvasId);
         if (nextCanvasId) {
             await loadAgentsCallback(nextCanvasId);
-            setDocumentStatusMessage('Canvas deleted successfully.', 'success');
+            setCanvasStatusMessage('Canvas deleted successfully.', 'success');
         } else {
-            setDocumentStatusMessage('Canvas deleted. No canvases remaining.', 'success');
+            setCanvasStatusMessage('Canvas deleted. No canvases remaining.', 'success');
         }
 
     } catch (error) {
         console.error('Delete failed:', error);
-        alert('Failed to delete document: ' + (error.message || 'Unknown error'));
-        setDocumentStatusMessage('Delete failed.', 'error');
+        alert('Failed to delete canvas: ' + (error.message || 'Unknown error'));
+        setCanvasStatusMessage('Delete failed.', 'error');
     }
 }
 

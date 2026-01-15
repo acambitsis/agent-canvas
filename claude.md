@@ -69,7 +69,7 @@ BASE_URL=http://localhost:3000
 │   ├── auth-client-workos.js   # WorkOS auth client
 │   ├── convex-client.js        # Convex client adapter
 │   ├── config.js, state.js     # Configuration and state
-│   ├── documents.js            # Document/canvas management
+│   ├── canvases.js             # Canvas management
 │   ├── grouping.js              # Agent grouping logic
 │   ├── legacy-yaml-import.js   # Legacy YAML import (one-way)
 │   ├── menu-utils.js           # Menu UI helpers

@@ -7,12 +7,17 @@ import {
 } from './config.js';
 import { createAgent as createAgentMutation, deleteAgent as deleteAgentMutation, getConvexClient, initConvexClientAsync, syncOrgMemberships, unsubscribeAll, updateAgent as updateAgentMutation, updateConvexAuth } from './convex-client.js';
 import {
+    handleCanvasSelection,
+    initializeCanvasControls,
+    refreshCanvasList,
+    registerLoadAgents,
+    setCanvasStatusMessage,
     handleDocumentSelection,
     initializeDocumentControls,
     refreshDocumentList,
     registerLoadAgents,
     setDocumentStatusMessage
-} from './documents.js';
+} from './canvases.js';
 import { filterAgents, groupAgentsByTag, searchAgents } from './grouping.js';
 import { bindToggleMenu } from './menu-utils.js';
 import {
@@ -1174,7 +1179,7 @@ async function bootstrapApp() {
             window.addEventListener('orgChanged', updateRoleBasedUI);
 
             // Listen for document list changes to update sidebar
-            window.addEventListener('documentsChanged', renderCanvasList);
+            window.addEventListener('canvasesChanged', renderCanvasList);
         } else {
             // Not authenticated, redirect to login
             // Prevent redirect loops using sessionStorage
@@ -1225,8 +1230,8 @@ async function handleSignOut() {
 
 // ----- Sidebar events -----
 function bindSidebarEvents() {
-    // Import createBlankDocument and triggerDocumentUpload from documents.js
-    import('./documents.js').then(({ createBlankDocument, triggerDocumentUpload }) => {
+    // Import createBlankCanvas and triggerCanvasUpload from canvases.js
+    import('./canvases.js').then(({ createBlankDocument, triggerDocumentUpload }) => {
         // New Canvas button in sidebar
         const newCanvasBtn = document.getElementById('newCanvasBtn');
         newCanvasBtn?.addEventListener('click', createBlankDocument);
@@ -1288,7 +1293,7 @@ function bindSidebarEvents() {
     const docMenuBtn = document.getElementById('documentMenuBtn');
     const docMenu = document.getElementById('documentMenu');
     if (docMenuBtn && docMenu) {
-        import('./documents.js').then(({ renameCurrentDocument, deleteCurrentDocument }) => {
+        import('./canvases.js').then(({ renameCurrentDocument, deleteCurrentDocument }) => {
             bindToggleMenu({
                 buttonEl: docMenuBtn,
                 menuEl: docMenu,
@@ -1414,7 +1419,7 @@ export function renderCanvasList() {
             if (canvasId && canvasId !== state.currentDocumentName) {
                 showLoadingOverlay(`Loading "${canvasId}"...`);
                 try {
-                    const { setActiveDocumentName } = await import('./documents.js');
+                    const { setActiveDocumentName } = await import('./canvases.js');
                     setActiveDocumentName(canvasId);
                     await loadAgents(canvasId);
                     renderCanvasList(); // Update active state

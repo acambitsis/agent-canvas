@@ -22,7 +22,7 @@ export const state = {
     // Legacy - kept for backward compatibility during migration
     dynamicStyleElement: null,
     availableDocuments: [],
-    documentListLoaded: false,
+    canvasListLoaded: false,
 
     // Modal state
     agentModalViewMode: 'form',
