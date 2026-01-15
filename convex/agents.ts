@@ -9,19 +9,10 @@ import {
   validateMetrics,
   validateOptionalUrl,
   validatePhase,
+  validateRoiContribution,
 } from "./lib/validation";
 
 // Shared agent input validator for bulk operations
-const tagsValidator = v.optional(
-  v.object({
-    department: v.optional(v.string()),
-    status: v.optional(v.string()),
-    implementationStatus: v.optional(v.string()),
-    priority: v.optional(v.string()),
-    owner: v.optional(v.string()),
-  })
-);
-
 const agentInputValidator = v.object({
   phase: v.string(),
   phaseOrder: v.number(),
@@ -39,8 +30,16 @@ const agentInputValidator = v.object({
       satisfaction: v.number(),
     })
   ),
-  tags: tagsValidator,
-  payload: v.optional(v.any()),
+  roiContribution: v.optional(
+    v.union(
+      v.literal("Very High"),
+      v.literal("High"),
+      v.literal("Medium"),
+      v.literal("Low")
+    )
+  ),
+  department: v.optional(v.string()),
+  status: v.optional(v.string()),
 });
 
 // Helper to verify canvas access and return canvas
@@ -76,12 +75,14 @@ function validateAgentData(data: {
   name: string;
   phase: string;
   metrics?: { adoption: number; satisfaction: number };
+  roiContribution?: "Very High" | "High" | "Medium" | "Low";
   demoLink?: string;
   videoLink?: string;
 }): void {
   validateAgentName(data.name);
   validatePhase(data.phase);
   validateMetrics(data.metrics);
+  validateRoiContribution(data.roiContribution);
   validateOptionalUrl(data.demoLink, "demoLink");
   validateOptionalUrl(data.videoLink, "videoLink");
 }
@@ -144,8 +145,16 @@ export const create = mutation({
         satisfaction: v.number(),
       })
     ),
-    tags: tagsValidator,
-    payload: v.optional(v.any()), // Portable JSON payload
+    roiContribution: v.optional(
+      v.union(
+        v.literal("Very High"),
+        v.literal("High"),
+        v.literal("Medium"),
+        v.literal("Low")
+      )
+    ),
+    department: v.optional(v.string()),
+    status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const auth = await requireAuth(ctx);
@@ -196,8 +205,16 @@ export const update = mutation({
         satisfaction: v.number(),
       })
     ),
-    tags: tagsValidator,
-    payload: v.optional(v.any()), // Portable JSON payload
+    roiContribution: v.optional(
+      v.union(
+        v.literal("Very High"),
+        v.literal("High"),
+        v.literal("Medium"),
+        v.literal("Low")
+      )
+    ),
+    department: v.optional(v.string()),
+    status: v.optional(v.string()),
   },
   handler: async (ctx, { agentId, ...updates }) => {
     const auth = await requireAuth(ctx);

@@ -31,16 +31,14 @@ import {
     getGroupingTagType
 } from './state.js';
 import { initAuth, signOut, getCurrentUser, getUserName, getUserEmail, isAuthenticated, getIdToken } from './auth-client-workos.js';
-import { createAgent as createAgentMutation, deleteAgent as deleteAgentMutation, getConvexClient, getDocument, initConvexClient, initConvexClientAsync, syncOrgMemberships, unsubscribeAll, updateAgent as updateAgentMutation, updateConvexAuth } from './convex-client.js';
+import { createAgent as createAgentMutation, deleteAgent as deleteAgentMutation, getConvexClient, initConvexClient, initConvexClientAsync, syncOrgMemberships, unsubscribeAll, updateAgent as updateAgentMutation, updateConvexAuth } from './convex-client.js';
 import { groupAgentsByTag, filterAgents, searchAgents } from './grouping.js';
 import { TAG_TYPES, getAgentTagDisplay, getToolDisplay } from './types/tags.js';
 
-// Tag type to DOM container ID mapping
+// Tag type to DOM container ID mapping (only department and status remain)
 const TAG_SELECTOR_IDS = {
     department: 'agentDepartmentTags',
-    status: 'agentStatusTags',
-    implementationStatus: 'agentImplementationTags',
-    priority: 'agentPriorityTags'
+    status: 'agentStatusTags'
 };
 
 // ----- Tag selector helpers -----
@@ -99,18 +97,6 @@ function getSelectedTagValue(containerId) {
     return selected?.dataset.tagValue || null;
 }
 
-// Re-export for backward compatibility
-export function getCurrentGroupId() {
-    return getCurrentOrgId();
-}
-
-export function getUserGroups() {
-    return getUserOrgsFromState();
-}
-
-export function canManageCanvasesInCurrentGroup() {
-    return canManageCanvases();
-}
 
 async function initializeGroups() {
     const orgs = getUserOrgsFromState();
@@ -150,7 +136,7 @@ function renderGroupSwitcher() {
 
 // ----- Role-based UI visibility -----
 function updateRoleBasedUI() {
-    const canManage = canManageCanvasesInCurrentGroup();
+    const canManage = canManageCanvases();
     const role = getCurrentOrgRole();
 
     // Update board menu - hide admin-only actions for viewers
@@ -285,11 +271,9 @@ function populateAgentFormFields(agent = {}) {
     document.getElementById('metricsUsage').value = metrics.usageThisWeek || '';
     document.getElementById('metricsTimeSaved').value = metrics.timeSaved || '';
 
-    // Populate tag selectors with clickable options
-    const tags = agent.tags || {};
-    for (const [tagType, containerId] of Object.entries(TAG_SELECTOR_IDS)) {
-        populateTagSelector(containerId, tagType, tags[tagType]);
-    }
+    // Populate tag selectors with clickable options (department and status only)
+    populateTagSelector('agentDepartmentTags', 'department', agent.department);
+    populateTagSelector('agentStatusTags', 'status', agent.status);
 
     // Populate phase input if present
     const phaseInput = document.getElementById('agentPhase');
@@ -325,18 +309,15 @@ function buildAgentDraftFromForm() {
         satisfaction: parseFloat(timeSaved) || 0
     };
 
-    // Collect tag values from custom tag selectors
-    const tags = { ...(baseAgent.tags || {}) };
-    for (const [tagType, containerId] of Object.entries(TAG_SELECTOR_IDS)) {
-        const value = getSelectedTagValue(containerId);
-        if (value) {
-            tags[tagType] = value;
-        } else {
-            delete tags[tagType];
-        }
-    }
+    // ROI contribution is now a first-class field
+    draft.roiContribution = baseAgent.roiContribution || 'Medium';
 
-    draft.tags = Object.keys(tags).length > 0 ? tags : undefined;
+    // Collect department and status from tag selectors
+    const departmentValue = getSelectedTagValue('agentDepartmentTags');
+    draft.department = departmentValue || undefined;
+    
+    const statusValue = getSelectedTagValue('agentStatusTags');
+    draft.status = statusValue || undefined;
 
     // Phase (for grouping)
     const phaseInput = document.getElementById('agentPhase');
@@ -344,28 +325,11 @@ function buildAgentDraftFromForm() {
     const nextPhase = (phaseInput?.value || defaultPhase || baseAgent.phase || '').trim();
     if (nextPhase) draft.phase = nextPhase;
 
-    // Keep a portable payload for UI/legacy compatibility (not used as source of truth)
-    const legacyMetrics = {
-        usageThisWeek,
-        timeSaved,
-        roiContribution: (baseAgent?.payload?.metrics?.roiContribution || baseAgent?.metrics?.roiContribution || 'Medium')
-    };
-    draft.payload = {
-        name: draft.name,
-        objective: draft.objective,
-        description: draft.description,
-        tools: draft.tools,
-        journeySteps: draft.journeySteps,
-        metrics: legacyMetrics,
-        tags: draft.tags,
-        phase: draft.phase
-    };
-
     return draft;
 }
 
 // ----- Config load/save -----
-async function loadConfig(canvasRef = state.currentCanvasId || state.currentDocumentName) {
+async function loadConfig(canvasRef = state.currentCanvasId) {
     try {
         const currentOrg = getCurrentOrg();
         if (!currentOrg) {
@@ -375,11 +339,8 @@ async function loadConfig(canvasRef = state.currentCanvasId || state.currentDocu
             throw new Error('No canvas selected');
         }
 
-        // Get canvas from Convex (canvasId preferred; fall back to slug for legacy)
-        const refIsCanvasId = state.availableDocuments?.some(d => d.id === canvasRef);
-        const canvas = refIsCanvasId
-            ? await getConvexClient().query("canvases:get", { canvasId: canvasRef })
-            : await getDocument(currentOrg.id, canvasRef);
+        // Get canvas from Convex (canvasId only - no slug fallback)
+        const canvas = await getConvexClient().query("canvases:get", { canvasId: canvasRef });
         if (!canvas) {
             throw new Error(`Canvas not found`);
         }
@@ -399,7 +360,6 @@ async function loadConfig(canvasRef = state.currentCanvasId || state.currentDocu
 
         // Store canvas ID for future operations / persistence
         state.currentCanvasId = canvas._id;
-        state.currentDocumentName = canvas._id;
         
         return { canvas, agents, orgSettings };
     } catch (error) {
@@ -465,8 +425,8 @@ function createAgentCard(agent, groupIndex, agentIndex) {
     // Create tag indicators
     const tagIndicatorsHTML = createTagIndicators(agent);
 
-    // Status color based on status tag
-    const statusTag = agent.tags?.status || 'active';
+    // Status color based on status field
+    const statusTag = agent.status || 'active';
     const statusColors = { active: '#10B981', draft: '#64748B', review: '#F59E0B', deprecated: '#EF4444' };
     const statusColor = statusColors[statusTag] || '#F59E0B';
 
@@ -545,14 +505,10 @@ function createAgentCard(agent, groupIndex, agentIndex) {
 
 // Create tag indicator chips for agent card
 function createTagIndicators(agent) {
-    const tags = agent.tags || {};
-
-    // Define which tags to show and their rendering
+    // Define which tags to show and their rendering (only department and status remain)
     const tagConfigs = [
-        { type: 'department', show: tags.department },
-        { type: 'status', show: tags.status && tags.status !== 'active', useStatusDot: true },
-        { type: 'implementationStatus', show: tags.implementationStatus },
-        { type: 'priority', show: tags.priority, iconless: true }
+        { type: 'department', show: agent.department },
+        { type: 'status', show: agent.status && agent.status !== 'active', useStatusDot: true }
     ];
 
     return tagConfigs
@@ -827,10 +783,11 @@ function openAddAgentModal(groupIndex) {
         description: '',
         tools: [],
         journeySteps: [],
-        tags: undefined,
+        department: undefined,
+        status: undefined,
         phase: defaultPhase,
         metrics: undefined,
-        payload: { metrics: getAgentMetrics({}) }
+        roiContribution: 'Medium'
     };
 
     showAgentModal(newAgent, { agentId: null, defaultPhase });
@@ -926,8 +883,9 @@ async function saveAgent() {
                 tools: draft.tools || [],
                 journeySteps: draft.journeySteps || [],
                 metrics: draft.metrics,
-                tags: draft.tags,
-                payload: draft.payload,
+                roiContribution: draft.roiContribution,
+                department: draft.department,
+                status: draft.status,
             });
         } else {
             const phaseChanged = phase !== (originalPhase || '');
@@ -939,8 +897,9 @@ async function saveAgent() {
                 tools: draft.tools || [],
                 journeySteps: draft.journeySteps || [],
                 metrics: draft.metrics,
-                tags: draft.tags,
-                payload: draft.payload,
+                roiContribution: draft.roiContribution,
+                department: draft.department,
+                status: draft.status,
             };
 
             if (phaseChanged) {
@@ -1006,10 +965,11 @@ function openAddSectionModal() {
         description: '',
         tools: [],
         journeySteps: [],
-        tags: undefined,
+        department: undefined,
+        status: undefined,
         phase: phaseName,
         metrics: undefined,
-        payload: { metrics: getAgentMetrics({}) }
+        roiContribution: 'Medium'
     };
 
     showAgentModal(newAgent, { agentId: null, defaultPhase: phaseName });

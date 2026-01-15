@@ -52,6 +52,7 @@ VITE_CONVEX_URL=https://your-deployment.convex.cloud
 WORKOS_API_KEY=sk_live_xxxxx
 WORKOS_CLIENT_ID=client_xxxxx
 WORKOS_COOKIE_PASSWORD=your-32-char-secret  # openssl rand -hex 32
+WORKOS_AUTHKIT_DOMAIN=your-authkit-subdomain  # e.g., "smart-chefs" for smart-chefs.authkit.app
 
 # App
 BASE_URL=http://localhost:3000

@@ -20,9 +20,7 @@ export const state = {
     orgSettings: null,
 
     // Legacy - kept for backward compatibility during migration
-    configData: null,
     dynamicStyleElement: null,
-    currentDocumentName: null,
     availableDocuments: [],
     documentListLoaded: false,
 
@@ -67,24 +65,15 @@ const COLLAPSED_PILL_CLASSES = [
 
 export function getAgentMetrics(agent = {}) {
     const metrics = agent?.metrics || {};
-    const payloadMetrics = agent?.payload?.metrics || {};
 
     // Convex-native numeric metrics: { adoption, satisfaction }
-    if (
-        metrics &&
-        typeof metrics === 'object' &&
-        (typeof metrics.adoption === 'number' || typeof metrics.satisfaction === 'number')
-    ) {
-        return {
-            ...defaultAgentMetrics,
-            usageThisWeek: String(metrics.adoption ?? defaultAgentMetrics.usageThisWeek),
-            timeSaved: String(metrics.satisfaction ?? defaultAgentMetrics.timeSaved),
-            roiContribution: payloadMetrics.roiContribution || defaultAgentMetrics.roiContribution
-        };
-    }
-
-    // Legacy/UI metrics shape: { usageThisWeek, timeSaved, roiContribution }
-    return { ...defaultAgentMetrics, ...payloadMetrics, ...(metrics || {}) };
+    // ROI contribution is now a first-class field
+    return {
+        ...defaultAgentMetrics,
+        usageThisWeek: String(metrics.adoption ?? defaultAgentMetrics.usageThisWeek),
+        timeSaved: String(metrics.satisfaction ?? defaultAgentMetrics.timeSaved),
+        roiContribution: agent.roiContribution || defaultAgentMetrics.roiContribution
+    };
 }
 
 export function toArray(value) {
@@ -115,23 +104,6 @@ export function slugifyIdentifier(value) {
         .replace(/^-+|-+$/g, '');
 }
 
-export function getGroupFormatting(group, field, config = state.configData) {
-    const defaults = config?.sectionDefaults || {
-        iconType: 'target',
-        showInFlow: true,
-        isSupport: false
-    };
-
-    return group[field] !== undefined ? group[field] : defaults[field];
-}
-
-export function getGroupClass(group) {
-    if (group.groupClass) {
-        return group.groupClass;
-    }
-    const groupId = group.groupId || slugifyIdentifier(group.groupName) || 'section';
-    return `group-${groupId}`;
-}
 
 export function getCollapsedPillClass(index) {
     return COLLAPSED_PILL_CLASSES[index % COLLAPSED_PILL_CLASSES.length];
@@ -148,56 +120,6 @@ export function refreshIcons() {
     }
 }
 
-function getExistingGroupIdSet(config = state.configData, excludeIndex = -1) {
-    if (!Array.isArray(config?.agentGroups)) {
-        return new Set();
-    }
-
-    return new Set(
-        config.agentGroups
-            .map((group, index) => (index === excludeIndex ? null : (group?.groupId || null)))
-            .filter(id => typeof id === 'string' && id.trim() !== '')
-            .map(id => id.trim())
-    );
-}
-
-export function generateGroupIdFromName(name, maybeExcludeIndex = -1, maybeConfig = state.configData) {
-    let excludeIndex = maybeExcludeIndex;
-    let config = maybeConfig;
-
-    // Backward compatibility: allow passing (name, config, excludeIndex)
-    if (typeof maybeExcludeIndex === 'object' && !Array.isArray(maybeExcludeIndex)) {
-        config = maybeExcludeIndex;
-        excludeIndex = typeof maybeConfig === 'number' ? maybeConfig : -1;
-    }
-
-    const fallbackBase = `section-${(config?.agentGroups?.length || 0) + 1}`;
-    const baseId = slugifyIdentifier(name) || fallbackBase;
-    const existingIds = getExistingGroupIdSet(config, excludeIndex);
-
-    let candidate = baseId;
-    let suffix = 2;
-    while (!candidate || existingIds.has(candidate)) {
-        candidate = `${baseId}-${suffix++}`;
-    }
-
-    return candidate;
-}
-
-export function ensureGroupHasId(group, groupIndex = -1, config = state.configData) {
-    if (!group || typeof group !== 'object') {
-        return group;
-    }
-
-    if (typeof group.groupId === 'string' && group.groupId.trim()) {
-        group.groupId = group.groupId.trim();
-        return group;
-    }
-
-    const fallbackName = group.groupName || `section-${Date.now()}`;
-    group.groupId = generateGroupIdFromName(fallbackName, config, groupIndex);
-    return group;
-}
 
 export function loadCollapsedState() {
     try {
@@ -295,34 +217,6 @@ export function saveCanvasPreference(canvasId) {
     state.currentCanvasId = canvasId;
 }
 
-// Group agents by phase for rendering (legacy - use grouping.js for dynamic grouping)
-export function groupAgentsByPhase(agents = state.agents) {
-    const phases = new Map();
-
-    for (const agent of agents) {
-        const phase = agent.phase || 'Uncategorized';
-        if (!phases.has(phase)) {
-            phases.set(phase, {
-                phase,
-                phaseOrder: agent.phaseOrder || 0,
-                agents: []
-            });
-        }
-        phases.get(phase).agents.push(agent);
-    }
-
-    // Sort phases by phaseOrder
-    const sortedPhases = Array.from(phases.values()).sort(
-        (a, b) => a.phaseOrder - b.phaseOrder
-    );
-
-    // Sort agents within each phase by agentOrder
-    for (const phaseGroup of sortedPhases) {
-        phaseGroup.agents.sort((a, b) => (a.agentOrder || 0) - (b.agentOrder || 0));
-    }
-
-    return sortedPhases;
-}
 
 // Grouping preference helpers
 export function loadGroupingPreference() {

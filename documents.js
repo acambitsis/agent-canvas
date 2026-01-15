@@ -1,6 +1,5 @@
-import { getCurrentOrg } from './state.js';
+import { getCurrentOrg, canManageCanvases, getCurrentOrgId, getUserOrgs } from './state.js';
 import { createCanvas, deleteCanvas, listDocuments, updateCanvas } from './convex-client.js';
-import { canManageCanvasesInCurrentGroup, getCurrentGroupId, getUserGroups } from './main.js';
 import { refreshIcons, slugifyIdentifier, state, loadCanvasPreference, saveCanvasPreference } from './state.js';
 import { bindToggleMenu, closeMenu } from './menu-utils.js';
 import { importLegacyYamlToNative } from './legacy-yaml-import.js';
@@ -14,8 +13,6 @@ export function registerLoadAgents(fn) {
 
 export function setActiveCanvasId(canvasId, options = {}) {
     state.currentCanvasId = canvasId || null;
-    // Legacy alias during migration; will be removed once all code is canvasId-native.
-    state.currentDocumentName = state.currentCanvasId;
 
     if (!options.skipPersist) {
         saveCanvasPreference(state.currentCanvasId);
@@ -84,14 +81,14 @@ function bindDocumentMenuEvents() {
 
 export async function createBlankDocument() {
     // Check if user can create canvases
-    if (!canManageCanvasesInCurrentGroup()) {
-        alert('You do not have permission to create canvases. Only group admins can create new canvases.');
+    if (!canManageCanvases()) {
+        alert('You do not have permission to create canvases. Only org admins can create new canvases.');
         return;
     }
 
-    // Get current group or prompt for selection
-    let groupId = getCurrentGroupId();
-    const groups = getUserGroups();
+    // Get current org or prompt for selection
+    let groupId = getCurrentOrgId();
+    const groups = getUserOrgs();
 
     if (!groupId && groups.length === 0) {
         alert('No groups available. You must be a member of a group to create canvases.');
@@ -295,7 +292,7 @@ function updateDocumentControlsUI() {
         const divider = menu.querySelector('[data-role="menu-divider"]');
         const hasDocument = Boolean(state.currentCanvasId);
         const isLastDocument = state.availableDocuments.length <= 1;
-        const canManage = canManageCanvasesInCurrentGroup();
+        const canManage = canManageCanvases();
 
         // Upload and blank require admin
         if (uploadBtn) {
@@ -500,11 +497,12 @@ async function handleDocumentFileSelected(event) {
             .replace(/\.ya?ml$/i, '')
             .trim();
         let suggestedTitle = filenameBase || 'Imported Canvas';
-        try {
-            const parsed = window.jsyaml?.load?.(contents);
-            if (parsed?.documentTitle) suggestedTitle = String(parsed.documentTitle);
-        } catch {
-            // ignore parse errors here; importer will validate
+        
+        // Extract title from YAML using importer helper
+        const { extractTitleFromYaml } = await import('./legacy-yaml-import.js');
+        const yamlTitle = await extractTitleFromYaml(contents);
+        if (yamlTitle) {
+            suggestedTitle = yamlTitle;
         }
 
         const userTitle = prompt('Title for imported canvas:', suggestedTitle);

@@ -4,18 +4,7 @@
  */
 
 import { TAG_TYPES, getTagValue, DEFAULT_GROUPING_TAG } from './types/tags.js';
-
-// Section color palette for phase grouping
-const SECTION_COLORS = [
-  '#F59E0B', // Amber
-  '#8B5CF6', // Violet
-  '#10B981', // Emerald
-  '#EC4899', // Pink
-  '#3B82F6', // Blue
-  '#06B6D4', // Cyan
-  '#EF4444', // Red
-  '#6366F1', // Indigo
-];
+import { SECTION_COLOR_PALETTE } from './config.js';
 
 /**
  * Group agents by the specified tag type
@@ -36,8 +25,13 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
     let tagValue;
     if (tagType === 'phase') {
       tagValue = agent.phase || 'Uncategorized';
+    } else if (tagType === 'department') {
+      tagValue = agent.department || 'unassigned';
+    } else if (tagType === 'status') {
+      tagValue = agent.status || 'unassigned';
     } else {
-      tagValue = agent.tags?.[tagType] || 'unassigned';
+      // Unknown tag type - skip or use unassigned
+      tagValue = 'unassigned';
     }
 
     // Initialize group if needed
@@ -50,7 +44,7 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
         groupMeta = {
           id: tagValue,
           label: tagValue,
-          color: SECTION_COLORS[groupIndex % SECTION_COLORS.length],
+          color: SECTION_COLOR_PALETTE[groupIndex % SECTION_COLOR_PALETTE.length],
           icon: 'layers',
           order: agent.phaseOrder ?? groupIndex
         };
@@ -88,26 +82,6 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
   return sortedGroups;
 }
 
-/**
- * Flatten agents from config data format
- * @param {Object} configData - The legacy config data format with agentGroups
- * @returns {Array} Flat array of agents with phase info preserved
- */
-export function flattenAgentsFromConfig(configData) {
-  if (!configData?.agentGroups) return [];
-
-  const agents = [];
-  for (const group of configData.agentGroups) {
-    for (const agent of (group.agents || [])) {
-      agents.push({
-        ...agent,
-        phase: group.groupName || group.groupId,
-        phaseOrder: group.groupNumber ?? 0
-      });
-    }
-  }
-  return agents;
-}
 
 /**
  * Filter agents by tag values
@@ -127,8 +101,13 @@ export function filterAgents(agents, filters) {
       let agentValue;
       if (tagType === 'phase') {
         agentValue = agent.phase;
+      } else if (tagType === 'department') {
+        agentValue = agent.department;
+      } else if (tagType === 'status') {
+        agentValue = agent.status;
       } else {
-        agentValue = agent.tags?.[tagType];
+        // Unknown tag type - skip filter
+        continue;
       }
 
       // If agent doesn't have this tag value or it's not in allowed list, filter out

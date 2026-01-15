@@ -1,11 +1,26 @@
 /**
  * Static tool and phase configurations
- * This replaces the toolsConfig section from YAML
+ * Canonical source for tool definitions and section color palette
  */
 
+// Tool definitions with display metadata (label, color, icon)
+export const TOOL_DEFINITIONS = {
+  forms: { label: 'Forms', color: '#06B6D4', icon: 'file-input' },
+  code: { label: 'Code', color: '#8B5CF6', icon: 'code-2' },
+  rag: { label: 'RAG', color: '#F59E0B', icon: 'file-search' },
+  'web-search': { label: 'Web Search', color: '#10B981', icon: 'globe' },
+  'deep-research': { label: 'Deep Research', color: '#EC4899', icon: 'search' },
+  context: { label: 'Context', color: '#EF4444', icon: 'database' },
+  email: { label: 'Email', color: '#3B82F6', icon: 'mail' },
+  calendar: { label: 'Calendar', color: '#6366F1', icon: 'calendar' },
+  slack: { label: 'Slack', color: '#E11D48', icon: 'message-square' },
+  api: { label: 'API', color: '#14B8A6', icon: 'plug' },
+};
+
+// Legacy TOOLS format (for backward compatibility with existing code)
 export const TOOLS = {
     'Forms': {
-        icon: 'clipboard-list',
+        icon: 'file-input',
         colorKey: 'cyan'
     },
     'Code': {
@@ -13,7 +28,7 @@ export const TOOLS = {
         colorKey: 'blue'
     },
     'RAG': {
-        icon: 'file-text',
+        icon: 'file-search',
         colorKey: 'orange'
     },
     'Web Search': {
@@ -25,13 +40,29 @@ export const TOOLS = {
         colorKey: 'purple'
     },
     'Context': {
-        icon: 'book-open',
+        icon: 'database',
         colorKey: 'red'
+    },
+    'Email': {
+        icon: 'mail',
+        colorKey: 'blue'
+    },
+    'Calendar': {
+        icon: 'calendar',
+        colorKey: 'indigo'
+    },
+    'Slack': {
+        icon: 'message-square',
+        colorKey: 'pink'
+    },
+    'API': {
+        icon: 'plug',
+        colorKey: 'teal'
     }
 };
 
 /**
- * Get tool configuration with fallback
+ * Get tool configuration with fallback (legacy format)
  */
 export function getToolConfig(toolName) {
     return TOOLS[toolName] || {
@@ -48,17 +79,32 @@ export function getAvailableTools() {
 }
 
 /**
- * Section color palette - cycles through for agent groups
+ * Get tool display info (canonical format with hex colors)
+ * @param {string} toolName - Tool name (case-insensitive, spaces normalized to hyphens)
+ * @returns {object} { label, color, icon }
+ */
+export function getToolDisplay(toolName) {
+  const normalized = toolName.toLowerCase().replace(/\s+/g, '-');
+  return TOOL_DEFINITIONS[normalized] || {
+    label: toolName,
+    color: '#6B7280',
+    icon: 'box'
+  };
+}
+
+/**
+ * Section color palette - cycles through for agent groups/phases
+ * Canonical palette used across the app
  */
 export const SECTION_COLOR_PALETTE = [
-    '#1a5f73',  // Teal
-    '#2c5f8d',  // Blue
-    '#5f4a8b',  // Purple
-    '#8b4a6f',  // Magenta
-    '#8b5f4a',  // Brown
-    '#4a8b5f',  // Green
-    '#8b7a4a',  // Gold
-    '#4a6f8b'   // Steel Blue
+  '#F59E0B', // Amber
+  '#8B5CF6', // Violet
+  '#10B981', // Emerald
+  '#EC4899', // Pink
+  '#3B82F6', // Blue
+  '#06B6D4', // Cyan
+  '#EF4444', // Red
+  '#6366F1', // Indigo
 ];
 
 /**

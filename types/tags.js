@@ -1,9 +1,10 @@
 /**
  * Tag type definitions for AgentCanvas
- * Strongly-typed tag system with validation, colors, and icons
+ * Fixed tag types: phase, department, status (same across all orgs)
+ * Values are loose strings - UI can suggest common values but backend accepts any string
  */
 
-// Core tag types - code-defined, strongly typed
+// Core tag types - code-defined, fixed across all orgs
 export const TAG_TYPES = {
   phase: {
     id: 'phase',
@@ -11,7 +12,7 @@ export const TAG_TYPES = {
     description: 'Business process phase',
     isGroupable: true,
     icon: 'layers',
-    // Phase values are dynamic from agentGroups - not predefined
+    // Phase values are dynamic from agents - not predefined
     values: []
   },
 
@@ -21,6 +22,7 @@ export const TAG_TYPES = {
     description: 'Organizational department',
     isGroupable: true,
     icon: 'building-2',
+    // Common values for UI suggestions (backend accepts any string)
     values: [
       { id: 'sales', label: 'Sales', color: '#3B82F6', icon: 'trending-up' },
       { id: 'engineering', label: 'Engineering', color: '#8B5CF6', icon: 'code-2' },
@@ -39,41 +41,12 @@ export const TAG_TYPES = {
     description: 'Agent lifecycle status',
     isGroupable: true,
     icon: 'activity',
+    // Common values for UI suggestions (backend accepts any string)
     values: [
       { id: 'active', label: 'Active', color: '#10B981', icon: 'check-circle' },
       { id: 'draft', label: 'Draft', color: '#6B7280', icon: 'edit-3' },
       { id: 'review', label: 'In Review', color: '#F59E0B', icon: 'eye' },
       { id: 'deprecated', label: 'Deprecated', color: '#EF4444', icon: 'archive' },
-    ]
-  },
-
-  implementationStatus: {
-    id: 'implementationStatus',
-    label: 'Implementation',
-    description: 'Development/deployment status',
-    isGroupable: true,
-    icon: 'git-branch',
-    values: [
-      { id: 'ideation', label: 'Ideation', color: '#A78BFA', icon: 'lightbulb' },
-      { id: 'planning', label: 'Planning', color: '#6366F1', icon: 'clipboard-list' },
-      { id: 'development', label: 'Development', color: '#F59E0B', icon: 'code' },
-      { id: 'testing', label: 'Testing', color: '#06B6D4', icon: 'flask-conical' },
-      { id: 'deployed', label: 'Deployed', color: '#10B981', icon: 'rocket' },
-      { id: 'monitoring', label: 'Monitoring', color: '#3B82F6', icon: 'activity' },
-    ]
-  },
-
-  priority: {
-    id: 'priority',
-    label: 'Priority',
-    description: 'Business priority level',
-    isGroupable: true,
-    icon: 'flag',
-    values: [
-      { id: 'p0', label: 'P0 Critical', color: '#DC2626', icon: 'alert-triangle' },
-      { id: 'p1', label: 'P1 High', color: '#F59E0B', icon: 'arrow-up' },
-      { id: 'p2', label: 'P2 Medium', color: '#3B82F6', icon: 'minus' },
-      { id: 'p3', label: 'P3 Low', color: '#6B7280', icon: 'arrow-down' },
     ]
   }
 };
@@ -110,11 +83,20 @@ export function getAgentTagDisplay(agent, tagType) {
     };
   }
 
-  const tagValue = agent.tags?.[tagType];
+  let tagValue;
+  if (tagType === 'department') {
+    tagValue = agent.department;
+  } else if (tagType === 'status') {
+    tagValue = agent.status;
+  } else {
+    return null;
+  }
+
   if (!tagValue) return null;
 
   const tagMeta = getTagValue(tagType, tagValue);
   if (!tagMeta) {
+    // Unknown value - return as-is (loose string support)
     return {
       value: tagValue,
       label: tagValue,
@@ -133,7 +115,7 @@ export function getAgentTagDisplay(agent, tagType) {
 
 /**
  * Get all tag values for a specific type from a list of agents
- * Used to build dynamic phase values
+ * Used to build dynamic phase/department/status values
  */
 export function getUniqueTagValues(agents, tagType) {
   const values = new Set();
@@ -141,39 +123,15 @@ export function getUniqueTagValues(agents, tagType) {
   for (const agent of agents) {
     if (tagType === 'phase') {
       if (agent.phase) values.add(agent.phase);
-    } else {
-      const tagValue = agent.tags?.[tagType];
-      if (tagValue) values.add(tagValue);
+    } else if (tagType === 'department') {
+      if (agent.department) values.add(agent.department);
+    } else if (tagType === 'status') {
+      if (agent.status) values.add(agent.status);
     }
   }
 
   return Array.from(values);
 }
 
-/**
- * Tool definitions with colors and icons
- */
-export const TOOL_DEFINITIONS = {
-  forms: { label: 'Forms', color: '#06B6D4', icon: 'file-input' },
-  code: { label: 'Code', color: '#8B5CF6', icon: 'code-2' },
-  rag: { label: 'RAG', color: '#F59E0B', icon: 'file-search' },
-  'web-search': { label: 'Web Search', color: '#10B981', icon: 'globe' },
-  'deep-research': { label: 'Deep Research', color: '#EC4899', icon: 'search' },
-  context: { label: 'Context', color: '#EF4444', icon: 'database' },
-  email: { label: 'Email', color: '#3B82F6', icon: 'mail' },
-  calendar: { label: 'Calendar', color: '#6366F1', icon: 'calendar' },
-  slack: { label: 'Slack', color: '#E11D48', icon: 'message-square' },
-  api: { label: 'API', color: '#14B8A6', icon: 'plug' },
-};
-
-/**
- * Get tool display info
- */
-export function getToolDisplay(toolName) {
-  const normalized = toolName.toLowerCase().replace(/\s+/g, '-');
-  return TOOL_DEFINITIONS[normalized] || {
-    label: toolName,
-    color: '#6B7280',
-    icon: 'box'
-  };
-}
+// Re-export tool definitions from canonical config.js
+export { TOOL_DEFINITIONS, getToolDisplay } from './config.js';

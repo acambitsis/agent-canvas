@@ -231,8 +231,9 @@ export async function createAgent(data) {
     demoLink: data.demoLink,
     videoLink: data.videoLink,
     metrics: data.metrics,
-    tags: data.tags,
-    payload: data.payload,
+    roiContribution: data.roiContribution,
+    department: data.department,
+    status: data.status,
   });
 }
 
@@ -290,68 +291,11 @@ export async function getRecentHistory(workosOrgId, limit = 50) {
   return requireClient().query("agentHistory:listRecent", { workosOrgId, limit });
 }
 
-// Document operations (replacing /api/config)
+// Query helpers (standardized on canvasId)
 
 /**
- * List all documents (canvases) for an org
+ * List all canvases for an org
  */
 export async function listDocuments(workosOrgId) {
   return requireClient().query("canvases:list", { workosOrgId });
-}
-
-/**
- * Get a document (canvas) by slug
- */
-export async function getDocument(workosOrgId, slug) {
-  return requireClient().query("canvases:getBySlug", { workosOrgId, slug });
-}
-
-/**
- * Create or update a document (canvas)
- */
-export async function saveDocument(workosOrgId, slug, title) {
-  // Try to get existing canvas
-  const existing = await requireClient().query("canvases:getBySlug", { workosOrgId, slug });
-  
-  if (existing) {
-    // Update existing
-    await requireClient().mutation("canvases:update", {
-      canvasId: existing._id,
-      title,
-    });
-    return existing._id;
-  } else {
-    // Create new
-    return await requireClient().mutation("canvases:create", {
-      workosOrgId,
-      title: title || slug,
-      slug,
-    });
-  }
-}
-
-/**
- * Delete a document (canvas)
- */
-export async function deleteDocument(workosOrgId, slug) {
-  const canvas = await requireClient().query("canvases:getBySlug", { workosOrgId, slug });
-  if (!canvas) {
-    throw new Error("Document not found");
-  }
-  // User has already confirmed deletion in UI, so always pass confirmDelete: true
-  await requireClient().mutation("canvases:remove", { canvasId: canvas._id, confirmDelete: true });
-}
-
-/**
- * Rename a document (canvas)
- */
-export async function renameDocument(workosOrgId, oldSlug, newSlug) {
-  const canvas = await requireClient().query("canvases:getBySlug", { workosOrgId, oldSlug });
-  if (!canvas) {
-    throw new Error("Document not found");
-  }
-  await requireClient().mutation("canvases:update", {
-    canvasId: canvas._id,
-    slug: newSlug,
-  });
 }
