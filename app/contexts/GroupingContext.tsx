@@ -1,14 +1,13 @@
 /**
- * GroupingContext - Manages agent grouping, filtering, and search state
+ * GroupingContext - Manages agent grouping and filtering state
  */
 
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import { Agent, AgentGroup } from '@/types/agent';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useDebounce } from '@/hooks/useDebounce';
-import { groupAgentsByTag, filterAgents, searchAgents } from '@/utils/grouping';
+import { groupAgentsByTag, filterAgents } from '@/utils/grouping';
 import { DEFAULT_GROUPING_TAG } from '@/utils/config';
 import { useAgents } from './AgentContext';
 
@@ -24,12 +23,10 @@ interface GroupingPreferences {
 interface GroupingContextValue {
   activeTagType: string;
   filters: Record<string, string[]>;
-  searchQuery: string;
   collapsedSections: Record<string, boolean>;
   computedGroups: AgentGroup[];
   setActiveTagType: (tagType: string) => void;
   setFilters: (filters: Record<string, string[]>) => void;
-  setSearchQuery: (query: string) => void;
   toggleSectionCollapse: (groupId: string) => void;
   collapseAll: (collapsed: boolean) => void;
 }
@@ -53,10 +50,7 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
     {}
   );
 
-  const [searchQuery, setSearchQueryState] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 200);
-
-  // Compute grouped agents with filters and search
+  // Compute grouped agents with filters
   const computedGroups = useMemo(() => {
     let filteredAgents = agents;
 
@@ -65,14 +59,9 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
       filteredAgents = filterAgents(filteredAgents, preferences.filters);
     }
 
-    // Apply search
-    if (debouncedSearchQuery) {
-      filteredAgents = searchAgents(filteredAgents, debouncedSearchQuery);
-    }
-
     // Group by active tag type
     return groupAgentsByTag(filteredAgents, preferences.activeTagType);
-  }, [agents, preferences.filters, preferences.activeTagType, debouncedSearchQuery]);
+  }, [agents, preferences.filters, preferences.activeTagType]);
 
   const setActiveTagType = useCallback((tagType: string) => {
     setPreferences((prev) => ({ ...prev, activeTagType: tagType }));
@@ -101,12 +90,10 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
   const value: GroupingContextValue = {
     activeTagType: preferences.activeTagType,
     filters: preferences.filters,
-    searchQuery,
     collapsedSections,
     computedGroups,
     setActiveTagType,
     setFilters,
-    setSearchQuery: setSearchQueryState,
     toggleSectionCollapse,
     collapseAll,
   };
