@@ -13,10 +13,16 @@ export async function GET(request: Request) {
     return json({ authenticated: false });
   }
 
+  // Check if token needs refresh (within 10 minutes of expiry or already expired)
+  const needsRefresh = session.idTokenExpiresAt
+    ? Date.now() > session.idTokenExpiresAt - (10 * 60 * 1000)
+    : !session.idToken;
+
   return json({
     authenticated: true,
     user: session.user,
     orgs: session.orgs || [],
     idToken: session.idToken, // Expose id_token for Convex authentication
+    needsRefresh, // Signal client to proactively refresh token
   });
 }

@@ -1,18 +1,15 @@
 /**
- * Dynamic grouping logic for AgentCanvas
- * Groups agents by any tag type with filtering support
+ * Grouping and filtering utilities for agents
  */
 
-import { DEFAULT_GROUPING_TAG, getTagValue, SECTION_COLOR_PALETTE, TAG_TYPES } from './config.js';
+import { Agent, AgentGroup } from '@/types/agent';
+import { TAG_TYPES, DEFAULT_GROUPING_TAG, SECTION_COLOR_PALETTE, getTagValue } from './config';
 
 /**
  * Group agents by the specified tag type
- * @param {Array} agents - Flat array of agent objects
- * @param {string} tagType - Tag type to group by ('phase', 'department', 'status', etc.)
- * @returns {Array} Array of group objects: { id, label, color, icon, agents, order }
  */
-export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
-  const groups = new Map();
+export function groupAgentsByTag(agents: Agent[], tagType: string = DEFAULT_GROUPING_TAG): AgentGroup[] {
+  const groups = new Map<string, AgentGroup>();
   const tagDef = TAG_TYPES[tagType];
 
   // Process each agent
@@ -21,7 +18,7 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
     if (agent.deletedAt) continue;
 
     // Get tag value from agent
-    let tagValue;
+    let tagValue: string;
     if (tagType === 'phase') {
       tagValue = agent.phase || 'Uncategorized';
     } else if (tagType === 'department') {
@@ -35,7 +32,7 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
 
     // Initialize group if needed
     if (!groups.has(tagValue)) {
-      let groupMeta;
+      let groupMeta: Omit<AgentGroup, 'agents'>;
 
       if (tagType === 'phase') {
         // Phase colors are assigned dynamically from palette
@@ -45,7 +42,6 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
           label: tagValue,
           color: SECTION_COLOR_PALETTE[groupIndex % SECTION_COLOR_PALETTE.length],
           icon: 'layers',
-          order: agent.phaseOrder ?? groupIndex
         };
       } else {
         // Other tags use predefined colors
@@ -55,49 +51,51 @@ export function groupAgentsByTag(agents, tagType = DEFAULT_GROUPING_TAG) {
           label: valueMeta?.label || tagValue,
           color: valueMeta?.color || '#6B7280',
           icon: valueMeta?.icon || tagDef?.icon || 'tag',
-          order: tagDef?.values?.findIndex(v => v.id === tagValue) ?? 999
         };
       }
 
       groups.set(tagValue, {
         ...groupMeta,
-        agents: []
+        agents: [],
       });
     }
 
-    groups.get(tagValue).agents.push(agent);
+    const group = groups.get(tagValue)!;
+    group.agents.push(agent);
   }
 
-  // Convert to array and sort groups by order
-  const sortedGroups = Array.from(groups.values())
-    .sort((a, b) => a.order - b.order);
+  // Convert to array and sort agents within each group
+  const sortedGroups = Array.from(groups.values());
 
-  // Sort agents within each group by agentOrder
   for (const group of sortedGroups) {
     group.agents.sort((a, b) => (a.agentOrder || 0) - (b.agentOrder || 0));
-    group.agentCount = group.agents.length;
+  }
+
+  // Sort groups by phase order if grouping by phase
+  if (tagType === 'phase') {
+    sortedGroups.sort((a, b) => {
+      const aOrder = a.agents[0]?.phaseOrder ?? 999;
+      const bOrder = b.agents[0]?.phaseOrder ?? 999;
+      return aOrder - bOrder;
+    });
   }
 
   return sortedGroups;
 }
 
-
 /**
  * Filter agents by tag values
- * @param {Array} agents - Array of agent objects
- * @param {Object} filters - Filter object: { tagType: [allowedValues] }
- * @returns {Array} Filtered agents
  */
-export function filterAgents(agents, filters) {
+export function filterAgents(agents: Agent[], filters: Record<string, string[]>): Agent[] {
   if (!filters || Object.keys(filters).length === 0) {
     return agents;
   }
 
-  return agents.filter(agent => {
+  return agents.filter((agent) => {
     for (const [tagType, allowedValues] of Object.entries(filters)) {
       if (!allowedValues || allowedValues.length === 0) continue;
 
-      let agentValue;
+      let agentValue: string | undefined;
       if (tagType === 'phase') {
         agentValue = agent.phase;
       } else if (tagType === 'department') {
@@ -119,34 +117,16 @@ export function filterAgents(agents, filters) {
 }
 
 /**
- * Get statistics about agents in groups
+ * Search agents by name, objective, description, or tools
  */
-export function getGroupStats(groups) {
-  const totalAgents = groups.reduce((sum, g) => sum + g.agents.length, 0);
-  const totalGroups = groups.length;
-  const avgPerGroup = totalGroups > 0 ? Math.round(totalAgents / totalGroups) : 0;
-
-  return {
-    totalAgents,
-    totalGroups,
-    avgPerGroup
-  };
-}
-
-/**
- * Search agents by name, objective, or description
- * @param {Array} agents - Array of agents
- * @param {string} query - Search query
- * @returns {Array} Matching agents
- */
-export function searchAgents(agents, query) {
+export function searchAgents(agents: Agent[], query: string): Agent[] {
   if (!query || query.trim().length === 0) {
     return agents;
   }
 
   const lowerQuery = query.toLowerCase().trim();
 
-  return agents.filter(agent => {
+  return agents.filter((agent) => {
     const name = (agent.name || '').toLowerCase();
     const objective = (agent.objective || '').toLowerCase();
     const description = (agent.description || '').toLowerCase();
@@ -159,4 +139,19 @@ export function searchAgents(agents, query) {
       tools.includes(lowerQuery)
     );
   });
+}
+
+/**
+ * Get statistics about agents in groups
+ */
+export function getGroupStats(groups: AgentGroup[]) {
+  const totalAgents = groups.reduce((sum, g) => sum + g.agents.length, 0);
+  const totalGroups = groups.length;
+  const avgPerGroup = totalGroups > 0 ? Math.round(totalAgents / totalGroups) : 0;
+
+  return {
+    totalAgents,
+    totalGroups,
+    avgPerGroup,
+  };
 }
