@@ -5,6 +5,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 
 interface ModalProps {
   isOpen: boolean;
@@ -15,6 +16,9 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, size = 'medium' }: ModalProps) {
+  // Initialize Lucide icons
+  useLucideIcons();
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

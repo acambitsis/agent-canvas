@@ -4,9 +4,10 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 
 interface AgentCardProps {
   agent: Agent;
@@ -18,12 +19,8 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
   const metrics = agent.metrics || { adoption: 0, satisfaction: 0 };
   const roiContribution = agent.roiContribution || 'Medium';
 
-  // Refresh Lucide icons after render
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).lucide) {
-      (window as any).lucide.createIcons();
-    }
-  });
+  // Initialize Lucide icons
+  useLucideIcons();
 
   const statusColor = agent.status === 'active' ? '#10B981' : agent.status === 'draft' ? '#6B7280' : '#F59E0B';
 

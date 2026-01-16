@@ -4,10 +4,11 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Agent, AgentGroup } from '@/types/agent';
 import { AgentCard } from './AgentCard';
 import { useGrouping } from '@/contexts/GroupingContext';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 
 interface AgentGroupSectionProps {
   group: AgentGroup;
@@ -20,12 +21,8 @@ export function AgentGroupSection({ group, onEditAgent, onDeleteAgent, onAddAgen
   const { collapsedSections, toggleSectionCollapse } = useGrouping();
   const isCollapsed = collapsedSections[group.id] || false;
 
-  // Refresh Lucide icons after render
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).lucide) {
-      (window as any).lucide.createIcons();
-    }
-  });
+  // Initialize Lucide icons
+  useLucideIcons();
 
   return (
     <section

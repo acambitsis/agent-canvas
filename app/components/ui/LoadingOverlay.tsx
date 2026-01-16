@@ -4,18 +4,15 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAppState } from '@/contexts/AppStateContext';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 
 export function LoadingOverlay() {
   const { isLoading, loadingMessage } = useAppState();
 
-  // Refresh Lucide icons when loading state changes
-  useEffect(() => {
-    if (isLoading && typeof window !== 'undefined' && (window as any).lucide) {
-      (window as any).lucide.createIcons();
-    }
-  }, [isLoading]);
+  // Initialize Lucide icons
+  useLucideIcons();
 
   if (!isLoading) return null;
 

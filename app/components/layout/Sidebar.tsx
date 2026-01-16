@@ -4,20 +4,17 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 
 export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId } = useCanvas();
 
-  // Refresh Lucide icons
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).lucide) {
-      (window as any).lucide.createIcons();
-    }
-  });
+  // Initialize Lucide icons
+  useLucideIcons();
 
   return (
     <aside className="sidebar">
@@ -45,7 +42,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="sidebar__section">
+      <div className="sidebar__section sidebar__section--grow">
         <h3>Canvases</h3>
         <div className="sidebar__canvas-list">
           {canvases.map((canvas) => (
@@ -61,7 +58,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="sidebar__footer">
+      <div style={{ marginTop: 'auto' }}>
         <div className="sidebar__user">
           <div className="sidebar__user-info">
             <span className="sidebar__user-name">

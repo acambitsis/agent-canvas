@@ -4,10 +4,11 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { useAgents } from '@/contexts/AgentContext';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 import { TAG_TYPES } from '@/utils/config';
 
 interface MainToolbarProps {
@@ -19,12 +20,8 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
   const { agents } = useAgents();
   const { activeTagType, setActiveTagType, searchQuery, setSearchQuery, collapseAll } = useGrouping();
 
-  // Refresh Lucide icons
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).lucide) {
-      (window as any).lucide.createIcons();
-    }
-  });
+  // Initialize Lucide icons
+  useLucideIcons();
 
   return (
     <header className="toolbar">

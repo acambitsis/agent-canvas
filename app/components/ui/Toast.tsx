@@ -4,18 +4,15 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAppState } from '@/contexts/AppStateContext';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 
 export function ToastContainer() {
   const { toasts, hideToast } = useAppState();
 
-  // Refresh Lucide icons when toasts change
-  useEffect(() => {
-    if (toasts.length > 0 && typeof window !== 'undefined' && (window as any).lucide) {
-      (window as any).lucide.createIcons();
-    }
-  }, [toasts]);
+  // Initialize Lucide icons
+  useLucideIcons();
 
   if (toasts.length === 0) return null;
 
