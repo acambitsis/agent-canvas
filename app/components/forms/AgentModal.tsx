@@ -11,7 +11,7 @@ import { useAgents } from '@/contexts/AgentContext';
 import { useAppState } from '@/contexts/AppStateContext';
 import { validateAgentForm } from '@/utils/validation';
 import { getAvailableTools, getToolDisplay } from '@/utils/config';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 
 interface AgentModalProps {
   isOpen: boolean;
@@ -23,9 +23,6 @@ interface AgentModalProps {
 export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalProps) {
   const { createAgent, updateAgent } = useAgents();
   const { showLoading, hideLoading, showToast } = useAppState();
-
-  // Initialize Lucide icons
-  useLucideIcons();
 
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
@@ -200,9 +197,9 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
                     onChange={() => handleToolToggle(tool)}
                   />
                   <div className="checkbox-item__check">
-                    <i data-lucide="check"></i>
+                    <Icon name="check" />
                   </div>
-                  <i data-lucide={toolDisplay.icon} style={{ color: toolDisplay.color }}></i>
+                  <Icon name={toolDisplay.icon} style={{ color: toolDisplay.color }} />
                   <span>{toolDisplay.label}</span>
                 </label>
               );

@@ -27,11 +27,15 @@ interface CanvasContextValue {
 const CanvasContext = createContext<CanvasContextValue | undefined>(undefined);
 
 export function CanvasProvider({ children }: { children: React.ReactNode }) {
-  const { currentOrgId, isInitialized } = useAuth();
+  const { currentOrgId, isInitialized, isAuthenticated } = useAuth();
   const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(CURRENT_CANVAS_KEY, null);
 
   // Subscribe to canvases using official Convex hook
-  const canvases = useQuery(api.canvases.list, currentOrgId ? { workosOrgId: currentOrgId } : 'skip') || [];
+  // Only query if authenticated AND has orgId
+  const canvases = useQuery(
+    api.canvases.list,
+    isAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+  ) || [];
   const createCanvasMutation = useMutation(api.canvases.create);
   const updateCanvasMutation = useMutation(api.canvases.update);
   const deleteCanvasMutation = useMutation(api.canvases.remove);

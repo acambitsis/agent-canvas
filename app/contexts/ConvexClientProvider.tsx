@@ -36,15 +36,16 @@ export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
     initClient();
   }, []);
 
-  // Set up auth when client and token are available
+  // Set up auth when client and token getter are available
   useEffect(() => {
     if (client && getIdToken) {
       setConvexAuth(client, getIdToken);
     }
   }, [client, getIdToken]);
 
+  // Wait for client to be initialized
   if (!client) {
-    return <div>Loading...</div>;
+    return <div>Loading Convex...</div>;
   }
 
   return <ConvexReactProvider client={client}>{children}</ConvexReactProvider>;

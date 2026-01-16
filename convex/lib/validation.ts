@@ -100,6 +100,8 @@ export function validateOptionalUrl(
   fieldName: string
 ): void {
   if (!url) return;
+  // Allow "#" as a placeholder for missing URLs
+  if (url === "#") return;
   try {
     new URL(url);
   } catch {

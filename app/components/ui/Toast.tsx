@@ -6,13 +6,10 @@
 
 import React from 'react';
 import { useAppState } from '@/contexts/AppStateContext';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 
 export function ToastContainer() {
   const { toasts, hideToast } = useAppState();
-
-  // Initialize Lucide icons
-  useLucideIcons();
 
   if (toasts.length === 0) return null;
 
@@ -21,15 +18,15 @@ export function ToastContainer() {
       {toasts.map((toast) => (
         <div key={toast.id} className={`toast toast-${toast.type}`}>
           <div className="toast__content">
-            <i
-              data-lucide={
+            <Icon
+              name={
                 toast.type === 'success'
                   ? 'check-circle'
                   : toast.type === 'error'
                   ? 'alert-circle'
                   : 'info'
               }
-            ></i>
+            />
             <span>{toast.message}</span>
           </div>
           <button
@@ -38,7 +35,7 @@ export function ToastContainer() {
             onClick={() => hideToast(toast.id)}
             aria-label="Close toast"
           >
-            <i data-lucide="x"></i>
+            <Icon name="x" />
           </button>
         </div>
       ))}

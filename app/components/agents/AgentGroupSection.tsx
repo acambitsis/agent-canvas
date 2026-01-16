@@ -8,7 +8,7 @@ import React from 'react';
 import { Agent, AgentGroup } from '@/types/agent';
 import { AgentCard } from './AgentCard';
 import { useGrouping } from '@/contexts/GroupingContext';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 
 interface AgentGroupSectionProps {
   group: AgentGroup;
@@ -20,9 +20,6 @@ interface AgentGroupSectionProps {
 export function AgentGroupSection({ group, onEditAgent, onDeleteAgent, onAddAgent }: AgentGroupSectionProps) {
   const { collapsedSections, toggleSectionCollapse } = useGrouping();
   const isCollapsed = collapsedSections[group.id] || false;
-
-  // Initialize Lucide icons
-  useLucideIcons();
 
   return (
     <section
@@ -37,15 +34,15 @@ export function AgentGroupSection({ group, onEditAgent, onDeleteAgent, onAddAgen
           aria-expanded={!isCollapsed}
           aria-label={isCollapsed ? 'Expand section' : 'Collapse section'}
         >
-          <i data-lucide={group.icon || 'layers'}></i>
+          <Icon name={group.icon || 'layers'} />
           <h2>{group.label}</h2>
           <span className="agent-group__count">{group.agents.length}</span>
-          <i data-lucide={isCollapsed ? 'chevron-down' : 'chevron-up'} className="chevron"></i>
+          <Icon name={isCollapsed ? 'chevron-down' : 'chevron-up'} className="chevron" />
         </button>
 
         <div className="agent-group__actions">
           <button className="btn btn--sm" onClick={() => onAddAgent(group.id)} title="Add agent">
-            <i data-lucide="plus"></i>
+            <Icon name="plus" />
           </button>
         </div>
       </div>

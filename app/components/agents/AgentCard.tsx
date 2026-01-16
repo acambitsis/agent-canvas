@@ -7,7 +7,7 @@
 import React from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 
 interface AgentCardProps {
   agent: Agent;
@@ -18,9 +18,6 @@ interface AgentCardProps {
 export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
   const metrics = agent.metrics || { adoption: 0, satisfaction: 0 };
   const roiContribution = agent.roiContribution || 'Medium';
-
-  // Initialize Lucide icons
-  useLucideIcons();
 
   const statusColor = agent.status === 'active' ? '#10B981' : agent.status === 'draft' ? '#6B7280' : '#F59E0B';
 
@@ -33,10 +30,10 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
         <h3 className="agent-card__name">{agent.name}</h3>
         <div className="agent-card__actions">
           <button className="agent-card__menu" onClick={onEdit} title="Edit agent">
-            <i data-lucide="edit-3"></i>
+            <Icon name="edit-3" />
           </button>
           <button className="agent-card__menu" onClick={onDelete} title="Delete agent">
-            <i data-lucide="trash-2"></i>
+            <Icon name="trash-2" />
           </button>
         </div>
       </div>
@@ -56,7 +53,7 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
             const toolDisplay = getToolDisplay(tool);
             return (
               <span key={tool} className="chip" style={{ backgroundColor: toolDisplay.color }}>
-                <i data-lucide={toolDisplay.icon}></i>
+                <Icon name={toolDisplay.icon} />
                 {toolDisplay.label}
               </span>
             );
@@ -73,7 +70,7 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
         {agent.journeySteps && agent.journeySteps.length > 0 && (
           <div className="agent-card__journey">
             <button className="btn-link" title="View journey">
-              <i data-lucide="route"></i>
+              <Icon name="route" />
             </button>
           </div>
         )}
@@ -83,12 +80,12 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
         <div className="agent-card__actions">
           {agent.demoLink && (
             <a href={agent.demoLink} target="_blank" rel="noopener noreferrer" className="btn-link">
-              <i data-lucide="external-link"></i> Demo
+              <Icon name="external-link" /> Demo
             </a>
           )}
           {agent.videoLink && (
             <a href={agent.videoLink} target="_blank" rel="noopener noreferrer" className="btn-link">
-              <i data-lucide="video"></i> Video
+              <Icon name="video" /> Video
             </a>
           )}
         </div>

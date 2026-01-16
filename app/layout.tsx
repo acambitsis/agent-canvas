@@ -24,7 +24,6 @@ export default function RootLayout({
             }),
           }}
         />
-        <script src="https://unpkg.com/lucide@latest" async></script>
       </head>
       <body className="app-layout">{children}</body>
     </html>

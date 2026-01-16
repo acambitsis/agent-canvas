@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 import { ImportYamlModal } from '../forms/ImportYamlModal';
 
 export function Sidebar() {
@@ -15,14 +15,11 @@ export function Sidebar() {
   const { canvases, currentCanvasId, setCurrentCanvasId } = useCanvas();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  // Initialize Lucide icons
-  useLucideIcons();
-
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
         <div className="sidebar__logo">
-          <i data-lucide="layout-grid"></i>
+          <Icon name="layout-grid" />
           <span>AgentCanvas</span>
         </div>
       </div>
@@ -53,7 +50,7 @@ export function Sidebar() {
             onClick={() => setIsImportModalOpen(true)}
             title="Import from YAML"
           >
-            <i data-lucide="upload"></i>
+            <Icon name="upload" />
           </button>
         </div>
         <div className="sidebar__canvas-list">
@@ -63,7 +60,7 @@ export function Sidebar() {
               className={`sidebar__canvas-item ${currentCanvasId === canvas._id ? 'active' : ''}`}
               onClick={() => setCurrentCanvasId(canvas._id)}
             >
-              <i data-lucide="file-text"></i>
+              <Icon name="file-text" />
               <span>{canvas.title}</span>
             </button>
           ))}
@@ -79,7 +76,7 @@ export function Sidebar() {
             <span className="sidebar__user-email">{user?.email}</span>
           </div>
           <button className="icon-btn" onClick={signOut} title="Sign out">
-            <i data-lucide="log-out"></i>
+            <Icon name="log-out" />
           </button>
         </div>
       </div>

@@ -47,6 +47,9 @@ export async function GET(request: Request) {
 
     const { user, access_token, refresh_token, id_token } = tokenData;
 
+    // Debug: Log whether WorkOS returned an id_token
+    console.log('[Auth Callback] WorkOS id_token present:', !!id_token);
+
     // Use WorkOS id_token if provided, otherwise generate custom JWT for Convex
     const idTokenForConvex = await getIdTokenForConvex(id_token, user);
 

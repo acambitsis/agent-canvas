@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { useAgents } from '@/contexts/AgentContext';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 import { TAG_TYPES } from '@/utils/config';
 
 interface MainToolbarProps {
@@ -21,9 +21,6 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
   const { activeTagType, setActiveTagType, collapsedSections, collapseAll } = useGrouping();
   const [isGroupingOpen, setIsGroupingOpen] = useState(false);
 
-  // Initialize Lucide icons
-  useLucideIcons();
-
   const activeTag = TAG_TYPES[activeTagType as keyof typeof TAG_TYPES];
   const allCollapsed = Object.values(collapsedSections).every(Boolean);
 
@@ -32,7 +29,7 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
       <div className="toolbar__left">
         <h1 className="toolbar__title">{currentCanvas?.title || 'AgentCanvas'}</h1>
         <span className="toolbar__badge">
-          <i data-lucide="bot"></i>
+          <Icon name="bot" />
           <span>{agents.length} Agents</span>
         </span>
       </div>
@@ -47,7 +44,7 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             onClick={() => setIsGroupingOpen(!isGroupingOpen)}
           >
             <span>{activeTag?.label || 'Phase'}</span>
-            <i data-lucide="chevron-down"></i>
+            <Icon name="chevron-down" />
           </button>
           <div className={`toolbar__dropdown ${isGroupingOpen ? 'open' : ''}`}>
             {Object.values(TAG_TYPES).map((tag) => (
@@ -59,7 +56,7 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
                   setIsGroupingOpen(false);
                 }}
               >
-                <i data-lucide={tag.icon}></i>
+                <Icon name={tag.icon} />
                 <span>{tag.label}</span>
               </div>
             ))}
@@ -73,13 +70,13 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
           onClick={() => collapseAll(!allCollapsed)}
           title={allCollapsed ? 'Expand all' : 'Collapse all'}
         >
-          <i data-lucide={allCollapsed ? 'chevrons-up' : 'chevrons-down'}></i>
+          <Icon name={allCollapsed ? 'chevrons-up' : 'chevrons-down'} />
           <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
         </button>
 
         {/* Add Agent Button */}
         <button type="button" className="btn btn--primary" onClick={onAddAgent}>
-          <i data-lucide="plus"></i>
+          <Icon name="plus" />
           <span>Add Agent</span>
         </button>
       </div>

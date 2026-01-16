@@ -22,11 +22,15 @@ interface AgentContextValue {
 const AgentContext = createContext<AgentContextValue | undefined>(undefined);
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
-  const { isInitialized } = useAuth();
+  const { isInitialized, isAuthenticated } = useAuth();
   const { currentCanvasId } = useCanvas();
 
   // Subscribe to agents using official Convex hook
-  const agents = useQuery(api.agents.list, currentCanvasId ? { canvasId: currentCanvasId as any } : 'skip') || [];
+  // Only query if authenticated AND has canvasId
+  const agents = useQuery(
+    api.agents.list,
+    isAuthenticated && currentCanvasId ? { canvasId: currentCanvasId as any } : 'skip'
+  ) || [];
   const createAgentMutation = useMutation(api.agents.create);
   const updateAgentMutation = useMutation(api.agents.update);
   const deleteAgentMutation = useMutation(api.agents.remove);

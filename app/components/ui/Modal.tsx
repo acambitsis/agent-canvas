@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,8 +16,6 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, size = 'medium' }: ModalProps) {
-  // Initialize Lucide icons
-  useLucideIcons();
 
   // Handle escape key
   useEffect(() => {
@@ -63,7 +61,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'medium' }: Mod
             onClick={onClose}
             aria-label="Close modal"
           >
-            <i data-lucide="x"></i>
+            <Icon name="x" />
           </button>
         </div>
         <div className="modal__body">{children}</div>

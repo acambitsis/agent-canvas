@@ -9,7 +9,7 @@ import { Modal } from '../ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useMutation } from '@/hooks/useConvex';
-import { useLucideIcons } from '@/hooks/useLucideIcons';
+import { Icon } from '@/components/ui/Icon';
 import { prepareYamlImport, extractTitleFromYaml } from '@/utils/yamlImport';
 import { api } from '../../../convex/_generated/api';
 
@@ -32,9 +32,6 @@ export function ImportYamlModal({ isOpen, onClose, onSuccess }: ImportYamlModalP
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Initialize Lucide icons when modal content changes
-  useLucideIcons();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -157,7 +154,7 @@ export function ImportYamlModal({ isOpen, onClose, onSuccess }: ImportYamlModalP
             onClick={handleBrowseClick}
             disabled={isLoading}
           >
-            <i data-lucide="upload"></i>
+            <Icon name="upload" />
             <span>{yamlText ? 'Change File' : 'Choose File'}</span>
           </button>
           {yamlText && (

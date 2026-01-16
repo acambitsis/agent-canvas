@@ -117,17 +117,17 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
         }
 
         // Parse metrics - only include if we have valid numeric values
-        const adoption = agent.metrics?.usageThisWeek
-          ? parseFloat(agent.metrics.usageThisWeek)
-          : undefined;
+        // Note: usageThisWeek is a usage count, not a 0-100 percentage, so we skip it
+        // timeSaved is a percentage (e.g., "60%") which we parse
         const satisfaction = agent.metrics?.timeSaved
           ? parseFloat(agent.metrics.timeSaved)
           : undefined;
 
-        // Only include metrics if both values are valid numbers
-        const metrics = (adoption !== undefined && !isNaN(adoption) &&
-                        satisfaction !== undefined && !isNaN(satisfaction))
-          ? { adoption, satisfaction }
+        // For adoption, we could derive it from usageThisWeek or set a default
+        // For now, set to undefined if no valid timeSaved percentage
+        const metrics = (satisfaction !== undefined && !isNaN(satisfaction) &&
+                        satisfaction >= 0 && satisfaction <= 100)
+          ? { adoption: satisfaction, satisfaction } // Use same value for both
           : undefined;
 
         agents.push({
