@@ -1,10 +1,10 @@
 /**
- * MainToolbar - Top toolbar with canvas title, grouping, search
+ * MainToolbar - Top toolbar with canvas title, grouping controls, actions
  */
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { useAgents } from '@/contexts/AgentContext';
@@ -18,52 +18,69 @@ interface MainToolbarProps {
 export function MainToolbar({ onAddAgent }: MainToolbarProps) {
   const { currentCanvas } = useCanvas();
   const { agents } = useAgents();
-  const { activeTagType, setActiveTagType, searchQuery, setSearchQuery, collapseAll } = useGrouping();
+  const { activeTagType, setActiveTagType, collapsedSections, collapseAll } = useGrouping();
+  const [isGroupingOpen, setIsGroupingOpen] = useState(false);
 
   // Initialize Lucide icons
   useLucideIcons();
+
+  const activeTag = TAG_TYPES[activeTagType as keyof typeof TAG_TYPES];
+  const allCollapsed = Object.values(collapsedSections).every(Boolean);
 
   return (
     <header className="toolbar">
       <div className="toolbar__left">
         <h1 className="toolbar__title">{currentCanvas?.title || 'AgentCanvas'}</h1>
-        <span className="badge">{agents.length} agents</span>
+        <span className="toolbar__badge">
+          <i data-lucide="bot"></i>
+          <span>{agents.length} Agents</span>
+        </span>
       </div>
 
       <div className="toolbar__right">
-        <div className="toolbar__search">
-          <i data-lucide="search"></i>
-          <input
-            type="search"
-            placeholder="Search agents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        {/* Grouping Control */}
+        <div className="toolbar__control">
+          <span className="toolbar__control-label">Group by</span>
+          <button
+            type="button"
+            className="toolbar__control-btn"
+            onClick={() => setIsGroupingOpen(!isGroupingOpen)}
+          >
+            <span>{activeTag?.label || 'Phase'}</span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div className={`toolbar__dropdown ${isGroupingOpen ? 'open' : ''}`}>
+            {Object.values(TAG_TYPES).map((tag) => (
+              <div
+                key={tag.id}
+                className={`toolbar__dropdown-item ${activeTagType === tag.id ? 'is-active' : ''}`}
+                onClick={() => {
+                  setActiveTagType(tag.id);
+                  setIsGroupingOpen(false);
+                }}
+              >
+                <i data-lucide={tag.icon}></i>
+                <span>{tag.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <select
-          className="toolbar__grouping"
-          value={activeTagType}
-          onChange={(e) => setActiveTagType(e.target.value)}
+        {/* Collapse/Expand All Button */}
+        <button
+          type="button"
+          className="toolbar__btn"
+          onClick={() => collapseAll(!allCollapsed)}
+          title={allCollapsed ? 'Expand all' : 'Collapse all'}
         >
-          {Object.values(TAG_TYPES).map((tag) => (
-            <option key={tag.id} value={tag.id}>
-              Group by {tag.label}
-            </option>
-          ))}
-        </select>
-
-        <button className="btn-secondary" onClick={() => collapseAll(false)} title="Expand all">
-          <i data-lucide="maximize-2"></i>
+          <i data-lucide={allCollapsed ? 'chevrons-up' : 'chevrons-down'}></i>
+          <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
         </button>
 
-        <button className="btn-secondary" onClick={() => collapseAll(true)} title="Collapse all">
-          <i data-lucide="minimize-2"></i>
-        </button>
-
-        <button className="btn-primary" onClick={onAddAgent}>
+        {/* Add Agent Button */}
+        <button type="button" className="btn btn--primary" onClick={onAddAgent}>
           <i data-lucide="plus"></i>
-          Add Agent
+          <span>Add Agent</span>
         </button>
       </div>
     </header>
