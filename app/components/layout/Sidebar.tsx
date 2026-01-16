@@ -30,6 +30,7 @@ export function Sidebar() {
           <label htmlFor="org-select">Organization</label>
           <select
             id="org-select"
+            className="form-select"
             value={currentOrgId || ''}
             onChange={(e) => setCurrentOrgId(e.target.value)}
           >

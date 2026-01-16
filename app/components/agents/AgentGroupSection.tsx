@@ -44,7 +44,7 @@ export function AgentGroupSection({ group, onEditAgent, onDeleteAgent, onAddAgen
         </button>
 
         <div className="agent-group__actions">
-          <button className="btn-sm" onClick={() => onAddAgent(group.id)} title="Add agent">
+          <button className="btn btn--sm" onClick={() => onAddAgent(group.id)} title="Add agent">
             <i data-lucide="plus"></i>
           </button>
         </div>

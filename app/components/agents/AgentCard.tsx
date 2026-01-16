@@ -31,11 +31,11 @@ export function AgentCard({ agent, onEdit, onDelete }: AgentCardProps) {
       <div className="agent-card__header">
         <div className="agent-card__number">{agent.agentOrder || 0}</div>
         <h3 className="agent-card__name">{agent.name}</h3>
-        <div className="agent-card__menu">
-          <button className="btn-icon" onClick={onEdit} title="Edit agent">
+        <div className="agent-card__actions">
+          <button className="agent-card__menu" onClick={onEdit} title="Edit agent">
             <i data-lucide="edit-3"></i>
           </button>
-          <button className="btn-icon" onClick={onDelete} title="Delete agent">
+          <button className="agent-card__menu" onClick={onDelete} title="Delete agent">
             <i data-lucide="trash-2"></i>
           </button>
         </div>
