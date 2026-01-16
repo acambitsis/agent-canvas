@@ -16,9 +16,15 @@ export function useLucideIcons() {
     // Try immediately
     initIcons();
 
-    // Also try after a short delay to catch late-loading icons
-    const timer = setTimeout(initIcons, 100);
+    // Try multiple times to catch dynamically added icons
+    const timers = [
+      setTimeout(initIcons, 50),
+      setTimeout(initIcons, 150),
+      setTimeout(initIcons, 300),
+    ];
 
-    return () => clearTimeout(timer);
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
   });
 }

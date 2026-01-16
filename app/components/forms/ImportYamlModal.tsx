@@ -4,11 +4,12 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useMutation } from '@/hooks/useConvex';
+import { useLucideIcons } from '@/hooks/useLucideIcons';
 import { prepareYamlImport, extractTitleFromYaml } from '@/utils/yamlImport';
 import { api } from '../../../convex/_generated/api';
 
@@ -31,6 +32,9 @@ export function ImportYamlModal({ isOpen, onClose, onSuccess }: ImportYamlModalP
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize Lucide icons when modal content changes
+  useLucideIcons();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
