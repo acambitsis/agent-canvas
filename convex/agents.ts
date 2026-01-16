@@ -12,7 +12,24 @@ import {
   validateRoiContribution,
 } from "./lib/validation";
 
-// Shared agent input validator for bulk operations
+// Shared validator components for reuse
+const metricsValidator = v.optional(
+  v.object({
+    adoption: v.number(),
+    satisfaction: v.number(),
+  })
+);
+
+const roiValidator = v.optional(
+  v.union(
+    v.literal("Very High"),
+    v.literal("High"),
+    v.literal("Medium"),
+    v.literal("Low")
+  )
+);
+
+// Complete agent fields for bulk operations
 const agentInputValidator = v.object({
   phase: v.string(),
   phaseOrder: v.number(),
@@ -24,23 +41,29 @@ const agentInputValidator = v.object({
   journeySteps: v.array(v.string()),
   demoLink: v.optional(v.string()),
   videoLink: v.optional(v.string()),
-  metrics: v.optional(
-    v.object({
-      adoption: v.number(),
-      satisfaction: v.number(),
-    })
-  ),
-  roiContribution: v.optional(
-    v.union(
-      v.literal("Very High"),
-      v.literal("High"),
-      v.literal("Medium"),
-      v.literal("Low")
-    )
-  ),
+  metrics: metricsValidator,
+  roiContribution: roiValidator,
   department: v.optional(v.string()),
   status: v.optional(v.string()),
 });
+
+// Partial agent fields for updates
+const agentUpdateFields = {
+  phase: v.optional(v.string()),
+  phaseOrder: v.optional(v.number()),
+  agentOrder: v.optional(v.number()),
+  name: v.optional(v.string()),
+  objective: v.optional(v.string()),
+  description: v.optional(v.string()),
+  tools: v.optional(v.array(v.string())),
+  journeySteps: v.optional(v.array(v.string())),
+  demoLink: v.optional(v.string()),
+  videoLink: v.optional(v.string()),
+  metrics: metricsValidator,
+  roiContribution: roiValidator,
+  department: v.optional(v.string()),
+  status: v.optional(v.string()),
+};
 
 // Helper to verify canvas access and return canvas
 async function getCanvasWithAccess(
@@ -85,6 +108,23 @@ function validateAgentData(data: {
   validateRoiContribution(data.roiContribution);
   validateOptionalUrl(data.demoLink, "demoLink");
   validateOptionalUrl(data.videoLink, "videoLink");
+}
+
+// Helper to record agent history
+async function recordHistory(
+  ctx: MutationCtx,
+  agentId: Id<"agents">,
+  workosUserId: string,
+  changeType: "create" | "update" | "delete",
+  previousData?: any
+): Promise<void> {
+  await ctx.db.insert("agentHistory", {
+    agentId,
+    changedBy: workosUserId,
+    changedAt: Date.now(),
+    changeType,
+    previousData,
+  });
 }
 
 /**
@@ -139,20 +179,8 @@ export const create = mutation({
     journeySteps: v.array(v.string()),
     demoLink: v.optional(v.string()),
     videoLink: v.optional(v.string()),
-    metrics: v.optional(
-      v.object({
-        adoption: v.number(),
-        satisfaction: v.number(),
-      })
-    ),
-    roiContribution: v.optional(
-      v.union(
-        v.literal("Very High"),
-        v.literal("High"),
-        v.literal("Medium"),
-        v.literal("Low")
-      )
-    ),
+    metrics: metricsValidator,
+    roiContribution: roiValidator,
     department: v.optional(v.string()),
     status: v.optional(v.string()),
   },
@@ -171,13 +199,7 @@ export const create = mutation({
       updatedAt: now,
     });
 
-    await ctx.db.insert("agentHistory", {
-      agentId,
-      changedBy: auth.workosUserId,
-      changedAt: now,
-      changeType: "create",
-      previousData: undefined,
-    });
+    await recordHistory(ctx, agentId, auth.workosUserId, "create");
 
     return agentId;
   },
@@ -189,32 +211,7 @@ export const create = mutation({
 export const update = mutation({
   args: {
     agentId: v.id("agents"),
-    phase: v.optional(v.string()),
-    phaseOrder: v.optional(v.number()),
-    agentOrder: v.optional(v.number()),
-    name: v.optional(v.string()),
-    objective: v.optional(v.string()),
-    description: v.optional(v.string()),
-    tools: v.optional(v.array(v.string())),
-    journeySteps: v.optional(v.array(v.string())),
-    demoLink: v.optional(v.string()),
-    videoLink: v.optional(v.string()),
-    metrics: v.optional(
-      v.object({
-        adoption: v.number(),
-        satisfaction: v.number(),
-      })
-    ),
-    roiContribution: v.optional(
-      v.union(
-        v.literal("Very High"),
-        v.literal("High"),
-        v.literal("Medium"),
-        v.literal("Low")
-      )
-    ),
-    department: v.optional(v.string()),
-    status: v.optional(v.string()),
+    ...agentUpdateFields,
   },
   handler: async (ctx, { agentId, ...updates }) => {
     const auth = await requireAuth(ctx);
@@ -241,13 +238,7 @@ export const update = mutation({
       updatedAt: now,
     });
 
-    await ctx.db.insert("agentHistory", {
-      agentId,
-      changedBy: auth.workosUserId,
-      changedAt: now,
-      changeType: "update",
-      previousData,
-    });
+    await recordHistory(ctx, agentId, auth.workosUserId, "update", previousData);
   },
 });
 
@@ -262,14 +253,7 @@ export const remove = mutation({
 
     const now = Date.now();
 
-    // Record history before deletion
-    await ctx.db.insert("agentHistory", {
-      agentId,
-      changedBy: auth.workosUserId,
-      changedAt: now,
-      changeType: "delete",
-      previousData: getAgentSnapshot(agent),
-    });
+    await recordHistory(ctx, agentId, auth.workosUserId, "delete", getAgentSnapshot(agent));
 
     // Soft delete instead of hard delete
     await ctx.db.patch(agentId, {
@@ -305,8 +289,7 @@ export const reorder = mutation({
 });
 
 /**
- * Rename a phase (a "section" in the UI) by updating agents.phase.
- * Optionally normalizes phaseOrder across phases in the canvas.
+ * Rename a phase by updating all agents with that phase name
  */
 export const renamePhase = mutation({
   args: {
@@ -338,51 +321,15 @@ export const renamePhase = mutation({
       return { updatedCount: 0 };
     }
 
-    // Apply phase rename
+    // Apply phase rename with history tracking
     for (const agent of toRename) {
-      await ctx.db.insert("agentHistory", {
-        agentId: agent._id,
-        changedBy: auth.workosUserId,
-        changedAt: now,
-        changeType: "update",
-        previousData: getAgentSnapshot(agent),
-      });
+      await recordHistory(ctx, agent._id, auth.workosUserId, "update", getAgentSnapshot(agent));
 
       await ctx.db.patch(agent._id, {
         phase: toPhase,
         updatedBy: auth.workosUserId,
         updatedAt: now,
       });
-    }
-
-    // Normalize phaseOrder across phases (stable by previous min phaseOrder, then name)
-    const agentsAfter = agents.map((a) =>
-      a.phase === fromPhase ? { ...a, phase: toPhase } : a
-    );
-    const phaseMinOrder = new Map<string, number>();
-    for (const a of agentsAfter) {
-      const phase = a.phase || "Uncategorized";
-      const current = phaseMinOrder.get(phase);
-      const order = Number.isFinite(a.phaseOrder) ? a.phaseOrder : 0;
-      phaseMinOrder.set(phase, current === undefined ? order : Math.min(current, order));
-    }
-
-    const orderedPhases = Array.from(phaseMinOrder.entries()).sort(
-      (a, b) => a[1] - b[1] || a[0].localeCompare(b[0])
-    );
-    const phaseOrderMap = new Map<string, number>();
-    orderedPhases.forEach(([phase], idx) => phaseOrderMap.set(phase, idx));
-
-    for (const a of agentsAfter) {
-      const phase = a.phase || "Uncategorized";
-      const desired = phaseOrderMap.get(phase) ?? 0;
-      if (a.phaseOrder !== desired) {
-        await ctx.db.patch(a._id, {
-          phaseOrder: desired,
-          updatedBy: auth.workosUserId,
-          updatedAt: now,
-        });
-      }
     }
 
     return { updatedCount: toRename.length };
@@ -417,13 +364,7 @@ export const bulkCreate = mutation({
         updatedAt: now,
       });
 
-      await ctx.db.insert("agentHistory", {
-        agentId,
-        changedBy: auth.workosUserId,
-        changedAt: now,
-        changeType: "create",
-        previousData: undefined,
-      });
+      await recordHistory(ctx, agentId, auth.workosUserId, "create");
 
       createdIds.push(agentId);
     }
@@ -459,13 +400,7 @@ export const bulkReplace = mutation({
 
     // Record history and soft-delete existing agents
     for (const agent of existingAgents) {
-      await ctx.db.insert("agentHistory", {
-        agentId: agent._id,
-        changedBy: auth.workosUserId,
-        changedAt: now,
-        changeType: "delete",
-        previousData: getAgentSnapshot(agent),
-      });
+      await recordHistory(ctx, agent._id, auth.workosUserId, "delete", getAgentSnapshot(agent));
 
       // Soft delete instead of hard delete
       await ctx.db.patch(agent._id, {
@@ -487,13 +422,7 @@ export const bulkReplace = mutation({
         updatedAt: now,
       });
 
-      await ctx.db.insert("agentHistory", {
-        agentId,
-        changedBy: auth.workosUserId,
-        changedAt: now,
-        changeType: "create",
-        previousData: undefined,
-      });
+      await recordHistory(ctx, agentId, auth.workosUserId, "create");
 
       createdIds.push(agentId);
     }
