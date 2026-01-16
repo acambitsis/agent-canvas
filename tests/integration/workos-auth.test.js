@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 /**
  * Test WorkOS authentication flow
- * Tests the auth patterns from api/auth/* endpoints
+ * Tests the auth patterns from app/api/auth/* route handlers
+ * Note: These tests verify the logic patterns; actual route handler tests
+ * should be added separately to test Next.js Request/Response handling
  */
 
 // Helper to parse cookie header into key-value pairs

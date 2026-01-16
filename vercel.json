@@ -1,16 +1,3 @@
 {
-  "rewrites": [
-    {
-      "source": "/login",
-      "destination": "/login.html"
-    },
-    {
-      "source": "/login/:path*",
-      "destination": "/login.html"
-    },
-    {
-      "source": "/callback",
-      "destination": "/callback.html"
-    }
-  ]
+  "rewrites": []
 }

@@ -106,3 +106,18 @@ export function validateOptionalUrl(
     throw new Error(`Validation: ${fieldName} must be a valid URL`);
   }
 }
+
+/**
+ * Validate ROI contribution value
+ */
+export function validateRoiContribution(
+  roiContribution?: "Very High" | "High" | "Medium" | "Low"
+): void {
+  if (!roiContribution) return;
+  const validValues = ["Very High", "High", "Medium", "Low"];
+  if (!validValues.includes(roiContribution)) {
+    throw new Error(
+      `Validation: roiContribution must be one of: ${validValues.join(", ")}`
+    );
+  }
+}

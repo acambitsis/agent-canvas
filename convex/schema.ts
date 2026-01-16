@@ -47,17 +47,18 @@ export default defineSchema({
         satisfaction: v.number(),
       })
     ),
-    // Typed tag fields for dynamic grouping and filtering
-    tags: v.optional(
-      v.object({
-        department: v.optional(v.string()), // "sales", "engineering", "marketing", etc.
-        status: v.optional(v.string()), // "active", "draft", "deprecated"
-        implementationStatus: v.optional(v.string()), // "planning", "in-progress", "deployed"
-        priority: v.optional(v.string()), // "p0", "p1", "p2", "p3"
-        owner: v.optional(v.string()), // User/team identifier
-      })
+    roiContribution: v.optional(
+      v.union(
+        v.literal("Very High"),
+        v.literal("High"),
+        v.literal("Medium"),
+        v.literal("Low")
+      )
     ),
-    payload: v.optional(v.any()), // Portable JSON payload for round-trip fidelity and extensibility
+    // Fixed tag fields for grouping and filtering (same across all orgs)
+    department: v.optional(v.string()), // e.g., "sales", "engineering", "marketing"
+    status: v.optional(v.string()), // e.g., "active", "draft", "deprecated"
+    // payload removed - we're Convex-native, no need for round-trip fidelity
     deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(),
     updatedBy: v.string(),

@@ -1,0 +1,117 @@
+/* Import existing styles */
+@import '/styles.css';
+
+/* Login page specific styles */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+  margin: 20px;
+  padding: 2rem;
+}
+
+.login-title {
+  margin-top: 0;
+  text-align: center;
+  color: var(--brand-primary);
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.sign-in-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--brand-primary);
+  color: white;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.sign-in-btn:hover:not(:disabled) {
+  background: var(--brand-primary-strong);
+}
+
+.sign-in-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.sign-in-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: #dc3545;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  display: none;
+}
+
+.error-message.show {
+  display: block;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.features {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.features li::before {
+  content: '✓';
+  color: var(--brand-primary);
+  font-weight: bold;
+}

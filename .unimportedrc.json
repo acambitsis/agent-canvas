@@ -1,0 +1,53 @@
+{
+  "entry": [
+    "client/main.js",
+    "index.html",
+    "login.html",
+    "callback.html",
+    "api/**/*.js",
+    "convex/**/*.ts",
+    "tests/**/*.js",
+    "vitest.config.js"
+  ],
+  "ignorePatterns": [
+    "_generated",
+    "node_modules",
+    "*.test.js",
+    "*.d.ts",
+    "api.d.ts",
+    "api.js",
+    "server.d.ts",
+    "server.js",
+    "dataModel.d.ts",
+    "scripts/**"
+  ],
+  "ignoreUnusedEnvironments": [
+    "browser",
+    "node"
+  ],
+  "ignoreUnusedDependencies": [
+    "js-yaml"
+  ],
+  "ignoreUnimported": [
+    "tests",
+    "tests/fixtures",
+    "tests/integration",
+    "tests/integration/session-encryption.test.js",
+    "tests/integration/workos-auth.test.js",
+    "tests/README.md",
+    "tests/setup.js",
+    "tests/unit",
+    "tests/unit/convex-subscriptions.test.js",
+    "tests/unit/legacy-import.test.js",
+    "tests/unit/validation.test.js",
+    "vitest.config.js",
+    "scripts",
+    "scripts/find-unused.js"
+  ],
+  "ignoreUnresolved": [
+    "_generated/**",
+    "*.d.ts"
+  ],
+  "ignoreUnused": [],
+  "respectGitignore": true
+}
