@@ -21,14 +21,12 @@ export function getConvexClient(convexUrl: string): ConvexReactClient {
 
 /**
  * Set auth on the client
+ * Returns undefined if token not available yet, allowing Convex to retry later
  */
 export function setConvexAuth(client: ConvexReactClient, getIdToken: () => string | null) {
   client.setAuth(async () => {
     const token = getIdToken();
-    if (!token) {
-      throw new Error('No authentication token available');
-    }
-    return token;
+    return token || undefined;
   });
 }
 
