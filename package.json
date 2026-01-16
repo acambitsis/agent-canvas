@@ -16,6 +16,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/ui": "^1.0.0",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.2",
     "jsdom": "^23.0.0",
     "typescript": "^5.9.3",
     "unimported": "^1.31.1",

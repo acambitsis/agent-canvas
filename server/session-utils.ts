@@ -58,7 +58,7 @@ async function getEncryptionKey(): Promise<Uint8Array> {
   return cachedKey;
 }
 
-export interface SessionData {
+export interface SessionData extends jose.JWTPayload {
   accessToken: string;
   refreshToken: string;
   idToken: string;
@@ -176,13 +176,13 @@ export function json(data: unknown, status = 200): Response {
 }
 
 // Cache for static JWT signing key (RS256)
-let privateKeyCache: jose.KeyLike | null = null;
+let privateKeyCache: Uint8Array | CryptoKey | null = null;
 
 /**
  * Get the static RSA private key from environment variable
  * This key must match the public key embedded in Convex auth config
  */
-async function getStaticPrivateKey(): Promise<jose.KeyLike> {
+async function getStaticPrivateKey(): Promise<Uint8Array | CryptoKey> {
   if (privateKeyCache) {
     return privateKeyCache;
   }

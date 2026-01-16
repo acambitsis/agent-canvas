@@ -1,0 +1,271 @@
+<!-- App Shell - loaded by app/page.tsx after authentication -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <div class="sidebar__logo-icon">
+      <i data-lucide="workflow"></i>
+    </div>
+    <span class="sidebar__logo-text">AgentCanvas</span>
+  </div>
+
+  <div class="sidebar__section">
+    <div class="sidebar__org-switcher" id="orgSwitcher">
+      <button type="button" class="sidebar__org-trigger" id="orgSwitcherTrigger">
+        <div class="sidebar__org-icon">
+          <i data-lucide="building-2"></i>
+        </div>
+        <div class="sidebar__org-info">
+          <span class="sidebar__org-label">Organization</span>
+          <span class="sidebar__org-name" id="currentOrgName">Select org...</span>
+        </div>
+        <i data-lucide="chevrons-up-down" class="sidebar__org-chevron"></i>
+      </button>
+      <div class="sidebar__dropdown" id="orgDropdown"></div>
+    </div>
+  </div>
+
+  <div class="sidebar__section sidebar__section--grow">
+    <div class="sidebar__section-header">
+      <span class="sidebar__section-title">Canvases</span>
+      <button type="button" class="sidebar__action-btn" id="newCanvasBtn" title="New Canvas">
+        <i data-lucide="plus"></i>
+      </button>
+    </div>
+    <div class="sidebar__canvas-list" id="canvasList"></div>
+  </div>
+
+  <div class="sidebar__section">
+    <button type="button" class="sidebar__menu-item" id="importCanvasBtn">
+      <i data-lucide="upload"></i>
+      <span>Import Canvas</span>
+    </button>
+  </div>
+
+  <div class="sidebar__user" id="userMenuTrigger">
+    <div class="sidebar__user-avatar" id="userAvatar">U</div>
+    <div class="sidebar__user-info">
+      <span class="sidebar__user-name" id="userDisplayName">User</span>
+      <span class="sidebar__user-email" id="userEmail">user@example.com</span>
+    </div>
+    <button type="button" class="sidebar__user-menu-btn" id="userMenuBtn">
+      <i data-lucide="more-vertical"></i>
+    </button>
+    <div class="sidebar__dropdown sidebar__dropdown--up" id="userMenuDropdown">
+      <div class="sidebar__dropdown-item" id="signOutBtn" data-action="signout">
+        <i data-lucide="log-out"></i>
+        <span>Sign out</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="main-wrapper">
+  <header class="toolbar">
+    <div class="toolbar__left">
+      <button type="button" class="toolbar__menu-toggle" id="sidebarToggle">
+        <i data-lucide="menu"></i>
+      </button>
+
+      <div class="toolbar__title-group">
+        <h1 class="toolbar__title" id="documentTitle">AgentCanvas</h1>
+        <button type="button" class="toolbar__title-btn" id="boardMenuTrigger" title="Canvas options">
+          <i data-lucide="chevron-down"></i>
+        </button>
+        <div class="toolbar__dropdown" id="board-menu">
+          <div class="toolbar__dropdown-item" data-board-action="edit-title">
+            <i data-lucide="edit-3"></i>
+            <span>Edit Title</span>
+          </div>
+          <div class="toolbar__dropdown-divider"></div>
+          <div class="toolbar__dropdown-item" data-board-action="add-section">
+            <i data-lucide="plus"></i>
+            <span>Add Section</span>
+          </div>
+        </div>
+      </div>
+
+      <span id="agent-count" class="toolbar__badge">
+        <i data-lucide="bot"></i>
+        <span>0 Agents</span>
+      </span>
+    </div>
+
+    <div class="toolbar__right">
+      <div class="toolbar__control" id="groupingControl">
+        <span class="toolbar__control-label">Group by</span>
+        <button type="button" class="toolbar__control-btn" id="groupingValue">
+          <span>Phase</span>
+          <i data-lucide="chevron-down"></i>
+        </button>
+        <div class="toolbar__dropdown" id="groupingDropdown">
+          <div class="toolbar__dropdown-item is-active" data-tag-type="phase">
+            <i data-lucide="layers"></i>
+            <span>Phase</span>
+          </div>
+          <div class="toolbar__dropdown-item" data-tag-type="department">
+            <i data-lucide="building-2"></i>
+            <span>Department</span>
+          </div>
+          <div class="toolbar__dropdown-item" data-tag-type="status">
+            <i data-lucide="activity"></i>
+            <span>Status</span>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="toolbar__btn" id="collapseAllBtn" title="Collapse/Expand All">
+        <i id="collapseAllIcon" data-lucide="chevrons-down"></i>
+        <span id="collapseAllText">Collapse</span>
+      </button>
+
+      <button type="button" class="toolbar__btn toolbar__btn--icon" id="documentMenuBtn" title="Canvas actions">
+        <i data-lucide="more-horizontal"></i>
+      </button>
+      <div class="toolbar__dropdown toolbar__dropdown--right" id="documentMenu">
+        <div class="toolbar__dropdown-item" data-action="rename">
+          <i data-lucide="edit-3"></i>
+          <span>Rename</span>
+        </div>
+        <div class="toolbar__dropdown-divider"></div>
+        <div class="toolbar__dropdown-item toolbar__dropdown-item--danger" data-action="delete">
+          <i data-lucide="trash-2"></i>
+          <span>Delete</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <input type="file" id="documentFileInput" class="is-hidden" accept=".yaml,.yml,text/yaml" />
+
+  <main class="main-content">
+    <p class="document-status" id="documentStatusMessage"></p>
+
+    <div class="empty-state" id="emptyState">
+      <div class="empty-state__icon">
+        <i data-lucide="layout-grid"></i>
+      </div>
+      <h2 class="empty-state__title">No canvas selected</h2>
+      <p class="empty-state__description">Create a new canvas or select one from the sidebar to get started.</p>
+      <button type="button" class="empty-state__btn" id="emptyStateNewBtn">
+        <i data-lucide="plus"></i>
+        Create Canvas
+      </button>
+    </div>
+
+    <div id="agentGroupsContainer"></div>
+  </main>
+</div>
+
+<!-- Modals -->
+<div id="agentModal" class="modal-overlay">
+  <div class="modal modal--large">
+    <div class="modal__header">
+      <h2 class="modal__title" id="modalAgentTitle">Edit Agent</h2>
+      <button type="button" class="modal__close" id="agentModalClose">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="agentForm">
+        <div id="agentFormContent">
+          <div class="form-group">
+            <label class="form-label form-label--required" for="agentName">Agent Name</label>
+            <input type="text" id="agentName" class="form-input" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="agentObjective">Objective</label>
+            <input type="text" id="agentObjective" class="form-input" placeholder="Brief summary of what this agent does" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="agentDescription">Description</label>
+            <textarea id="agentDescription" class="form-textarea" rows="3" placeholder="Detailed description of capabilities"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tags</label>
+            <div class="u-flex u-flex-column u-gap-3">
+              <div>
+                <label class="form-label" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">
+                  Department
+                </label>
+                <div class="tag-select" id="agentDepartmentTags"></div>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">
+                  Status
+                </label>
+                <div class="tag-select" id="agentStatusTags"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tools</label>
+            <div id="agentTools" class="checkbox-group"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="journeySteps">Journey Steps</label>
+            <textarea id="journeySteps" class="form-textarea" rows="4" placeholder="Enter one step per line"></textarea>
+          </div>
+
+          <div class="u-flex u-gap-3">
+            <div class="form-group u-flex-1">
+              <label class="form-label" for="metricsUsage">Usage This Week</label>
+              <input type="text" id="metricsUsage" class="form-input" placeholder="e.g., 25 uses" />
+            </div>
+            <div class="form-group u-flex-1">
+              <label class="form-label" for="metricsTimeSaved">Time Saved</label>
+              <input type="text" id="metricsTimeSaved" class="form-input" placeholder="e.g., 60%" />
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--danger" id="deleteAgentBtn">
+        <i data-lucide="trash-2"></i> Delete
+      </button>
+      <div class="u-flex-1"></div>
+      <button type="button" class="btn" id="agentCancelBtn">Cancel</button>
+      <button type="button" class="btn btn--primary" id="agentSaveBtn">
+        <i data-lucide="check"></i> Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="titleModal" class="modal-overlay">
+  <div class="modal" style="max-width: 400px;">
+    <div class="modal__header">
+      <h2 class="modal__title">Edit Title</h2>
+      <button type="button" class="modal__close" id="titleModalClose">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <form id="titleForm">
+        <div class="form-group">
+          <label class="form-label form-label--required" for="documentTitleInput">Title</label>
+          <input type="text" id="documentTitleInput" class="form-input" required placeholder="Enter document title" />
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn" id="titleModalCancel">Cancel</button>
+      <button type="button" class="btn btn--primary" id="titleModalSave">
+        <i data-lucide="check"></i> Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay" class="modal-overlay" style="background: var(--bg-primary);">
+  <div class="u-flex u-flex-column u-align-center u-gap-4">
+    <div class="spinner spinner--lg"></div>
+    <p id="loadingMessage" style="color: var(--text-secondary);">Loading...</p>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>

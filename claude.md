@@ -6,7 +6,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 **AgentCanvas** is a web-based configuration management system for visualizing and editing multi-phase agent workflows. It displays business process agents organized by phases with interactive editing capabilities.
 
-**Architecture**: Next.js App Router (React) with existing vanilla JavaScript client code, Convex backend, and WorkOS authentication.
+**Architecture**: Minimal Next.js App Router for routing and API endpoints, with vanilla JavaScript client code for the UI, Convex backend, and WorkOS authentication. Next.js serves as a thin wrapper - it handles auth checks and routing, then loads the existing vanilla JS application.
 
 ## Technology Stack
 
@@ -73,7 +73,7 @@ BASE_URL=http://localhost:3000
 ```
 /
 ├── app/                     # Next.js App Router
-│   ├── page.tsx            # Main application page (loads client/main.js)
+│   ├── page.tsx            # Main app page (auth check + loads app-shell.html + client/main.js)
 │   ├── login/page.tsx      # Login page (React component)
 │   ├── layout.tsx          # Root layout with importmap and scripts
 │   ├── globals.css         # Global styles (imports styles.css)
@@ -89,17 +89,18 @@ BASE_URL=http://localhost:3000
 ├── server/                  # Shared server utilities (TypeScript)
 │   ├── session-utils.ts    # Session encryption/decryption, cookie management
 │   └── workos.ts           # WorkOS API helpers
-├── client/                  # Browser-side JavaScript (ES modules)
-│   ├── main.js             # Main client-side logic (loaded by Next.js page)
-│   ├── auth-client-workos.js   # WorkOS auth client
-│   ├── convex-client.js        # Convex client adapter
-│   ├── config.js, state.js     # Configuration and state
-│   ├── canvases.js             # Canvas management
-│   ├── grouping.js              # Agent grouping logic
-│   ├── legacy-yaml-import.js   # Legacy YAML import (one-way)
-│   ├── menu-utils.js           # Menu UI helpers
-│   └── modal-utils.js          # Modal UI helpers
-├── public/client/           # Client files served as static assets (symlink/copy of client/)
+├── public/                  # Static assets served by Next.js
+│   ├── app-shell.html      # HTML structure for vanilla JS app (injected by page.tsx)
+│   └── client/             # Browser-side JavaScript (ES modules)
+│       ├── main.js             # Main client-side logic
+│       ├── auth-client-workos.js   # WorkOS auth client
+│       ├── convex-client.js        # Convex client adapter
+│       ├── config.js, state.js     # Configuration and state
+│       ├── canvases.js             # Canvas management
+│       ├── grouping.js              # Agent grouping logic
+│       ├── legacy-yaml-import.js   # Legacy YAML import (one-way)
+│       ├── menu-utils.js           # Menu UI helpers
+│       └── modal-utils.js          # Modal UI helpers
 ├── convex/                  # Convex backend (TypeScript)
 │   ├── schema.ts           # Database schema (5 tables)
 │   ├── agents.ts           # Agent CRUD + history
@@ -109,10 +110,7 @@ BASE_URL=http://localhost:3000
 │   ├── users.ts            # User org membership sync
 │   ├── auth.config.ts      # Convex auth provider config
 │   └── lib/auth.ts         # Auth helpers (requireAuth, requireOrgAccess)
-├── api/                     # Legacy Vercel edge routes (deprecated, use app/api/)
-│   └── ...                  # Kept for reference, will be removed
-├── index.html, login.html, callback.html  # Legacy HTML pages (deprecated)
-├── styles.css              # Styling (imported by app/globals.css)
+├── styles.css              # Main styling (imported by app/globals.css)
 ├── next.config.js          # Next.js configuration
 ├── tsconfig.json           # TypeScript configuration for Next.js
 └── tests/                   # Vitest tests (unit/, integration/)
@@ -184,11 +182,12 @@ subscribeToAgents(canvasId, (agents) => renderAgentGroups(agents));
 
 - **Functions/Variables**: camelCase
 - **CSS Classes**: kebab-case
-- **Next.js App Router**: Uses React Server Components and Route Handlers
+- **Next.js App Router**: Minimal usage - auth routing and API endpoints only
 - **TypeScript**: Used for Next.js pages, API routes, and server utilities
-- **Client Code**: Existing vanilla JavaScript in `client/` is preserved and loaded by Next.js
-- **API Routes**: All use Edge runtime where possible (for WebCrypto support)
+- **Client Code**: Vanilla JavaScript in `public/client/` - NO React, NO build system for client code
+- **API Routes**: All use Edge runtime for WebCrypto support (session encryption)
 - **Path Aliases**: Use `@/` prefix for imports (e.g., `@/server/session-utils`)
+- **Architecture**: Next.js is a thin wrapper - `app/page.tsx` fetches `app-shell.html`, injects it into the DOM, then loads `client/main.js`. This preserves the existing vanilla JS architecture while adding modern auth and routing.
 
 ## Debugging
 
@@ -197,8 +196,9 @@ Common issues:
 - **Convex errors**: Run `npx convex dev` to sync schema, check Convex dashboard logs
 - **Session issues**: WORKOS_COOKIE_PASSWORD must be 32+ chars
 - **Next.js build errors**: Check TypeScript errors with `pnpm build`, ensure all imports use correct paths
-- **Client code not loading**: Verify `public/client/` contains client files (symlink or copy from `client/`)
+- **Client code not loading**: Verify `public/client/` and `public/app-shell.html` exist
 - **Route handler errors**: Check Edge runtime compatibility (WebCrypto APIs work, Node.js APIs don't)
+- **Blank page**: Check browser console - ensure `app-shell.html` is loading correctly and `client/main.js` is executing
 
 ## Related Files
 

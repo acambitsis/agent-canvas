@@ -1,5 +1,5 @@
 /* Import existing styles */
-@import '../styles.css';
+@import '/styles.css';
 
 /* Login page specific styles */
 .login-container {

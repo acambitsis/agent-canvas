@@ -1618,8 +1618,16 @@ function bindStaticEventHandlers() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', bindStaticEventHandlers);
-document.addEventListener('DOMContentLoaded', bootstrapApp);
+// Initialize app - handles both DOMContentLoaded and dynamically loaded scenarios
+if (document.readyState === 'loading') {
+    // DOM not ready yet, wait for DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', bindStaticEventHandlers);
+    document.addEventListener('DOMContentLoaded', bootstrapApp);
+} else {
+    // DOM already loaded (script loaded dynamically), run immediately
+    bindStaticEventHandlers();
+    bootstrapApp();
+}
 
 // Cleanup subscriptions on page unload to prevent memory leaks
 window.addEventListener('beforeunload', unsubscribeAll);
