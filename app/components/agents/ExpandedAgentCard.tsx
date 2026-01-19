@@ -8,6 +8,7 @@
 import React, { useRef } from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
+import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
 
 interface ExpandedAgentCardProps {
@@ -46,17 +47,6 @@ function getStatusConfig(status?: string): { color: string; bgColor: string; lab
     default:
       return { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: status || 'Unknown' };
   }
-}
-
-// Format currency for ROI display
-function formatCurrency(value: number): string {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  }
-  if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}K`;
-  }
-  return `$${value}`;
 }
 
 export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: ExpandedAgentCardProps) {

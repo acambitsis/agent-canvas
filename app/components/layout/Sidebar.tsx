@@ -19,10 +19,15 @@ interface CanvasMenuState {
   y: number;
 }
 
+// Context menu dimensions for viewport boundary calculations
+const MENU_WIDTH = 150;
+const MENU_HEIGHT = 80;
+const VIEWPORT_PADDING = 8;
+
 export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId, deleteCanvas } = useCanvas();
-  const { isSidebarCollapsed, toggleSidebar } = useAppState();
+  const { isSidebarCollapsed, toggleSidebar, showToast } = useAppState();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState | null>(null);
   const [renameCanvas, setRenameCanvas] = useState<{ id: string; title: string } | null>(null);
@@ -46,11 +51,25 @@ export function Sidebar() {
   const handleCanvasContextMenu = (e: React.MouseEvent, canvasId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setCanvasMenu({
-      canvasId,
-      x: e.clientX,
-      y: e.clientY,
-    });
+
+    // Calculate position with viewport boundary checks
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // Adjust if menu would overflow right edge
+    if (x + MENU_WIDTH + VIEWPORT_PADDING > viewportWidth) {
+      x = viewportWidth - MENU_WIDTH - VIEWPORT_PADDING;
+    }
+
+    // Adjust if menu would overflow bottom edge
+    if (y + MENU_HEIGHT + VIEWPORT_PADDING > viewportHeight) {
+      y = viewportHeight - MENU_HEIGHT - VIEWPORT_PADDING;
+    }
+
+    setCanvasMenu({ canvasId, x, y });
   };
 
   const handleMenuAction = (action: 'rename' | 'delete') => {
@@ -70,9 +89,12 @@ export function Sidebar() {
     if (!deleteConfirm) return;
     try {
       await deleteCanvas(deleteConfirm.id);
+      showToast('Canvas deleted successfully', 'success');
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Failed to delete canvas:', error);
+      showToast('Failed to delete canvas', 'error');
+      setDeleteConfirm(null);
     }
   };
 
