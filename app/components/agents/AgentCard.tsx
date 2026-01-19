@@ -182,40 +182,9 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
         </div>
       )}
 
-      {/* Footer with Metrics, Links, and Journey */}
+      {/* Footer with Links, Metrics, and Journey */}
       <div className="agent-card__footer">
-        <div className="agent-card__metrics">
-          {metrics.numberOfUsers !== undefined && (
-            <div className="metric">
-              <Icon name="users" />
-              <span className="metric__label">Users:</span>
-              <span className="metric__value">{metrics.numberOfUsers}</span>
-            </div>
-          )}
-          {metrics.timesUsed !== undefined && (
-            <div className="metric">
-              <Icon name="activity" />
-              <span className="metric__label">Uses:</span>
-              <span className="metric__value">{metrics.timesUsed}</span>
-            </div>
-          )}
-          {metrics.timeSaved !== undefined && (
-            <div className="metric">
-              <Icon name="clock" />
-              <span className="metric__label">Saved:</span>
-              <span className="metric__value">{metrics.timeSaved}h</span>
-            </div>
-          )}
-          {metrics.roi !== undefined && (
-            <div className="metric">
-              <Icon name="trending-up" />
-              <span className="metric__label">ROI:</span>
-              <span className="metric__value">{formatCurrency(metrics.roi)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="agent-card__footer-right">
+        <div className="agent-card__footer-left">
           {agent.demoLink && (
             <a
               href={agent.demoLink}
@@ -223,7 +192,7 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
               rel="noopener noreferrer"
               className="btn-link"
             >
-              <Icon name="external-link" />
+              <Icon name="play-circle" />
               Demo
             </a>
           )}
@@ -238,9 +207,54 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
               Video
             </a>
           )}
+        </div>
+
+        <div className="agent-card__footer-right">
+          {(metrics.numberOfUsers !== undefined || metrics.timesUsed !== undefined ||
+            metrics.timeSaved !== undefined || metrics.roi !== undefined) && (
+            <div className="agent-card__stats">
+              <button type="button" className="btn-link" aria-label="View performance stats">
+                <Icon name="bar-chart-2" />
+                <span>Stats</span>
+              </button>
+              <div className="agent-card__stats-tooltip">
+                <div className="stats-tooltip__title">Performance</div>
+                <div className="stats-tooltip__grid">
+                  {metrics.numberOfUsers !== undefined && (
+                    <div className="stats-tooltip__item">
+                      <Icon name="users" />
+                      <span className="stats-tooltip__label">Users</span>
+                      <span className="stats-tooltip__value">{metrics.numberOfUsers}</span>
+                    </div>
+                  )}
+                  {metrics.timesUsed !== undefined && (
+                    <div className="stats-tooltip__item">
+                      <Icon name="activity" />
+                      <span className="stats-tooltip__label">Uses</span>
+                      <span className="stats-tooltip__value">{metrics.timesUsed}</span>
+                    </div>
+                  )}
+                  {metrics.timeSaved !== undefined && (
+                    <div className="stats-tooltip__item">
+                      <Icon name="clock" />
+                      <span className="stats-tooltip__label">Saved</span>
+                      <span className="stats-tooltip__value">{metrics.timeSaved}h</span>
+                    </div>
+                  )}
+                  {metrics.roi !== undefined && (
+                    <div className="stats-tooltip__item">
+                      <Icon name="trending-up" />
+                      <span className="stats-tooltip__label">ROI</span>
+                      <span className="stats-tooltip__value">{formatCurrency(metrics.roi)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {agent.journeySteps && agent.journeySteps.length > 0 && (
             <div className="agent-card__journey">
-              <button className="btn-link">
+              <button type="button" className="btn-link" aria-label="View user journey steps">
                 <Icon name="route" />
                 <span>{agent.journeySteps.length} steps</span>
               </button>

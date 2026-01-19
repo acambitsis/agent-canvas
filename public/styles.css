@@ -1813,35 +1813,16 @@ a:hover {
     flex-wrap: wrap;
 }
 
-.agent-card__footer-right {
+.agent-card__footer-left {
     display: flex;
     align-items: center;
     gap: var(--space-3);
 }
 
-/* Metrics */
-.agent-card__metrics {
-    display: flex;
-    gap: var(--space-4);
-}
-
-.metric {
+.agent-card__footer-right {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-xs);
-    color: var(--text-muted);
-}
-
-.metric svg {
-    width: 14px;
-    height: 14px;
-}
-
-.metric__value {
-    font-weight: 700;
-    color: var(--text-secondary);
-    font-family: var(--font-mono);
+    gap: var(--space-3);
 }
 
 /* Journey indicator */
@@ -3212,6 +3193,14 @@ a:hover {
     color: var(--accent-primary);
 }
 
+.agent-card__dropdown-item--danger {
+    color: var(--error);
+}
+
+.agent-card__dropdown-item--danger svg {
+    color: var(--error);
+}
+
 .agent-card__dropdown-item--danger:hover {
     background: var(--error-bg);
     color: var(--error);
@@ -3299,6 +3288,79 @@ a:hover {
     font-size: 0.65rem;
     font-weight: 700;
     color: var(--accent-primary);
+}
+
+/* ============================================
+   STATS TOOLTIP
+   ============================================ */
+
+.agent-card__stats {
+    position: relative;
+}
+
+.agent-card__stats-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    min-width: 180px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-3);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: all 0.15s var(--ease-out);
+    pointer-events: none;
+}
+
+.agent-card__stats:hover .agent-card__stats-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.stats-tooltip__title {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.stats-tooltip__grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.stats-tooltip__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.stats-tooltip__item svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.stats-tooltip__label {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.stats-tooltip__value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
 }
 
 .badge--sm {
