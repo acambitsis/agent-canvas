@@ -4,7 +4,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
@@ -51,6 +51,32 @@ function getStatusColor(status?: string): string {
 export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps) {
   const metrics = agent.metrics || {};
   const statusColor = getStatusColor(agent.status);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click or Escape key
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    function handleEscapeKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [menuOpen]);
 
   return (
     <div
@@ -83,23 +109,33 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
           )}
         </div>
 
-        <div className="agent-card__actions">
+        <div className="agent-card__actions" ref={menuRef}>
           <button
-            className="agent-card__menu"
-            onClick={onEdit}
-            title="Edit agent"
-            aria-label="Edit agent"
+            className="agent-card__menu-trigger"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="More actions"
+            aria-expanded={menuOpen}
           >
-            <Icon name="edit-3" />
+            <Icon name="more-vertical" />
           </button>
-          <button
-            className="agent-card__menu agent-card__menu--danger"
-            onClick={onDelete}
-            title="Delete agent"
-            aria-label="Delete agent"
-          >
-            <Icon name="trash-2" />
-          </button>
+          {menuOpen && (
+            <div className="agent-card__dropdown">
+              <button
+                className="agent-card__dropdown-item"
+                onClick={() => { onEdit(); setMenuOpen(false); }}
+              >
+                <Icon name="edit-3" />
+                Edit
+              </button>
+              <button
+                className="agent-card__dropdown-item agent-card__dropdown-item--danger"
+                onClick={() => { onDelete(); setMenuOpen(false); }}
+              >
+                <Icon name="trash-2" />
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -146,7 +182,7 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
         </div>
       )}
 
-      {/* Footer with Metrics */}
+      {/* Footer with Metrics, Links, and Journey */}
       <div className="agent-card__footer">
         <div className="agent-card__metrics">
           {metrics.numberOfUsers !== undefined && (
@@ -179,19 +215,7 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
           )}
         </div>
 
-        {agent.journeySteps && agent.journeySteps.length > 0 && (
-          <div className="agent-card__journey">
-            <button className="btn-link" title="View journey">
-              <Icon name="route" />
-              <span>{agent.journeySteps.length} steps</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Links */}
-      {(agent.demoLink || agent.videoLink) && (
-        <div className="agent-card__links">
+        <div className="agent-card__footer-right">
           {agent.demoLink && (
             <a
               href={agent.demoLink}
@@ -214,8 +238,24 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
               Video
             </a>
           )}
+          {agent.journeySteps && agent.journeySteps.length > 0 && (
+            <div className="agent-card__journey">
+              <button className="btn-link">
+                <Icon name="route" />
+                <span>{agent.journeySteps.length} steps</span>
+              </button>
+              <div className="agent-card__journey-tooltip">
+                <div className="journey-tooltip__title">User Journey</div>
+                <ol className="journey-tooltip__steps">
+                  {agent.journeySteps.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

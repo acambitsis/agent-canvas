@@ -1508,7 +1508,7 @@ a:hover {
     background: var(--bg-secondary);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-xl);
-    padding: var(--space-6);
+    padding: var(--space-4);
     transition: all var(--duration-base) var(--ease-out);
     animation: card-enter var(--duration-slow) var(--ease-out) both;
     box-shadow: var(--shadow-card);
@@ -1525,8 +1525,8 @@ a:hover {
     content: '';
     position: absolute;
     top: 0;
-    left: var(--space-6);
-    right: var(--space-6);
+    left: var(--space-4);
+    right: var(--space-4);
     height: 3px;
     background: linear-gradient(90deg, var(--status-color, var(--accent-primary)), color-mix(in srgb, var(--status-color, var(--accent-primary)) 60%, var(--accent-violet)));
     border-radius: 0 0 var(--radius-full) var(--radius-full);
@@ -1541,10 +1541,10 @@ a:hover {
 /* Status Strip */
 .agent-card__status-strip {
     position: absolute;
-    top: var(--space-6);
+    top: var(--space-4);
     left: 0;
     width: 4px;
-    height: calc(100% - var(--space-12));
+    height: calc(100% - var(--space-8));
     background: var(--status-color, var(--accent-primary));
     border-radius: 0 var(--radius-full) var(--radius-full) 0;
     opacity: 0.6;
@@ -1553,27 +1553,27 @@ a:hover {
 
 .agent-card:hover .agent-card__status-strip {
     opacity: 1;
-    height: calc(100% - var(--space-8));
-    top: var(--space-4);
+    height: calc(100% - var(--space-6));
+    top: var(--space-3);
 }
 
 /* Card Header */
 .agent-card__header {
     display: flex;
     align-items: flex-start;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
 .agent-card__number {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-violet) 100%);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
     font-weight: 800;
     color: white;
     font-family: var(--font-mono);
@@ -1613,9 +1613,8 @@ a:hover {
     color: var(--success);
 }
 
-/* Card Menu/Actions */
-.agent-card__menu,
-.agent-card__actions button {
+/* Card Menu/Actions - legacy .agent-card__menu kept for backwards compatibility */
+.agent-card__menu {
     width: 32px;
     height: 32px;
     display: flex;
@@ -1630,20 +1629,17 @@ a:hover {
     transition: all var(--duration-fast) var(--ease-out);
 }
 
-.agent-card:hover .agent-card__menu,
-.agent-card:hover .agent-card__actions button {
+.agent-card:hover .agent-card__menu {
     opacity: 1;
 }
 
-.agent-card__menu:hover,
-.agent-card__actions button:hover {
+.agent-card__menu:hover {
     background: var(--bg-hover);
     color: var(--accent-primary);
     transform: scale(1.1);
 }
 
-.agent-card__menu svg,
-.agent-card__actions svg {
+.agent-card__menu svg {
     width: 18px;
     height: 18px;
 }
@@ -1659,7 +1655,7 @@ a:hover {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
 }
 
 .tag-indicator {
@@ -1712,8 +1708,8 @@ a:hover {
     font-size: var(--text-sm);
     font-weight: 600;
     color: var(--accent-primary);
-    margin-bottom: var(--space-3);
-    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-normal);
     padding-left: var(--space-3);
     border-left: 2px solid var(--accent-primary-muted);
 }
@@ -1722,10 +1718,10 @@ a:hover {
 .agent-card__description {
     font-size: var(--text-sm);
     color: var(--text-secondary);
-    line-height: var(--leading-relaxed);
-    margin-bottom: var(--space-4);
+    line-height: var(--leading-normal);
+    margin-bottom: var(--space-3);
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -1735,7 +1731,7 @@ a:hover {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-3);
 }
 
 /* Tool Chips - Modern pills */
@@ -1811,8 +1807,16 @@ a:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-top: var(--space-4);
+    gap: var(--space-3);
+    padding-top: var(--space-3);
     border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+}
+
+.agent-card__footer-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
 }
 
 /* Metrics */
@@ -3088,8 +3092,8 @@ a:hover {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    margin-top: var(--space-3);
-    padding-top: var(--space-3);
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
     border-top: 1px solid var(--border-subtle);
 }
 
@@ -3103,6 +3107,200 @@ a:hover {
     margin-right: var(--space-1);
 }
 
+/* ============================================
+   CARD OVERFLOW MENU
+   ============================================ */
+
+.agent-card__menu-trigger {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.agent-card:hover .agent-card__menu-trigger,
+.agent-card__menu-trigger[aria-expanded="true"] {
+    opacity: 1;
+}
+
+.agent-card__menu-trigger:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.agent-card__menu-trigger:focus {
+    outline: none;
+}
+
+.agent-card__menu-trigger:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.agent-card__menu-trigger svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.agent-card__actions {
+    position: relative;
+}
+
+.agent-card__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 130px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    overflow: hidden;
+    animation: dropdown-enter 0.15s var(--ease-out);
+}
+
+@keyframes dropdown-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.agent-card__dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    border: none;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    text-align: left;
+}
+
+.agent-card__dropdown-item:hover {
+    background: var(--bg-hover);
+    color: var(--accent-primary);
+}
+
+.agent-card__dropdown-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.agent-card__dropdown-item:hover svg {
+    color: var(--accent-primary);
+}
+
+.agent-card__dropdown-item--danger:hover {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.agent-card__dropdown-item--danger:hover svg {
+    color: var(--error);
+}
+
+/* ============================================
+   JOURNEY TOOLTIP
+   ============================================ */
+
+.agent-card__journey {
+    position: relative;
+}
+
+.agent-card__journey-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    min-width: 240px;
+    max-width: 320px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-3);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: all 0.15s var(--ease-out);
+    pointer-events: none;
+}
+
+.agent-card__journey:hover .agent-card__journey-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.journey-tooltip__title {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.journey-tooltip__steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: step;
+}
+
+.journey-tooltip__steps li {
+    position: relative;
+    padding-left: var(--space-6);
+    padding-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    counter-increment: step;
+}
+
+.journey-tooltip__steps li:last-child {
+    padding-bottom: 0;
+}
+
+.journey-tooltip__steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary-muted);
+    border-radius: var(--radius-full);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+}
+
 .badge--sm {
     padding: var(--space-1) var(--space-2);
     font-size: 0.65rem;
@@ -3114,9 +3312,8 @@ a:hover {
 
 /* Card entrance animation - staggered with CSS */
 .agent-card {
-    animation: card-enter var(--duration-slow) var(--ease-out) forwards;
+    animation: card-enter var(--duration-slow) var(--ease-out) both;
     animation-delay: var(--animation-delay, 0ms);
-    opacity: 0;
 }
 
 /* Group entrance animation */
@@ -3176,8 +3373,8 @@ a:hover {
     box-shadow: 0 2px 8px color-mix(in srgb, var(--chip-accent, var(--accent-primary)) 25%, transparent);
 }
 
-/* Focus ring for accessibility */
-.agent-card:focus-within {
+/* Focus ring for accessibility - only show on keyboard navigation */
+.agent-card:has(:focus-visible) {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
 }
