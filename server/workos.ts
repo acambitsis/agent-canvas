@@ -170,7 +170,27 @@ export interface WorkOSInvitation {
 }
 
 /**
- * List all members of an organization
+ * Get user details by ID
+ */
+export async function getUser(
+  userId: string,
+  apiKey: string
+): Promise<{ id: string; email: string; first_name?: string; last_name?: string; profile_picture_url?: string } | null> {
+  const response = await fetch(
+    `https://api.workos.com/user_management/users/${userId}`,
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+
+  if (!response.ok) {
+    console.error('Failed to get user:', userId, response.status);
+    return null;
+  }
+
+  return response.json();
+}
+
+/**
+ * List all members of an organization (with user details)
  */
 export async function listOrgMembers(
   orgId: string,
@@ -187,7 +207,20 @@ export async function listOrgMembers(
   }
 
   const data = await response.json();
-  return data.data || [];
+  const memberships = data.data || [];
+
+  // Fetch user details for each membership
+  const membersWithUsers = await Promise.all(
+    memberships.map(async (membership: WorkOSMember) => {
+      const user = await getUser(membership.user_id, apiKey);
+      return {
+        ...membership,
+        user: user || undefined,
+      };
+    })
+  );
+
+  return membersWithUsers;
 }
 
 /**
