@@ -75,14 +75,6 @@ export default defineSchema({
     .index("by_agent", ["agentId"])
     .index("by_agent_time", ["agentId", "changedAt"]),
 
-  // User org memberships - synced from WorkOS on login
-  userOrgMemberships: defineTable({
-    workosUserId: v.string(),
-    workosOrgId: v.string(),
-    role: v.string(), // e.g., "admin", "member"
-    syncedAt: v.number(),
-  })
-    .index("by_user", ["workosUserId"])
-    .index("by_org", ["workosOrgId"])
-    .index("by_user_org", ["workosUserId", "workosOrgId"]),
+  // Note: User org memberships are now stored in JWT claims
+  // The userOrgMemberships table has been removed - org access is verified via JWT
 });

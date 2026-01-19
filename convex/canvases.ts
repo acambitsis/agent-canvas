@@ -11,7 +11,7 @@ export const list = query({
   args: { workosOrgId: v.string() },
   handler: async (ctx, { workosOrgId }) => {
     const auth = await requireAuth(ctx);
-    await requireOrgAccess(ctx, auth, workosOrgId);
+    requireOrgAccess(auth, workosOrgId);
 
     return ctx.db
       .query("canvases")
@@ -34,7 +34,7 @@ export const get = query({
       throw new Error("NotFound: Canvas not found");
     }
 
-    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
+    requireOrgAccess(auth, canvas.workosOrgId);
     return canvas;
   },
 });
@@ -49,7 +49,7 @@ export const getBySlug = query({
   },
   handler: async (ctx, { workosOrgId, slug }) => {
     const auth = await requireAuth(ctx);
-    await requireOrgAccess(ctx, auth, workosOrgId);
+    requireOrgAccess(auth, workosOrgId);
 
     const canvas = await ctx.db
       .query("canvases")
@@ -74,7 +74,7 @@ export const create = mutation({
   },
   handler: async (ctx, { workosOrgId, title, slug }) => {
     const auth = await requireAuth(ctx);
-    await requireOrgAccess(ctx, auth, workosOrgId);
+    requireOrgAccess(auth, workosOrgId);
 
     // Validate inputs
     validateTitle(title);
@@ -124,7 +124,7 @@ export const update = mutation({
       throw new Error("NotFound: Canvas not found");
     }
 
-    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
+    requireOrgAccess(auth, canvas.workosOrgId);
 
     // Validate inputs (only validate provided fields)
     if (title !== undefined) validateTitle(title);
@@ -173,7 +173,7 @@ export const remove = mutation({
       throw new Error("NotFound: Canvas not found");
     }
 
-    await requireOrgAccess(ctx, auth, canvas.workosOrgId);
+    requireOrgAccess(auth, canvas.workosOrgId);
 
     // Get non-deleted agents in this canvas
     const agents = await ctx.db

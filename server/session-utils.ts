@@ -209,14 +209,33 @@ export interface WorkOSUser {
 }
 
 /**
+ * Organization membership for JWT claims
+ */
+export interface OrgClaim {
+  id: string;
+  role: string;
+}
+
+/**
+ * Check if user email is in super admin list
+ */
+function checkSuperAdmin(email: string): boolean {
+  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS || '';
+  const emailList = superAdminEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  return emailList.includes(email.toLowerCase());
+}
+
+/**
  * Generate a signed JWT (id_token) for Convex authentication using RS256
  * Uses a static key pair - the public key is embedded in Convex auth config
  * @param user - WorkOS user object
+ * @param orgs - Array of organization memberships with roles
  * @returns Signed JWT
  */
-export async function generateIdToken(user: WorkOSUser): Promise<string> {
+export async function generateIdToken(user: WorkOSUser, orgs: OrgClaim[] = []): Promise<string> {
   const privateKey = await getStaticPrivateKey();
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const isSuperAdmin = checkSuperAdmin(user.email);
 
   const jwt = await new jose.SignJWT({
     // Standard OIDC claims
@@ -229,6 +248,8 @@ export async function generateIdToken(user: WorkOSUser): Promise<string> {
     picture: user.profile_picture_url,
     // Custom claims for Convex
     workosUserId: user.id,
+    orgs,
+    isSuperAdmin,
   })
     .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: 'agentcanvas-static-1' })
     .setIssuer(baseUrl)
@@ -242,14 +263,15 @@ export async function generateIdToken(user: WorkOSUser): Promise<string> {
 
 /**
  * Get or generate id_token for Convex authentication
- * Uses WorkOS id_token if provided, otherwise generates custom JWT
- * @param workosIdToken - Optional id_token from WorkOS
+ * Always generates a custom JWT to include orgs and isSuperAdmin claims
  * @param user - WorkOS user object for generating custom token
+ * @param orgs - Array of organization memberships with roles
  * @returns id_token for Convex
  */
 export async function getIdTokenForConvex(
-  workosIdToken: string | undefined,
-  user: WorkOSUser
+  user: WorkOSUser,
+  orgs: OrgClaim[]
 ): Promise<string> {
-  return workosIdToken || await generateIdToken(user);
+  // Always generate custom JWT to ensure orgs and isSuperAdmin claims are included
+  return generateIdToken(user, orgs);
 }

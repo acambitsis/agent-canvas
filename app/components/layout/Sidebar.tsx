@@ -5,13 +5,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, useIsOrgAdmin } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useAppState } from '@/contexts/AppStateContext';
 import { Icon } from '@/components/ui/Icon';
 import { ImportYamlModal } from '../forms/ImportYamlModal';
 import { CanvasRenameModal } from '../forms/CanvasRenameModal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { MembersModal } from '../org/MembersModal';
 
 interface CanvasMenuState {
   canvasId: string;
@@ -28,7 +29,9 @@ export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId, deleteCanvas } = useCanvas();
   const { isSidebarCollapsed, toggleSidebar, showToast } = useAppState();
+  const isOrgAdmin = useIsOrgAdmin();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState | null>(null);
   const [renameCanvas, setRenameCanvas] = useState<{ id: string; title: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
@@ -178,6 +181,16 @@ export function Sidebar() {
         </div>
 
         <div style={{ marginTop: 'auto' }}>
+          {isOrgAdmin && (
+            <button
+              className="sidebar__admin-btn"
+              onClick={() => setIsMembersModalOpen(true)}
+              title="Manage organization members"
+            >
+              <Icon name="users" />
+              <span>Members</span>
+            </button>
+          )}
           <div className="sidebar__user">
             <div className="sidebar__user-info">
               <span className="sidebar__user-name">
@@ -195,6 +208,15 @@ export function Sidebar() {
           isOpen={isImportModalOpen}
           onClose={() => setIsImportModalOpen(false)}
         />
+
+        {currentOrgId && user && (
+          <MembersModal
+            isOpen={isMembersModalOpen}
+            onClose={() => setIsMembersModalOpen(false)}
+            orgId={currentOrgId}
+            currentUserId={user.id}
+          />
+        )}
       </aside>
 
       {/* Canvas Context Menu */}

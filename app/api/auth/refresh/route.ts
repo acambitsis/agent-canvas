@@ -10,6 +10,7 @@ import {
   json,
   getIdTokenForConvex,
   type SessionData,
+  type OrgClaim,
 } from '@/server/session-utils';
 import { refreshAccessToken } from '@/server/workos';
 
@@ -35,10 +36,25 @@ export async function POST(request: Request) {
       return json({ error: 'Refresh failed' }, 401);
     }
 
-    const { access_token, refresh_token, id_token } = tokenData;
+    const { access_token, refresh_token } = tokenData;
 
-    // Use WorkOS id_token if provided, otherwise generate custom JWT for Convex
-    const idTokenForConvex = await getIdTokenForConvex(id_token, session.user);
+    // Convert session orgs to OrgClaim format (they should already be in this format)
+    const orgClaims: OrgClaim[] = session.orgs.map(org => ({
+      id: org.id,
+      role: org.role,
+    }));
+
+    // Convert session user to WorkOSUser format for JWT generation
+    const workosUser = {
+      id: session.user.id,
+      email: session.user.email,
+      first_name: session.user.firstName,
+      last_name: session.user.lastName,
+      profile_picture_url: session.user.profilePictureUrl,
+    };
+
+    // Generate custom JWT with orgs and isSuperAdmin claims for Convex
+    const idTokenForConvex = await getIdTokenForConvex(workosUser, orgClaims);
 
     // Calculate token expiry from expires_in if provided, otherwise default to 50 minutes
     const expiresIn = tokenData.expires_in ? parseInt(String(tokenData.expires_in)) * 1000 : 50 * 60 * 1000;

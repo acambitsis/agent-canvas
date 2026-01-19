@@ -28,7 +28,7 @@ export async function getCanvasWithAccess(
   if (!canvas || canvas.deletedAt) {
     throw new Error("NotFound: Canvas not found");
   }
-  await requireOrgAccess(ctx, auth, canvas.workosOrgId);
+  requireOrgAccess(auth, canvas.workosOrgId);
   return canvas;
 }
 
