@@ -4,20 +4,10 @@
  */
 
 import { parseSession, json } from '@/server/session-utils';
+import { isSessionOrgAdmin } from '@/server/org-utils';
 import { inviteToOrg } from '@/server/workos';
 
 export const runtime = 'edge';
-
-/**
- * Check if caller is admin of the specified org
- */
-function isOrgAdmin(
-  session: { orgs: Array<{ id: string; role: string }> },
-  orgId: string
-): boolean {
-  const membership = session.orgs.find((org) => org.id === orgId);
-  return membership?.role === 'admin';
-}
 
 export async function POST(
   request: Request,
@@ -30,8 +20,8 @@ export async function POST(
     return json({ error: 'Unauthorized' }, 401);
   }
 
-  // Check if caller is admin of this org
-  if (!isOrgAdmin(session, orgId)) {
+  // Check if caller is admin of this org (or super admin)
+  if (!isSessionOrgAdmin(session, orgId)) {
     return json({ error: 'Admin access required' }, 403);
   }
 
@@ -62,13 +52,13 @@ export async function POST(
 
     const result = await inviteToOrg(orgId, email, memberRole, workosApiKey);
 
-    if (!result) {
-      return json({ error: 'Failed to send invitation' }, 500);
+    if (!result.success) {
+      return json({ error: result.error }, 500);
     }
 
     return json({
       success: true,
-      invitationId: result.id,
+      invitationId: result.data.id,
       message: `Invitation sent to ${email}`
     });
   } catch (error) {

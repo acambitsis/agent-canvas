@@ -116,6 +116,31 @@ export async function fetchOrgDetails(orgId: string, apiKey: string): Promise<Wo
 // Member Management Types and Helpers
 // ============================================================================
 
+/**
+ * Result type for WorkOS API operations that can fail
+ */
+export type WorkOSResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+/**
+ * Parse WorkOS API error response
+ */
+async function parseWorkOSError(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      // WorkOS errors typically have a "message" field
+      return json.message || json.error || `WorkOS API error: ${response.status}`;
+    } catch {
+      return text || `WorkOS API error: ${response.status}`;
+    }
+  } catch {
+    return `WorkOS API error: ${response.status}`;
+  }
+}
+
 export interface WorkOSMember {
   id: string; // membership ID
   user_id: string;
@@ -173,7 +198,7 @@ export async function inviteToOrg(
   email: string,
   role: string,
   apiKey: string
-): Promise<{ id: string } | null> {
+): Promise<WorkOSResult<{ id: string }>> {
   const response = await fetch('https://api.workos.com/user_management/invitations', {
     method: 'POST',
     headers: {
@@ -188,13 +213,13 @@ export async function inviteToOrg(
   });
 
   if (!response.ok) {
-    const error = await response.text();
+    const error = await parseWorkOSError(response);
     console.error('Failed to invite user:', error);
-    return null;
+    return { success: false, error };
   }
 
   const data = await response.json();
-  return { id: data.id };
+  return { success: true, data: { id: data.id } };
 }
 
 /**
@@ -204,7 +229,7 @@ export async function updateMemberRole(
   membershipId: string,
   role: string,
   apiKey: string
-): Promise<boolean> {
+): Promise<WorkOSResult<void>> {
   const response = await fetch(
     `https://api.workos.com/user_management/organization_memberships/${membershipId}`,
     {
@@ -220,12 +245,12 @@ export async function updateMemberRole(
   );
 
   if (!response.ok) {
-    const error = await response.text();
+    const error = await parseWorkOSError(response);
     console.error('Failed to update member role:', error);
-    return false;
+    return { success: false, error };
   }
 
-  return true;
+  return { success: true, data: undefined };
 }
 
 /**
@@ -234,7 +259,7 @@ export async function updateMemberRole(
 export async function removeMember(
   membershipId: string,
   apiKey: string
-): Promise<boolean> {
+): Promise<WorkOSResult<void>> {
   const response = await fetch(
     `https://api.workos.com/user_management/organization_memberships/${membershipId}`,
     {
@@ -244,12 +269,12 @@ export async function removeMember(
   );
 
   if (!response.ok) {
-    const error = await response.text();
+    const error = await parseWorkOSError(response);
     console.error('Failed to remove member:', error);
-    return false;
+    return { success: false, error };
   }
 
-  return true;
+  return { success: true, data: undefined };
 }
 
 /**

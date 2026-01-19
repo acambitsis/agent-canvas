@@ -1,3 +1,28 @@
+/**
+ * JWT-Based Organization Membership Authentication
+ *
+ * This module provides authentication helpers that read org memberships from JWT claims
+ * rather than database lookups. This approach offers better performance but has a trade-off:
+ *
+ * IMPORTANT: JWT Expiry and Org Membership Changes
+ * ------------------------------------------------
+ * When a user's org membership is changed (role update, removal, or addition),
+ * their current JWT still contains the OLD claims until the token expires and
+ * is refreshed. The JWT expires after 1 hour (with proactive refresh at ~50 minutes).
+ *
+ * This means:
+ * - A user removed from an org may still have access for up to 1 hour
+ * - A user's role change won't take effect until their next token refresh
+ * - New org memberships won't be accessible until next login/refresh
+ *
+ * For immediate effect of membership changes, users should:
+ * - Log out and log back in, OR
+ * - Wait for the automatic token refresh (~50 minutes)
+ *
+ * In the future, consider implementing a forced token refresh mechanism when
+ * membership changes occur, or use a hybrid approach with database checks for
+ * sensitive operations.
+ */
 import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
 
 /**

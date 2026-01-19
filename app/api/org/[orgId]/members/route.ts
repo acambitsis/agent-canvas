@@ -4,20 +4,10 @@
  */
 
 import { parseSession, json } from '@/server/session-utils';
+import { isSessionOrgAdmin } from '@/server/org-utils';
 import { listOrgMembers } from '@/server/workos';
 
 export const runtime = 'edge';
-
-/**
- * Check if caller is admin of the specified org
- */
-function isOrgAdmin(
-  session: { orgs: Array<{ id: string; role: string }> },
-  orgId: string
-): boolean {
-  const membership = session.orgs.find((org) => org.id === orgId);
-  return membership?.role === 'admin';
-}
 
 export async function GET(
   request: Request,
@@ -30,8 +20,8 @@ export async function GET(
     return json({ error: 'Unauthorized' }, 401);
   }
 
-  // Check if caller is admin of this org
-  if (!isOrgAdmin(session, orgId)) {
+  // Check if caller is admin of this org (or super admin)
+  if (!isSessionOrgAdmin(session, orgId)) {
     return json({ error: 'Admin access required' }, 403);
   }
 

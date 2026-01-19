@@ -4213,6 +4213,21 @@ a:hover {
     color: var(--text-primary);
 }
 
+.btn--text {
+    background: transparent;
+    border: none;
+    color: var(--accent-primary);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+.btn--text:hover {
+    color: var(--accent-primary-hover);
+    text-decoration: underline;
+}
+
 /* Members Modal */
 .members-modal {
     min-height: 300px;

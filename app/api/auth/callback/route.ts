@@ -8,6 +8,7 @@ import {
   createSessionCookie,
   encryptSession,
   getIdTokenForConvex,
+  checkSuperAdmin,
   type SessionData,
   type OrgClaim,
 } from '@/server/session-utils';
@@ -82,6 +83,7 @@ export async function GET(request: Request) {
         profilePictureUrl: user.profile_picture_url,
       },
       orgs: orgClaims, // Reuse the same org claims
+      isSuperAdmin: checkSuperAdmin(user.email),
     };
 
     // Encrypt session data

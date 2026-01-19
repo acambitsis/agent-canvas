@@ -73,6 +73,8 @@ export interface SessionData extends jose.JWTPayload {
     role: string;
     name?: string;
   }>;
+  /** Whether user is a super admin (based on SUPER_ADMIN_EMAILS) */
+  isSuperAdmin?: boolean;
 }
 
 /**
@@ -219,7 +221,7 @@ export interface OrgClaim {
 /**
  * Check if user email is in super admin list
  */
-function checkSuperAdmin(email: string): boolean {
+export function checkSuperAdmin(email: string): boolean {
   const superAdminEmails = process.env.SUPER_ADMIN_EMAILS || '';
   const emailList = superAdminEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
   return emailList.includes(email.toLowerCase());

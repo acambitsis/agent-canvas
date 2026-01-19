@@ -4,20 +4,10 @@
  */
 
 import { parseSession, json } from '@/server/session-utils';
+import { isSessionOrgAdmin } from '@/server/org-utils';
 import { updateMemberRole, removeMember, getMembership } from '@/server/workos';
 
 export const runtime = 'edge';
-
-/**
- * Check if caller is admin of the specified org
- */
-function isOrgAdmin(
-  session: { orgs: Array<{ id: string; role: string }> },
-  orgId: string
-): boolean {
-  const membership = session.orgs.find((org) => org.id === orgId);
-  return membership?.role === 'admin';
-}
 
 /**
  * PATCH - Update member's role
@@ -33,8 +23,8 @@ export async function PATCH(
     return json({ error: 'Unauthorized' }, 401);
   }
 
-  // Check if caller is admin of this org
-  if (!isOrgAdmin(session, orgId)) {
+  // Check if caller is admin of this org (or super admin)
+  if (!isSessionOrgAdmin(session, orgId)) {
     return json({ error: 'Admin access required' }, 403);
   }
 
@@ -70,10 +60,10 @@ export async function PATCH(
       }, 400);
     }
 
-    const success = await updateMemberRole(membershipId, role, workosApiKey);
+    const result = await updateMemberRole(membershipId, role, workosApiKey);
 
-    if (!success) {
-      return json({ error: 'Failed to update role' }, 500);
+    if (!result.success) {
+      return json({ error: result.error }, 500);
     }
 
     return json({ success: true, role });
@@ -97,8 +87,8 @@ export async function DELETE(
     return json({ error: 'Unauthorized' }, 401);
   }
 
-  // Check if caller is admin of this org
-  if (!isOrgAdmin(session, orgId)) {
+  // Check if caller is admin of this org (or super admin)
+  if (!isSessionOrgAdmin(session, orgId)) {
     return json({ error: 'Admin access required' }, 403);
   }
 
@@ -119,10 +109,10 @@ export async function DELETE(
       return json({ error: 'Cannot remove yourself from the organization' }, 400);
     }
 
-    const success = await removeMember(membershipId, workosApiKey);
+    const result = await removeMember(membershipId, workosApiKey);
 
-    if (!success) {
-      return json({ error: 'Failed to remove member' }, 500);
+    if (!result.success) {
+      return json({ error: result.error }, 500);
     }
 
     return json({ success: true });
