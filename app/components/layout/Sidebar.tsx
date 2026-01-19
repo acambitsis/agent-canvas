@@ -27,7 +27,7 @@ const VIEWPORT_PADDING = 8;
 
 export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
-  const { canvases, currentCanvasId, setCurrentCanvasId, deleteCanvas } = useCanvas();
+  const { canvases, currentCanvasId, setCurrentCanvasId, createCanvas, deleteCanvas } = useCanvas();
   const { isSidebarCollapsed, toggleSidebar, showToast } = useAppState();
   const isOrgAdmin = useIsOrgAdmin();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -101,6 +101,21 @@ export function Sidebar() {
     }
   };
 
+  const handleCreateCanvas = async () => {
+    const title = prompt('Enter canvas name:');
+    if (!title?.trim()) return;
+
+    try {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const canvasId = await createCanvas(title.trim(), slug);
+      setCurrentCanvasId(canvasId);
+      showToast('Canvas created successfully', 'success');
+    } catch (error) {
+      console.error('Failed to create canvas:', error);
+      showToast('Failed to create canvas', 'error');
+    }
+  };
+
   return (
     <>
       <aside className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''}`}>
@@ -139,13 +154,22 @@ export function Sidebar() {
         <div className="sidebar__section sidebar__section--grow">
           <div className="sidebar__section-header">
             <h3 className="sidebar__section-title">Canvases</h3>
-            <button
-              className="sidebar__action-btn"
-              onClick={() => setIsImportModalOpen(true)}
-              title="Import from YAML"
-            >
-              <Icon name="upload" />
-            </button>
+            <div className="sidebar__section-actions">
+              <button
+                className="sidebar__action-btn"
+                onClick={handleCreateCanvas}
+                title="New canvas"
+              >
+                <Icon name="plus" />
+              </button>
+              <button
+                className="sidebar__action-btn"
+                onClick={() => setIsImportModalOpen(true)}
+                title="Import from YAML"
+              >
+                <Icon name="upload" />
+              </button>
+            </div>
           </div>
           <div className="sidebar__canvas-list">
             {canvases.map((canvas) => (
@@ -164,7 +188,7 @@ export function Sidebar() {
                 }}
               >
                 <Icon name="file-text" />
-                <span>{canvas.title}</span>
+                <span title={canvas.title}>{canvas.title}</span>
                 <button
                   className="sidebar__canvas-menu-btn"
                   onClick={(e) => {
