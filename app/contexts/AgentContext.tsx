@@ -23,13 +23,13 @@ const AgentContext = createContext<AgentContextValue | undefined>(undefined);
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
   const { isInitialized, isAuthenticated } = useAuth();
-  const { currentCanvasId, isLoading: isCanvasLoading } = useCanvas();
+  const { currentCanvasId, currentCanvas, isLoading: isCanvasLoading } = useCanvas();
 
   // Subscribe to agents using official Convex hook
-  // Only query if authenticated AND has canvasId
+  // Only query if authenticated AND has a valid canvas (not just canvasId, as it may be stale after deletion)
   const agentsQueryResult = useQuery(
     api.agents.list,
-    isAuthenticated && currentCanvasId ? { canvasId: currentCanvasId as any } : 'skip'
+    isAuthenticated && currentCanvas ? { canvasId: currentCanvasId as any } : 'skip'
   );
 
   // Track loading state: loading if auth not initialized, canvas loading, or agents query pending

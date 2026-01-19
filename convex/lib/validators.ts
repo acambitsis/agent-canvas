@@ -23,51 +23,44 @@ export const agentFieldValidators = {
   demoLink: v.optional(v.string()),
   videoLink: v.optional(v.string()),
 
-  // Complex optional fields
+  // Metrics - all fields optional
   metrics: v.optional(
     v.object({
-      adoption: v.number(),
-      satisfaction: v.number(),
+      numberOfUsers: v.optional(v.number()),
+      timesUsed: v.optional(v.number()),
+      timeSaved: v.optional(v.number()), // hours
+      roi: v.optional(v.number()), // integer currency
     })
-  ),
-  roiContribution: v.optional(
-    v.union(
-      v.literal("Very High"),
-      v.literal("High"),
-      v.literal("Medium"),
-      v.literal("Low")
-    )
   ),
   department: v.optional(v.string()),
   status: v.optional(v.string()),
 } as const;
 
 /**
- * Build a validator with specified required and optional fields
- */
-export function buildAgentValidator(fields: Record<string, any>) {
-  return v.object(fields);
-}
-
-/**
  * Create agent input validator (for bulk create)
  * All fields required except explicitly optional ones
  */
-export const agentInputValidator = buildAgentValidator({
-  phase: agentFieldValidators.phase,
-  phaseOrder: agentFieldValidators.phaseOrder,
-  agentOrder: agentFieldValidators.agentOrder,
-  name: agentFieldValidators.name,
-  objective: agentFieldValidators.objective,
-  description: agentFieldValidators.description,
-  tools: agentFieldValidators.tools,
-  journeySteps: agentFieldValidators.journeySteps,
-  demoLink: agentFieldValidators.demoLink,
-  videoLink: agentFieldValidators.videoLink,
-  metrics: agentFieldValidators.metrics,
-  roiContribution: agentFieldValidators.roiContribution,
-  department: agentFieldValidators.department,
-  status: agentFieldValidators.status,
+export const agentInputValidator = v.object({
+  phase: v.string(),
+  phaseOrder: v.number(),
+  agentOrder: v.number(),
+  name: v.string(),
+  objective: v.optional(v.string()),
+  description: v.optional(v.string()),
+  tools: v.array(v.string()),
+  journeySteps: v.array(v.string()),
+  demoLink: v.optional(v.string()),
+  videoLink: v.optional(v.string()),
+  metrics: v.optional(
+    v.object({
+      numberOfUsers: v.optional(v.number()),
+      timesUsed: v.optional(v.number()),
+      timeSaved: v.optional(v.number()),
+      roi: v.optional(v.number()),
+    })
+  ),
+  department: v.optional(v.string()),
+  status: v.optional(v.string()),
 });
 
 /**
@@ -85,7 +78,6 @@ export const agentUpdateValidator = {
   demoLink: agentFieldValidators.demoLink,
   videoLink: agentFieldValidators.videoLink,
   metrics: agentFieldValidators.metrics,
-  roiContribution: agentFieldValidators.roiContribution,
   department: agentFieldValidators.department,
   status: agentFieldValidators.status,
 };

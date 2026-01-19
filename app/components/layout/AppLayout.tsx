@@ -12,8 +12,11 @@ import { AgentModal } from '../forms/AgentModal';
 import { AgentGrid } from '../agents/AgentGrid';
 import { LoadingOverlay } from '../ui/LoadingOverlay';
 import { ToastContainer } from '../ui/Toast';
+import { useAppState } from '@/contexts/AppStateContext';
+import { Icon } from '@/components/ui/Icon';
 
 export function AppLayout() {
+  const { isSidebarCollapsed, toggleSidebar } = useAppState();
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [defaultPhase, setDefaultPhase] = useState<string | undefined>();
@@ -33,7 +36,16 @@ export function AppLayout() {
   return (
     <>
       <Sidebar />
-      <div className="main-wrapper">
+      <div className={`main-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {isSidebarCollapsed && (
+          <button
+            className="sidebar-expand-btn"
+            onClick={toggleSidebar}
+            title="Expand sidebar"
+          >
+            <Icon name="panel-left-open" />
+          </button>
+        )}
         <MainToolbar onAddAgent={() => handleOpenAgentModal()} />
         <main className="main-content">
           <AgentGrid

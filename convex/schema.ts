@@ -43,17 +43,11 @@ export default defineSchema({
     videoLink: v.optional(v.string()),
     metrics: v.optional(
       v.object({
-        adoption: v.number(),
-        satisfaction: v.number(),
+        numberOfUsers: v.optional(v.number()),
+        timesUsed: v.optional(v.number()),
+        timeSaved: v.optional(v.number()), // hours
+        roi: v.optional(v.number()), // integer currency
       })
-    ),
-    roiContribution: v.optional(
-      v.union(
-        v.literal("Very High"),
-        v.literal("High"),
-        v.literal("Medium"),
-        v.literal("Low")
-      )
     ),
     // Fixed tag fields for grouping and filtering (same across all orgs)
     department: v.optional(v.string()), // e.g., "sales", "engineering", "marketing"

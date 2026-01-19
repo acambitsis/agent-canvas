@@ -7,15 +7,17 @@ import { describe, it, expect } from 'vitest';
 
 // Replicate validation functions for testing
 function validateMetric(value, fieldName) {
-  if (value < 0 || value > 100) {
-    throw new Error(`Validation: ${fieldName} must be between 0 and 100`);
+  if (value < 0) {
+    throw new Error(`Validation: ${fieldName} must be 0 or greater`);
   }
 }
 
 function validateMetrics(metrics) {
   if (!metrics) return;
-  validateMetric(metrics.adoption, 'adoption');
-  validateMetric(metrics.satisfaction, 'satisfaction');
+  if (metrics.numberOfUsers !== undefined) validateMetric(metrics.numberOfUsers, 'numberOfUsers');
+  if (metrics.timesUsed !== undefined) validateMetric(metrics.timesUsed, 'timesUsed');
+  if (metrics.timeSaved !== undefined) validateMetric(metrics.timeSaved, 'timeSaved');
+  // roi can be negative (loss), so no validation needed
 }
 
 function validateNonEmptyString(value, fieldName) {
@@ -68,31 +70,34 @@ function validateOptionalUrl(url, fieldName) {
 
 describe('Input Validation', () => {
   describe('validateMetric', () => {
-    it('should accept values 0-100', () => {
+    it('should accept non-negative values', () => {
       expect(() => validateMetric(0, 'test')).not.toThrow();
       expect(() => validateMetric(50, 'test')).not.toThrow();
       expect(() => validateMetric(100, 'test')).not.toThrow();
+      expect(() => validateMetric(1000000, 'test')).not.toThrow();
     });
 
     it('should reject values below 0', () => {
       expect(() => validateMetric(-1, 'test')).toThrow(
-        'Validation: test must be between 0 and 100'
+        'Validation: test must be 0 or greater'
       );
       expect(() => validateMetric(-100, 'test')).toThrow();
-    });
-
-    it('should reject values above 100', () => {
-      expect(() => validateMetric(101, 'test')).toThrow(
-        'Validation: test must be between 0 and 100'
-      );
-      expect(() => validateMetric(1000, 'test')).toThrow();
     });
   });
 
   describe('validateMetrics', () => {
     it('should accept valid metrics', () => {
       expect(() =>
-        validateMetrics({ adoption: 50, satisfaction: 75 })
+        validateMetrics({ numberOfUsers: 50, timesUsed: 100, timeSaved: 24, roi: 5000 })
+      ).not.toThrow();
+    });
+
+    it('should accept partial metrics', () => {
+      expect(() =>
+        validateMetrics({ numberOfUsers: 50 })
+      ).not.toThrow();
+      expect(() =>
+        validateMetrics({ roi: 10000 })
       ).not.toThrow();
     });
 
@@ -101,15 +106,27 @@ describe('Input Validation', () => {
       expect(() => validateMetrics(null)).not.toThrow();
     });
 
-    it('should reject invalid adoption', () => {
+    it('should accept negative ROI (loss)', () => {
       expect(() =>
-        validateMetrics({ adoption: -10, satisfaction: 50 })
+        validateMetrics({ roi: -5000 })
+      ).not.toThrow();
+    });
+
+    it('should reject negative numberOfUsers', () => {
+      expect(() =>
+        validateMetrics({ numberOfUsers: -10 })
       ).toThrow();
     });
 
-    it('should reject invalid satisfaction', () => {
+    it('should reject negative timesUsed', () => {
       expect(() =>
-        validateMetrics({ adoption: 50, satisfaction: 150 })
+        validateMetrics({ timesUsed: -5 })
+      ).toThrow();
+    });
+
+    it('should reject negative timeSaved', () => {
+      expect(() =>
+        validateMetrics({ timeSaved: -10 })
       ).toThrow();
     });
   });

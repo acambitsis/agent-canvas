@@ -48,30 +48,22 @@ function getStatusConfig(status?: string): { color: string; bgColor: string; lab
   }
 }
 
-// Get ROI configuration
-function getRoiConfig(roi: string): { color: string; bgColor: string; icon: string } {
-  switch (roi) {
-    case 'Very High':
-      return { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', icon: 'trending-up' };
-    case 'High':
-      return { color: '#3B82F6', bgColor: 'rgba(59, 130, 246, 0.1)', icon: 'arrow-up-right' };
-    case 'Medium':
-      return { color: '#F59E0B', bgColor: 'rgba(245, 158, 11, 0.1)', icon: 'minus' };
-    case 'Low':
-      return { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', icon: 'arrow-down-right' };
-    default:
-      return { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', icon: 'minus' };
+// Format currency for ROI display
+function formatCurrency(value: number): string {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
   }
+  if (value >= 1000) {
+    return `$${(value / 1000).toFixed(1)}K`;
+  }
+  return `$${value}`;
 }
 
 export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: ExpandedAgentCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const adoption = agent.metrics?.adoption ?? 0;
-  const satisfaction = agent.metrics?.satisfaction ?? 0;
-  const roiContribution = agent.roiContribution || 'Medium';
+  const metrics = agent.metrics || {};
   const statusConfig = getStatusConfig(agent.status);
-  const roiConfig = getRoiConfig(roiContribution);
 
   return (
     <article
@@ -221,42 +213,45 @@ export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: Expand
               Performance
             </h4>
 
-            <div className="expanded-card__metric">
-              <div className="metric-header">
-                <span className="metric-label">Adoption</span>
-                <span className="metric-value">{adoption}%</span>
+            {metrics.numberOfUsers !== undefined && (
+              <div className="expanded-card__metric">
+                <div className="metric-header">
+                  <Icon name="users" />
+                  <span className="metric-label">No. of Users</span>
+                  <span className="metric-value">{metrics.numberOfUsers}</span>
+                </div>
               </div>
-              <div className="metric-bar">
-                <div
-                  className="metric-bar__fill metric-bar__fill--adoption"
-                  style={{ width: `${Math.min(100, adoption)}%` }}
-                />
-              </div>
-            </div>
+            )}
 
-            <div className="expanded-card__metric">
-              <div className="metric-header">
-                <span className="metric-label">Satisfaction</span>
-                <span className="metric-value">{satisfaction}%</span>
+            {metrics.timesUsed !== undefined && (
+              <div className="expanded-card__metric">
+                <div className="metric-header">
+                  <Icon name="activity" />
+                  <span className="metric-label">Times Used</span>
+                  <span className="metric-value">{metrics.timesUsed}</span>
+                </div>
               </div>
-              <div className="metric-bar">
-                <div
-                  className="metric-bar__fill metric-bar__fill--satisfaction"
-                  style={{ width: `${Math.min(100, satisfaction)}%` }}
-                />
-              </div>
-            </div>
+            )}
 
-            <div className="expanded-card__roi">
-              <span className="roi-label">ROI Contribution</span>
-              <span
-                className="roi-badge"
-                style={{ color: roiConfig.color, backgroundColor: roiConfig.bgColor }}
-              >
-                <Icon name={roiConfig.icon} />
-                {roiContribution}
-              </span>
-            </div>
+            {metrics.timeSaved !== undefined && (
+              <div className="expanded-card__metric">
+                <div className="metric-header">
+                  <Icon name="clock" />
+                  <span className="metric-label">Time Saved</span>
+                  <span className="metric-value">{metrics.timeSaved} hours</span>
+                </div>
+              </div>
+            )}
+
+            {metrics.roi !== undefined && (
+              <div className="expanded-card__metric expanded-card__roi">
+                <div className="metric-header">
+                  <Icon name="trending-up" />
+                  <span className="metric-label">ROI</span>
+                  <span className="metric-value">{formatCurrency(metrics.roi)}</span>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Links */}

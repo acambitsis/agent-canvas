@@ -47,25 +47,19 @@ function getStatusColor(status?: string): string {
   }
 }
 
-// Get ROI badge variant
-function getRoiBadgeClass(roi: string): string {
-  switch (roi) {
-    case 'Very High':
-      return 'badge--success';
-    case 'High':
-      return 'badge--info';
-    case 'Medium':
-      return 'badge--warning';
-    case 'Low':
-      return 'badge--error';
-    default:
-      return '';
+// Format currency for ROI display
+function formatCurrency(value: number): string {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
   }
+  if (value >= 1000) {
+    return `$${(value / 1000).toFixed(1)}K`;
+  }
+  return `$${value}`;
 }
 
 export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps) {
-  const metrics = agent.metrics || { adoption: 0, satisfaction: 0 };
-  const roiContribution = agent.roiContribution || 'Medium';
+  const metrics = agent.metrics || {};
   const statusColor = getStatusColor(agent.status);
 
   return (
@@ -165,21 +159,34 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
       {/* Footer with Metrics */}
       <div className="agent-card__footer">
         <div className="agent-card__metrics">
-          <div className="metric">
-            <Icon name="activity" />
-            <span className="metric__label">Usage:</span>
-            <span className="metric__value">{metrics.adoption}</span>
-          </div>
-          <div className="metric">
-            <Icon name="smile" />
-            <span className="metric__label">Satisfaction:</span>
-            <span className="metric__value">{metrics.satisfaction}</span>
-          </div>
-          <div className="metric">
-            <span className={`badge badge--sm ${getRoiBadgeClass(roiContribution)}`}>
-              ROI: {roiContribution}
-            </span>
-          </div>
+          {metrics.numberOfUsers !== undefined && (
+            <div className="metric">
+              <Icon name="users" />
+              <span className="metric__label">Users:</span>
+              <span className="metric__value">{metrics.numberOfUsers}</span>
+            </div>
+          )}
+          {metrics.timesUsed !== undefined && (
+            <div className="metric">
+              <Icon name="activity" />
+              <span className="metric__label">Uses:</span>
+              <span className="metric__value">{metrics.timesUsed}</span>
+            </div>
+          )}
+          {metrics.timeSaved !== undefined && (
+            <div className="metric">
+              <Icon name="clock" />
+              <span className="metric__label">Saved:</span>
+              <span className="metric__value">{metrics.timeSaved}h</span>
+            </div>
+          )}
+          {metrics.roi !== undefined && (
+            <div className="metric">
+              <Icon name="trending-up" />
+              <span className="metric__label">ROI:</span>
+              <span className="metric__value">{formatCurrency(metrics.roi)}</span>
+            </div>
+          )}
         </div>
 
         {agent.journeySteps && agent.journeySteps.length > 0 && (

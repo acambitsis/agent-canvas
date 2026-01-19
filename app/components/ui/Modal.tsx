@@ -45,14 +45,14 @@ export function Modal({ isOpen, onClose, title, children, size = 'medium' }: Mod
   if (!isOpen) return null;
 
   const sizeClass = {
-    small: 'modal-small',
-    medium: 'modal-medium',
-    large: 'modal-large',
+    small: 'modal--small',
+    medium: '',
+    large: 'modal--large',
   }[size];
 
   return (
-    <div className="modal show" onClick={onClose}>
-      <div className={`modal__content ${sizeClass}`} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay show" onClick={onClose}>
+      <div className={`modal ${sizeClass}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal__header">
           <h2>{title}</h2>
           <button

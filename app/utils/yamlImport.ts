@@ -19,9 +19,10 @@ interface YamlAgent {
   demoLink?: string;
   videoLink?: string;
   metrics?: {
-    usageThisWeek?: string;
-    timeSaved?: string;
-    roiContribution?: string;
+    numberOfUsers?: number | string;
+    timesUsed?: number | string;
+    timeSaved?: number | string; // hours
+    roi?: number | string; // integer currency
   };
   tags?: {
     department?: string;
@@ -117,19 +118,23 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
           throw new Error(`Agent in phase "${phase}" is missing a name`);
         }
 
-        // Parse metrics - only include if we have valid numeric values
-        // Note: usageThisWeek is a usage count, not a 0-100 percentage, so we skip it
-        // timeSaved is a percentage (e.g., "60%") which we parse
-        const satisfaction = agent.metrics?.timeSaved
-          ? parseFloat(agent.metrics.timeSaved)
-          : undefined;
+        // Parse metrics - convert string values to numbers
+        const parseMetricValue = (val: number | string | undefined): number | undefined => {
+          if (val === undefined) return undefined;
+          const num = typeof val === 'number' ? val : parseFloat(String(val));
+          return isNaN(num) ? undefined : num;
+        };
 
-        // For adoption, we could derive it from usageThisWeek or set a default
-        // For now, set to undefined if no valid timeSaved percentage
-        const metrics = (satisfaction !== undefined && !isNaN(satisfaction) &&
-                        satisfaction >= 0 && satisfaction <= 100)
-          ? { adoption: satisfaction, satisfaction } // Use same value for both
-          : undefined;
+        const metrics: { numberOfUsers?: number; timesUsed?: number; timeSaved?: number; roi?: number } = {};
+        const numberOfUsers = parseMetricValue(agent.metrics?.numberOfUsers);
+        const timesUsed = parseMetricValue(agent.metrics?.timesUsed);
+        const timeSaved = parseMetricValue(agent.metrics?.timeSaved);
+        const roi = parseMetricValue(agent.metrics?.roi);
+
+        if (numberOfUsers !== undefined) metrics.numberOfUsers = numberOfUsers;
+        if (timesUsed !== undefined) metrics.timesUsed = timesUsed;
+        if (timeSaved !== undefined) metrics.timeSaved = timeSaved;
+        if (roi !== undefined) metrics.roi = roi;
 
         agents.push({
           phase,
@@ -142,8 +147,7 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
           journeySteps: Array.isArray(agent.journeySteps) ? agent.journeySteps : [],
           demoLink: agent.demoLink?.trim() || undefined,
           videoLink: agent.videoLink?.trim() || undefined,
-          metrics,
-          roiContribution: agent.metrics?.roiContribution as any || undefined,
+          metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
           department: agent.tags?.department || undefined,
           status: agent.tags?.status || undefined,
         });

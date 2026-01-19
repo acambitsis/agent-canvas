@@ -3,11 +3,11 @@
  */
 
 export interface AgentMetrics {
-  adoption?: number;
-  satisfaction?: number;
+  numberOfUsers?: number;
+  timesUsed?: number;
+  timeSaved?: number; // hours
+  roi?: number; // integer currency
 }
-
-export type RoiContribution = 'Very High' | 'High' | 'Medium' | 'Low';
 
 export interface Agent {
   _id: string;
@@ -24,7 +24,6 @@ export interface Agent {
   demoLink?: string;
   videoLink?: string;
   metrics?: AgentMetrics;
-  roiContribution?: RoiContribution;
   department?: string;
   status?: string;
   createdBy: string;
@@ -50,11 +49,7 @@ export interface AgentFormData {
   journeySteps: string[];
   demoLink?: string;
   videoLink?: string;
-  metrics?: {
-    adoption: number;
-    satisfaction: number;
-  };
-  roiContribution?: RoiContribution;
+  metrics?: AgentMetrics;
   department?: string;
   status?: string;
   phase: string;

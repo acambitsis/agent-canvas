@@ -4,7 +4,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useCallback } from 'react';
 import { Canvas } from '@/types/canvas';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useQuery, useMutation } from '@/hooks/useConvex';
@@ -45,10 +45,17 @@ export function CanvasProvider({ children }: { children: React.ReactNode }) {
     ? canvases.find((c: Canvas) => c._id === currentCanvasId) || null
     : null;
 
-  // Auto-select first canvas if none selected
+  // Auto-select first canvas if none selected or current canvas was deleted
   useEffect(() => {
-    if (!currentCanvasId && canvases.length > 0) {
-      setCurrentCanvasIdState(canvases[0]._id);
+    if (canvases.length > 0) {
+      // If current canvas doesn't exist in the list (was deleted), select first available
+      const currentExists = currentCanvasId && canvases.some((c: Canvas) => c._id === currentCanvasId);
+      if (!currentExists) {
+        setCurrentCanvasIdState(canvases[0]._id);
+      }
+    } else if (currentCanvasId) {
+      // No canvases available, clear selection
+      setCurrentCanvasIdState(null);
     }
   }, [canvases, currentCanvasId, setCurrentCanvasIdState]);
 

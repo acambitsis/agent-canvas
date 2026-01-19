@@ -18,10 +18,4 @@ export const VALIDATION_CONSTANTS = {
 
   // Metrics constraints
   METRIC_MIN_VALUE: 0,
-  METRIC_MAX_VALUE: 100,
-
-  // ROI contribution values
-  ROI_CONTRIBUTION_VALUES: ["Very High", "High", "Medium", "Low"] as const,
 } as const;
-
-export type RoiContribution = typeof VALIDATION_CONSTANTS.ROI_CONTRIBUTION_VALUES[number];

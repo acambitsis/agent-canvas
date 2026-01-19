@@ -6,11 +6,11 @@
 import { VALIDATION_CONSTANTS } from "../../app/types/validationConstants";
 
 /**
- * Validate metric value is between 0 and 100
+ * Validate metric value is non-negative
  */
 export function validateMetric(value: number, fieldName: string): void {
-  if (value < VALIDATION_CONSTANTS.METRIC_MIN_VALUE || value > VALIDATION_CONSTANTS.METRIC_MAX_VALUE) {
-    throw new Error(`Validation: ${fieldName} must be between ${VALIDATION_CONSTANTS.METRIC_MIN_VALUE} and ${VALIDATION_CONSTANTS.METRIC_MAX_VALUE}`);
+  if (value < VALIDATION_CONSTANTS.METRIC_MIN_VALUE) {
+    throw new Error(`Validation: ${fieldName} must be ${VALIDATION_CONSTANTS.METRIC_MIN_VALUE} or greater`);
   }
 }
 
@@ -18,11 +18,18 @@ export function validateMetric(value: number, fieldName: string): void {
  * Validate metrics object if present
  */
 export function validateMetrics(
-  metrics?: { adoption: number; satisfaction: number }
+  metrics?: {
+    numberOfUsers?: number;
+    timesUsed?: number;
+    timeSaved?: number;
+    roi?: number;
+  }
 ): void {
   if (!metrics) return;
-  validateMetric(metrics.adoption, "adoption");
-  validateMetric(metrics.satisfaction, "satisfaction");
+  if (metrics.numberOfUsers !== undefined) validateMetric(metrics.numberOfUsers, "numberOfUsers");
+  if (metrics.timesUsed !== undefined) validateMetric(metrics.timesUsed, "timesUsed");
+  if (metrics.timeSaved !== undefined) validateMetric(metrics.timeSaved, "timeSaved");
+  // roi can be negative (loss), so no validation needed
 }
 
 /**
@@ -111,16 +118,3 @@ export function validateOptionalUrl(
   }
 }
 
-/**
- * Validate ROI contribution value
- */
-export function validateRoiContribution(
-  roiContribution?: "Very High" | "High" | "Medium" | "Low"
-): void {
-  if (!roiContribution) return;
-  if (!VALIDATION_CONSTANTS.ROI_CONTRIBUTION_VALUES.includes(roiContribution as any)) {
-    throw new Error(
-      `Validation: roiContribution must be one of: ${VALIDATION_CONSTANTS.ROI_CONTRIBUTION_VALUES.join(", ")}`
-    );
-  }
-}

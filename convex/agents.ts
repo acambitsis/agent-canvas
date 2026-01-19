@@ -15,25 +15,23 @@ import {
   validateMetrics,
   validateOptionalUrl,
   validatePhase,
-  validateRoiContribution,
 } from "./lib/validation";
-import { agentInputValidator, agentUpdateValidator } from "./lib/validators";
+import { agentFieldValidators, agentInputValidator, agentUpdateValidator } from "./lib/validators";
 
 // Shared validation for agent data
-function validateAgentData(data: {
-  name: string;
-  phase: string;
-  metrics?: { adoption: number; satisfaction: number };
-  roiContribution?: "Very High" | "High" | "Medium" | "Low";
-  demoLink?: string;
-  videoLink?: string;
-}): void {
-  validateAgentName(data.name);
-  validatePhase(data.phase);
-  validateMetrics(data.metrics);
-  validateRoiContribution(data.roiContribution);
-  validateOptionalUrl(data.demoLink, "demoLink");
-  validateOptionalUrl(data.videoLink, "videoLink");
+function validateAgentData(data: Record<string, unknown>): void {
+  if (typeof data.name === 'string') validateAgentName(data.name);
+  if (typeof data.phase === 'string') validatePhase(data.phase);
+  if (data.metrics && typeof data.metrics === 'object') {
+    validateMetrics(data.metrics as {
+      numberOfUsers?: number;
+      timesUsed?: number;
+      timeSaved?: number;
+      roi?: number;
+    });
+  }
+  if (typeof data.demoLink === 'string') validateOptionalUrl(data.demoLink, "demoLink");
+  if (typeof data.videoLink === 'string') validateOptionalUrl(data.videoLink, "videoLink");
 }
 
 // Helper to record agent history
@@ -105,8 +103,7 @@ export const create = mutation({
     journeySteps: v.array(v.string()),
     demoLink: v.optional(v.string()),
     videoLink: v.optional(v.string()),
-    metrics: metricsValidator,
-    roiContribution: roiValidator,
+    metrics: agentFieldValidators.metrics,
     department: v.optional(v.string()),
     status: v.optional(v.string()),
   },

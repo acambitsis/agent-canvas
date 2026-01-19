@@ -1,10 +1,11 @@
 /**
- * AppStateContext - Manages global UI state (loading, toasts, modals)
+ * AppStateContext - Manages global UI state (loading, toasts, modals, sidebar)
  */
 
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface Toast {
   id: string;
@@ -16,18 +17,24 @@ interface AppStateContextValue {
   isLoading: boolean;
   loadingMessage: string;
   toasts: Toast[];
+  isSidebarCollapsed: boolean;
   showLoading: (message: string) => void;
   hideLoading: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
   hideToast: (id: string) => void;
+  toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
+
+const SIDEBAR_COLLAPSED_KEY = 'agentcanvas-sidebar-collapsed';
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
 
   const showLoading = useCallback((message: string) => {
     setIsLoading(true);
@@ -53,14 +60,25 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed((prev) => !prev);
+  }, [setIsSidebarCollapsed]);
+
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+  }, [setIsSidebarCollapsed]);
+
   const value: AppStateContextValue = {
     isLoading,
     loadingMessage,
     toasts,
+    isSidebarCollapsed,
     showLoading,
     hideLoading,
     showToast,
     hideToast,
+    toggleSidebar,
+    setSidebarCollapsed,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
