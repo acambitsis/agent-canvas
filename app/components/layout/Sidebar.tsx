@@ -156,6 +156,7 @@ export function Sidebar() {
             <h3 className="sidebar__section-title">Canvases</h3>
             <div className="sidebar__section-actions">
               <button
+                type="button"
                 className="sidebar__action-btn"
                 onClick={handleCreateCanvas}
                 title="New canvas"
@@ -163,6 +164,7 @@ export function Sidebar() {
                 <Icon name="plus" />
               </button>
               <button
+                type="button"
                 className="sidebar__action-btn"
                 onClick={() => setIsImportModalOpen(true)}
                 title="Import from YAML"
