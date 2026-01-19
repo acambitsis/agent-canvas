@@ -181,3 +181,13 @@ export function useIdToken() {
   const { idToken } = useAuth();
   return useCallback(() => idToken, [idToken]);
 }
+
+/**
+ * Check if current user is admin of the current org
+ */
+export function useIsOrgAdmin() {
+  const { userOrgs, currentOrgId } = useAuth();
+  if (!currentOrgId) return false;
+  const org = userOrgs.find(org => org.id === currentOrgId);
+  return org?.role === 'admin';
+}

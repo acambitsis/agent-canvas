@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AgentCanvas',
+  title: 'Agent Canvas',
   description: 'AI Agent Workflow Visualization and Configuration',
 };
 

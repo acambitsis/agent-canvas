@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { MutationCtx, QueryCtx } from "./_generated/server";
-import { AuthContext, requireAuth, requireOrgAccess } from "./lib/auth";
+import { AuthContext, requireAuth } from "./lib/auth";
 import {
   getAgentSnapshot,
   getCanvasWithAccess,

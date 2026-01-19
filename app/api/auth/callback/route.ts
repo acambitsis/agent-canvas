@@ -8,7 +8,9 @@ import {
   createSessionCookie,
   encryptSession,
   getIdTokenForConvex,
+  checkSuperAdmin,
   type SessionData,
+  type OrgClaim,
 } from '@/server/session-utils';
 import { exchangeCodeForTokens, fetchUserOrgs } from '@/server/workos';
 
@@ -45,15 +47,19 @@ export async function GET(request: Request) {
     const tokenData = await exchangeCodeForTokens(code, workosApiKey, workosClientId);
     if (!tokenData) return redirect(baseUrl, 'auth_failed');
 
-    const { user, access_token, refresh_token, id_token } = tokenData;
+    const { user, access_token, refresh_token } = tokenData;
 
-    // Debug: Log whether WorkOS returned an id_token
-    console.log('[Auth Callback] WorkOS id_token present:', !!id_token);
-
-    // Use WorkOS id_token if provided, otherwise generate custom JWT for Convex
-    const idTokenForConvex = await getIdTokenForConvex(id_token, user);
-
+    // Fetch user's org memberships from WorkOS
     const orgs = await fetchUserOrgs(user.id, workosApiKey);
+
+    // Convert to OrgClaim format for JWT
+    const orgClaims: OrgClaim[] = orgs.map((om) => ({
+      id: om.organization_id,
+      role: om.role?.slug || 'member',
+    }));
+
+    // Generate custom JWT with orgs and isSuperAdmin claims for Convex
+    const idTokenForConvex = await getIdTokenForConvex(user, orgClaims);
 
     if (orgs.length === 0) {
       return redirect(baseUrl, 'no_organization');
@@ -67,7 +73,7 @@ export async function GET(request: Request) {
     const sessionData: SessionData = {
       accessToken: access_token, // Keep for WorkOS API calls if needed
       refreshToken: refresh_token,
-      idToken: idTokenForConvex, // JWT token for Convex authentication (WorkOS or custom)
+      idToken: idTokenForConvex, // JWT token for Convex authentication with orgs claims
       idTokenExpiresAt,
       user: {
         id: user.id,
@@ -76,10 +82,8 @@ export async function GET(request: Request) {
         lastName: user.last_name,
         profilePictureUrl: user.profile_picture_url,
       },
-      orgs: orgs.map((om) => ({
-        id: om.organization_id,
-        role: om.role?.slug || 'member',
-      })),
+      orgs: orgClaims, // Reuse the same org claims
+      isSuperAdmin: checkSuperAdmin(user.email),
     };
 
     // Encrypt session data

@@ -78,7 +78,7 @@ export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="surface-card login-card">
-        <h1 className="login-title">AgentCanvas</h1>
+        <h1 className="login-title">Agent Canvas</h1>
         <p className="login-subtitle">Sign in to manage your agent workflows</p>
 
         {error && (

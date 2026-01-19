@@ -14,8 +14,8 @@ import type * as canvases from "../canvases.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_helpers from "../lib/helpers.js";
 import type * as lib_validation from "../lib/validation.js";
+import type * as lib_validators from "../lib/validators.js";
 import type * as orgSettings from "../orgSettings.js";
-import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -30,8 +30,8 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/helpers": typeof lib_helpers;
   "lib/validation": typeof lib_validation;
+  "lib/validators": typeof lib_validators;
   orgSettings: typeof orgSettings;
-  users: typeof users;
 }>;
 
 /**

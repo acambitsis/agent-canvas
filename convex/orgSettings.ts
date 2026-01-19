@@ -9,7 +9,7 @@ export const get = query({
   args: { workosOrgId: v.string() },
   handler: async (ctx, { workosOrgId }) => {
     const auth = await requireAuth(ctx);
-    await requireOrgAccess(ctx, auth, workosOrgId);
+    requireOrgAccess(auth, workosOrgId);
 
     const settings = await ctx.db
       .query("orgSettings")
@@ -32,7 +32,7 @@ export const update = mutation({
   },
   handler: async (ctx, { workosOrgId, toolDefinitions, colorScheme, sectionDefaults }) => {
     const auth = await requireAuth(ctx);
-    await requireOrgAccess(ctx, auth, workosOrgId);
+    requireOrgAccess(auth, workosOrgId);
 
     const existing = await ctx.db
       .query("orgSettings")
@@ -71,7 +71,7 @@ export const initDefaults = mutation({
   args: { workosOrgId: v.string() },
   handler: async (ctx, { workosOrgId }) => {
     const auth = await requireAuth(ctx);
-    await requireOrgAccess(ctx, auth, workosOrgId);
+    requireOrgAccess(auth, workosOrgId);
 
     const existing = await ctx.db
       .query("orgSettings")
