@@ -148,7 +148,7 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
           demoLink: agent.demoLink?.trim() || undefined,
           videoLink: agent.videoLink?.trim() || undefined,
           metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
-          department: agent.tags?.department || undefined,
+          category: agent.tags?.department || undefined, // Map legacy 'department' to 'category'
           status: agent.tags?.status || undefined,
         });
       }

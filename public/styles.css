@@ -3618,7 +3618,7 @@ a:hover {
     flex-wrap: wrap;
 }
 
-.expanded-card__department,
+.expanded-card__category,
 .expanded-card__phase {
     display: flex;
     align-items: center;
@@ -3627,7 +3627,7 @@ a:hover {
     color: var(--text-muted);
 }
 
-.expanded-card__department svg,
+.expanded-card__category svg,
 .expanded-card__phase svg {
     width: 14px;
     height: 14px;

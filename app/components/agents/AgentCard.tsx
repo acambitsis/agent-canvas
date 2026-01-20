@@ -139,12 +139,12 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
         </div>
       </div>
 
-      {/* Department Tag */}
-      {agent.department && (
+      {/* Category Tag */}
+      {agent.category && (
         <div className="agent-card__tags">
           <span className="tag-indicator">
-            <Icon name="building-2" />
-            {agent.department}
+            <Icon name="folder" />
+            {agent.category}
           </span>
         </div>
       )}

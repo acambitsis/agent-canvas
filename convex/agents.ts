@@ -104,7 +104,7 @@ export const create = mutation({
     demoLink: v.optional(v.string()),
     videoLink: v.optional(v.string()),
     metrics: agentFieldValidators.metrics,
-    department: v.optional(v.string()),
+    category: v.optional(v.string()),
     status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -355,10 +355,10 @@ export const bulkReplace = mutation({
 });
 
 /**
- * Get distinct departments across all agents in an organization
+ * Get distinct categories across all agents in an organization
  * Used for autocomplete suggestions in the agent form
  */
-export const getDistinctDepartments = query({
+export const getDistinctCategories = query({
   args: { workosOrgId: v.string() },
   handler: async (ctx, { workosOrgId }) => {
     const auth = await requireAuth(ctx);
@@ -371,8 +371,8 @@ export const getDistinctDepartments = query({
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
-    // Collect all departments from agents across all canvases
-    const departments = new Set<string>();
+    // Collect all categories from agents across all canvases
+    const categories = new Set<string>();
 
     for (const canvas of canvases) {
       const agents = await ctx.db
@@ -382,14 +382,14 @@ export const getDistinctDepartments = query({
         .collect();
 
       for (const agent of agents) {
-        if (agent.department && agent.department.trim()) {
-          departments.add(agent.department.trim());
+        if (agent.category && agent.category.trim()) {
+          categories.add(agent.category.trim());
         }
       }
     }
 
     // Return sorted array
-    return Array.from(departments).sort((a, b) =>
+    return Array.from(categories).sort((a, b) =>
       a.toLowerCase().localeCompare(b.toLowerCase())
     );
   },

@@ -32,7 +32,7 @@ export const agentFieldValidators = {
       roi: v.optional(v.number()), // integer currency
     })
   ),
-  department: v.optional(v.string()),
+  category: v.optional(v.string()),
   status: v.optional(v.string()),
 } as const;
 
@@ -59,7 +59,7 @@ export const agentInputValidator = v.object({
       roi: v.optional(v.number()),
     })
   ),
-  department: v.optional(v.string()),
+  category: v.optional(v.string()),
   status: v.optional(v.string()),
 });
 
@@ -78,6 +78,6 @@ export const agentUpdateValidator = {
   demoLink: agentFieldValidators.demoLink,
   videoLink: agentFieldValidators.videoLink,
   metrics: agentFieldValidators.metrics,
-  department: agentFieldValidators.department,
+  category: agentFieldValidators.category,
   status: agentFieldValidators.status,
 };

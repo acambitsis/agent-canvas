@@ -3,7 +3,7 @@
  */
 
 import { Agent, AgentGroup } from '@/types/agent';
-import { TAG_TYPES, DEFAULT_GROUPING_TAG, SECTION_COLOR_PALETTE, getTagValue } from './config';
+import { TAG_TYPES, DEFAULT_GROUPING_TAG, DEFAULT_CATEGORY, DEFAULT_PHASE, SECTION_COLOR_PALETTE, getTagValue } from './config';
 
 /**
  * Get tag value from agent for the specified tag type
@@ -11,8 +11,8 @@ import { TAG_TYPES, DEFAULT_GROUPING_TAG, SECTION_COLOR_PALETTE, getTagValue } f
  */
 export function getAgentTagValue(agent: Agent, tagType: string): string | undefined {
   const tagValueMap: Record<string, string | undefined> = {
+    category: agent.category,
     phase: agent.phase,
-    department: agent.department,
     status: agent.status,
   };
   return tagValueMap[tagType];
@@ -42,21 +42,31 @@ export function groupAgentsByTag(agents: Agent[], tagType: string = DEFAULT_GROU
     if (agent.deletedAt) continue;
 
     // Get tag value from agent
-    const defaultValue = tagType === 'phase' ? 'Uncategorized' : 'unassigned';
+    const defaultValue = tagType === 'category' ? DEFAULT_CATEGORY :
+                         tagType === 'phase' ? DEFAULT_PHASE : 'unassigned';
     const tagValue = getAgentTagValueWithDefault(agent, tagType, defaultValue);
 
     // Initialize group if needed
     if (!groups.has(tagValue)) {
       let groupMeta: Omit<AgentGroup, 'agents'>;
 
-      if (tagType === 'phase') {
+      if (tagType === 'category') {
+        // Category colors are assigned dynamically from palette
+        const groupIndex = groups.size;
+        groupMeta = {
+          id: tagValue,
+          label: tagValue,
+          color: SECTION_COLOR_PALETTE[groupIndex % SECTION_COLOR_PALETTE.length],
+          icon: 'folder',
+        };
+      } else if (tagType === 'phase') {
         // Phase colors are assigned dynamically from palette
         const groupIndex = groups.size;
         groupMeta = {
           id: tagValue,
           label: tagValue,
           color: SECTION_COLOR_PALETTE[groupIndex % SECTION_COLOR_PALETTE.length],
-          icon: 'layers',
+          icon: 'milestone',
         };
       } else {
         // Other tags use predefined colors
@@ -113,7 +123,7 @@ export function filterAgents(agents: Agent[], filters: Record<string, string[]>)
       const agentValue = getAgentTagValue(agent, tagType);
 
       // If unknown tag type, skip this filter
-      if (agentValue === undefined && !['phase', 'department', 'status'].includes(tagType)) {
+      if (agentValue === undefined && !['category', 'phase', 'status'].includes(tagType)) {
         continue;
       }
 

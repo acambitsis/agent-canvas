@@ -24,7 +24,7 @@ export interface Agent {
   demoLink?: string;
   videoLink?: string;
   metrics?: AgentMetrics;
-  department?: string;
+  category?: string;
   status?: string;
   createdBy: string;
   updatedBy: string;
@@ -50,7 +50,7 @@ export interface AgentFormData {
   demoLink?: string;
   videoLink?: string;
   metrics?: AgentMetrics;
-  department?: string;
+  category?: string;
   status?: string;
   phase: string;
   phaseOrder: number;

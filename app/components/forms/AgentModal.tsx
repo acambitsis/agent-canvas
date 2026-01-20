@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { useQuery } from '@/hooks/useConvex';
 import { validateAgentForm } from '@/utils/validation';
-import { getAvailableTools, getToolDisplay } from '@/utils/config';
+import { getAvailableTools, getToolDisplay, DEFAULT_PHASE } from '@/utils/config';
 import { Icon } from '@/components/ui/Icon';
 import { api } from '../../../convex/_generated/api';
 
@@ -54,12 +54,12 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
   const { currentOrgId } = useAuth();
   const executeOperation = useAsyncOperation();
 
-  // Get existing departments from org for autocomplete
-  const existingDepartments = useQuery(
-    api.agents.getDistinctDepartments,
+  // Get existing categories from org for autocomplete
+  const existingCategories = useQuery(
+    api.agents.getDistinctCategories,
     currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
-  const departmentDatalistId = useId();
+  const categoryDatalistId = useId();
 
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
@@ -70,9 +70,9 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
     demoLink: '',
     videoLink: '',
     metrics: {},
-    department: '',
+    category: '',
     status: 'draft',
-    phase: defaultPhase || 'Uncategorized',
+    phase: defaultPhase || DEFAULT_PHASE,
     phaseOrder: 0,
     agentOrder: 0,
   });
@@ -92,7 +92,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
         demoLink: agent.demoLink || '',
         videoLink: agent.videoLink || '',
         metrics: agent.metrics || {},
-        department: agent.department || '',
+        category: agent.category || '',
         status: agent.status || 'draft',
         phase: agent.phase,
         phaseOrder: agent.phaseOrder,
@@ -110,9 +110,9 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
         demoLink: '',
         videoLink: '',
         metrics: {},
-        department: '',
+        category: '',
         status: 'draft',
-        phase: defaultPhase || 'Uncategorized',
+        phase: defaultPhase || DEFAULT_PHASE,
         phaseOrder: 0,
         agentOrder: 0,
       });
@@ -233,7 +233,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="agent-phase" className="form-label">
-                Phase <span className="required">*</span>
+                Implementation Phase <span className="required">*</span>
               </label>
               <input
                 id="agent-phase"
@@ -242,34 +242,35 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
                 value={formData.phase}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phase: e.target.value }))}
                 onBlur={(e) => validateField('phase', e.target.value)}
+                placeholder="e.g., Phase 1, Q2 2025, Backlog"
                 required
               />
               {errors.phase && <div className="form-error">{errors.phase}</div>}
             </div>
 
             <div className="form-group">
-              <label htmlFor="agent-department" className="form-label">
-                Department
+              <label htmlFor="agent-category" className="form-label">
+                Category
               </label>
               <input
-                id="agent-department"
+                id="agent-category"
                 type="text"
                 className="form-input"
-                list={departmentDatalistId}
-                value={formData.department}
-                onChange={(e) => setFormData((prev) => ({ ...prev, department: e.target.value }))}
+                list={categoryDatalistId}
+                value={formData.category}
+                onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                 onBlur={(e) => {
                   // Normalize: trim whitespace
                   const trimmed = e.target.value.trim();
                   if (trimmed !== e.target.value) {
-                    setFormData((prev) => ({ ...prev, department: trimmed }));
+                    setFormData((prev) => ({ ...prev, category: trimmed }));
                   }
                 }}
-                placeholder="e.g., Sales, Engineering, Marketing"
+                placeholder="e.g., Recruitment, Onboarding, Benefits"
               />
-              <datalist id={departmentDatalistId}>
-                {existingDepartments.map((dept) => (
-                  <option key={dept} value={dept} />
+              <datalist id={categoryDatalistId}>
+                {existingCategories.map((cat) => (
+                  <option key={cat} value={cat} />
                 ))}
               </datalist>
             </div>

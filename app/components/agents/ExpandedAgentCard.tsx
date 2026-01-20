@@ -77,15 +77,15 @@ export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: Expand
           <div className="expanded-card__title-group">
             <h3 className="expanded-card__name">{agent.name}</h3>
             <div className="expanded-card__meta">
-              {agent.department && (
-                <span className="expanded-card__department">
-                  <Icon name="building-2" />
-                  {agent.department}
+              {agent.category && (
+                <span className="expanded-card__category">
+                  <Icon name="folder" />
+                  {agent.category}
                 </span>
               )}
               {agent.phase && (
                 <span className="expanded-card__phase">
-                  <Icon name="layers" />
+                  <Icon name="milestone" />
                   {agent.phase}
                 </span>
               )}

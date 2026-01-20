@@ -31,7 +31,7 @@ export default defineSchema({
   // Individual agents within canvases
   agents: defineTable({
     canvasId: v.id("canvases"),
-    phase: v.string(), // Grouping: "Sales", "Design", etc.
+    phase: v.string(), // Implementation phase: "Phase 1", "Backlog", etc.
     phaseOrder: v.number(), // Sort order for phases
     agentOrder: v.number(), // Sort order within phase
     name: v.string(),
@@ -50,7 +50,7 @@ export default defineSchema({
       })
     ),
     // Fixed tag fields for grouping and filtering (same across all orgs)
-    department: v.optional(v.string()), // e.g., "sales", "engineering", "marketing"
+    category: v.optional(v.string()), // Visual grouping: "Recruitment", "Onboarding", etc.
     status: v.optional(v.string()), // e.g., "active", "draft", "deprecated"
     // payload removed - we're Convex-native, no need for round-trip fidelity
     deletedAt: v.optional(v.number()), // Soft delete timestamp

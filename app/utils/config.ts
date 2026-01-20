@@ -52,30 +52,21 @@ export const SECTION_COLOR_PALETTE = [
 
 // Tag type definitions
 export const TAG_TYPES: Record<string, TagType> = {
-  phase: {
-    id: 'phase',
-    label: 'Phase',
-    description: 'Business process phase',
+  category: {
+    id: 'category',
+    label: 'Category',
+    description: 'Visual grouping',
     isGroupable: true,
-    icon: 'layers',
+    icon: 'folder',
     values: [],
   },
-  department: {
-    id: 'department',
-    label: 'Department',
-    description: 'Organizational department',
+  phase: {
+    id: 'phase',
+    label: 'Implementation Phase',
+    description: 'Implementation schedule',
     isGroupable: true,
-    icon: 'building-2',
-    values: [
-      { id: 'sales', label: 'Sales', color: '#3B82F6', icon: 'trending-up' },
-      { id: 'engineering', label: 'Engineering', color: '#8B5CF6', icon: 'code-2' },
-      { id: 'marketing', label: 'Marketing', color: '#EC4899', icon: 'megaphone' },
-      { id: 'operations', label: 'Operations', color: '#F59E0B', icon: 'settings' },
-      { id: 'support', label: 'Support', color: '#10B981', icon: 'headphones' },
-      { id: 'finance', label: 'Finance', color: '#06B6D4', icon: 'wallet' },
-      { id: 'hr', label: 'HR', color: '#F472B6', icon: 'users' },
-      { id: 'legal', label: 'Legal', color: '#6366F1', icon: 'scale' },
-    ],
+    icon: 'milestone',
+    values: [],
   },
   status: {
     id: 'status',
@@ -92,7 +83,11 @@ export const TAG_TYPES: Record<string, TagType> = {
   },
 };
 
-export const DEFAULT_GROUPING_TAG = 'phase';
+export const DEFAULT_GROUPING_TAG = 'category';
+
+// Default values for grouping fields
+export const DEFAULT_CATEGORY = 'Uncategorized';
+export const DEFAULT_PHASE = 'Backlog';
 
 /**
  * Get tool display info (canonical format with hex colors)
