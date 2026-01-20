@@ -49,8 +49,8 @@ pnpm test:ui     # browser UI
 
 ## Git Workflow
 
-- **Feature branches** → merge to `dev` → test → merge to `main` (prod)
-- Always deploy feature branches to `dev` first for testing
+- **Minor fixes** (typos, small doc updates): commit directly to `dev`
+- **Features/bug series**: feature branch → `dev` → test → `main` (prod)
 
 ## Environment Variables
 
