@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { MutationCtx, QueryCtx } from "./_generated/server";
-import { AuthContext, requireAuth } from "./lib/auth";
+import { AuthContext, requireAuth, requireOrgAccess } from "./lib/auth";
 import {
   getAgentSnapshot,
   getCanvasWithAccess,
@@ -351,5 +351,46 @@ export const bulkReplace = mutation({
     }
 
     return createdIds;
+  },
+});
+
+/**
+ * Get distinct departments across all agents in an organization
+ * Used for autocomplete suggestions in the agent form
+ */
+export const getDistinctDepartments = query({
+  args: { workosOrgId: v.string() },
+  handler: async (ctx, { workosOrgId }) => {
+    const auth = await requireAuth(ctx);
+    requireOrgAccess(auth, workosOrgId);
+
+    // Get all canvases for this org
+    const canvases = await ctx.db
+      .query("canvases")
+      .withIndex("by_org", (q) => q.eq("workosOrgId", workosOrgId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+
+    // Collect all departments from agents across all canvases
+    const departments = new Set<string>();
+
+    for (const canvas of canvases) {
+      const agents = await ctx.db
+        .query("agents")
+        .withIndex("by_canvas", (q) => q.eq("canvasId", canvas._id))
+        .filter((q) => q.eq(q.field("deletedAt"), undefined))
+        .collect();
+
+      for (const agent of agents) {
+        if (agent.department && agent.department.trim()) {
+          departments.add(agent.department.trim());
+        }
+      }
+    }
+
+    // Return sorted array
+    return Array.from(departments).sort((a, b) =>
+      a.toLowerCase().localeCompare(b.toLowerCase())
+    );
   },
 });

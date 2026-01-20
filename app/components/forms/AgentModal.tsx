@@ -9,10 +9,13 @@ import { Agent, AgentFormData, AgentMetrics } from '@/types/agent';
 import { Modal } from '../ui/Modal';
 import { useAgents } from '@/contexts/AgentContext';
 import { useAppState } from '@/contexts/AppStateContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { useQuery } from '@/hooks/useConvex';
 import { validateAgentForm } from '@/utils/validation';
 import { getAvailableTools, getToolDisplay } from '@/utils/config';
 import { Icon } from '@/components/ui/Icon';
+import { api } from '../../../convex/_generated/api';
 
 interface AgentModalProps {
   isOpen: boolean;
@@ -48,7 +51,14 @@ function FormSection({ title, children, defaultCollapsed = false }: FormSectionP
 export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalProps) {
   const { createAgent, updateAgent } = useAgents();
   const { showToast } = useAppState();
+  const { currentOrgId } = useAuth();
   const executeOperation = useAsyncOperation();
+
+  // Get existing departments from org for autocomplete
+  const existingDepartments = useQuery(
+    api.agents.getDistinctDepartments,
+    currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+  ) || [];
 
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
@@ -240,19 +250,27 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
               <label htmlFor="agent-department" className="form-label">
                 Department
               </label>
-              <select
+              <input
                 id="agent-department"
-                className="form-select"
+                type="text"
+                className="form-input"
+                list="department-suggestions"
                 value={formData.department}
                 onChange={(e) => setFormData((prev) => ({ ...prev, department: e.target.value }))}
-              >
-                <option value="">None</option>
-                <option value="sales">Sales</option>
-                <option value="engineering">Engineering</option>
-                <option value="marketing">Marketing</option>
-                <option value="operations">Operations</option>
-                <option value="support">Support</option>
-              </select>
+                onBlur={(e) => {
+                  // Normalize: trim whitespace
+                  const trimmed = e.target.value.trim();
+                  if (trimmed !== e.target.value) {
+                    setFormData((prev) => ({ ...prev, department: trimmed }));
+                  }
+                }}
+                placeholder="e.g., Sales, Engineering, Marketing"
+              />
+              <datalist id="department-suggestions">
+                {existingDepartments.map((dept) => (
+                  <option key={dept} value={dept} />
+                ))}
+              </datalist>
             </div>
           </div>
 
