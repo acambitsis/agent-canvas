@@ -5,68 +5,79 @@ Compact spec for LLM-generated agent canvas documents.
 ## Structure
 
 ```yaml
-documentTitle: string (required)
-agentGroups:
-  - groupName: string
-    agents:
-      - name: string (required)
-        objective: string
-        description: string
-        tools: [string]
-        journeySteps: [string]
+documentTitle: string (required, max 200 chars)
+agentGroups:                    # optional, defaults to []
+  - groupName: string           # optional, defaults to "Phase N", max 50 chars
+    agents:                     # optional, defaults to []
+      - name: string            # required, max 100 chars
+        objective: string       # max 500 chars
+        description: string     # max 1000 chars
+        tools: [string]         # defaults to []
+        journeySteps: [string]  # defaults to []
         demoLink: url
         videoLink: url
         metrics:
-          numberOfUsers: number
-          timesUsed: number
-          timeSaved: number  # hours
-          roi: number        # currency
+          numberOfUsers: number # >= 0
+          timesUsed: number     # >= 0
+          timeSaved: number     # >= 0, hours saved
+          roi: number           # >= 0, currency value
         tags:
-          department: string # e.g., "Sales", "Engineering"
-          status: string     # e.g., "active", "draft"
+          department: string    # maps to "category" in database
+          status: string        # e.g., "active", "draft", "deprecated"
 ```
 
 ## Rules
 
-- `documentTitle`: Canvas name, max 200 chars
-- `agentGroups`: Logical phases/stages containing agents
-- `groupName`: Phase label (e.g., "Discovery", "Implementation")
-- `name`: Agent name, required
-- All other fields optional, omit if empty
-- `tools`: List of tool/capability names
-- `journeySteps`: Ordered workflow steps
-- `metrics`: Values can be numbers or numeric strings (e.g., `42` or `"42"`)
+- `documentTitle`: Required. Canvas name, max 200 chars
+- `agentGroups`: Optional. Array of phases/stages. Omit or use `[]` if empty
+- `groupName`: Optional. Defaults to "Phase 1", "Phase 2", etc. Max 50 chars
+- `name`: Required per agent. Max 100 chars
+- `metrics`: All values must be numbers ≥ 0. Can also be numeric strings (e.g., `"42"`)
 - `tags.department`: Maps to `category` field in database
+- All other fields: Optional—omit if empty/unused
 
 ## Example
 
 ```yaml
 documentTitle: Customer Onboarding Agents
+
 agentGroups:
   - groupName: Initial Contact
     agents:
       - name: Lead Qualifier
-        objective: Assess and score incoming leads
+        objective: Assess and score incoming leads based on fit criteria
+        description: |
+          Analyzes lead data from multiple sources, applies scoring rules,
+          and routes qualified leads to the appropriate sales team.
         tools:
           - CRM
           - Email
+          - Analytics
         journeySteps:
           - Receive lead notification
-          - Check company profile
-          - Score based on criteria
+          - Pull company profile data
+          - Calculate fit score
+          - Route to sales or nurture
+        demoLink: https://demo.example.com/lead-qualifier
+        videoLink: https://videos.example.com/lead-qualifier-overview
+        metrics:
+          numberOfUsers: 12
+          timesUsed: 450
+          timeSaved: 120
+          roi: 25000
         tags:
           department: Sales
           status: active
 
-  - groupName: Setup
+  - groupName: Account Setup
     agents:
       - name: Account Creator
-        objective: Provision new customer accounts
+        objective: Provision new customer accounts automatically
         tools:
           - Admin Portal
           - Billing System
         journeySteps:
-          - Create account
-          - Set permissions
-          - Send welcome email
+          - Create account record
+          - Set initial permissions
+          - Generate welcome email
 ```
