@@ -26,7 +26,7 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
   return (
     <header className="toolbar">
       <div className="toolbar__left">
-        <h1 className="toolbar__title">{currentCanvas?.title || 'Agent Canvas'}</h1>
+        <h1 className="toolbar__title">{currentCanvas?.title || ''}</h1>
         <span className="toolbar__badge">
           <Icon name="bot" />
           <span>{agents.length} Agents</span>
