@@ -11,7 +11,7 @@ import { useCanvas } from '@/contexts/CanvasContext';
 import { useMutation } from '@/hooks/useConvex';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { Icon } from '@/components/ui/Icon';
-import { prepareYamlImport, extractTitleFromYaml } from '@/utils/yamlImport';
+import { prepareYamlImport, extractTitleFromYaml } from '@/utils/yaml';
 import { api } from '../../../convex/_generated/api';
 
 interface ImportYamlModalProps {

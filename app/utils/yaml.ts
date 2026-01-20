@@ -1,10 +1,9 @@
 /**
- * Legacy YAML import utility
- * One-way import: YAML → Convex (no YAML persistence)
+ * YAML import/export utilities for canvas data
  */
 
 import * as yaml from 'js-yaml';
-import { AgentFormData } from '@/types/agent';
+import { Agent, AgentFormData } from '@/types/agent';
 import { VALIDATION_CONSTANTS } from '@/types/validationConstants';
 
 /**
@@ -222,4 +221,81 @@ export function prepareYamlImport({
   const slug = generateUniqueSlug(title, existingSlugs);
 
   return { title, slug, agents };
+}
+
+/**
+ * Convert agents to YAML document structure
+ */
+function agentsToYamlDoc(title: string, agents: Agent[]): YamlDocument {
+  // Group agents by phase, maintaining order
+  const phaseMap = new Map<string, { order: number; agents: Agent[] }>();
+
+  for (const agent of agents) {
+    const existing = phaseMap.get(agent.phase);
+    if (existing) {
+      existing.agents.push(agent);
+    } else {
+      phaseMap.set(agent.phase, { order: agent.phaseOrder, agents: [agent] });
+    }
+  }
+
+  // Sort phases by phaseOrder
+  const sortedPhases = Array.from(phaseMap.entries())
+    .sort((a, b) => a[1].order - b[1].order);
+
+  const agentGroups: YamlAgentGroup[] = sortedPhases.map(([phaseName, { agents: phaseAgents }]) => {
+    // Sort agents within phase by agentOrder
+    const sortedAgents = [...phaseAgents].sort((a, b) => a.agentOrder - b.agentOrder);
+
+    return {
+      groupName: phaseName,
+      agents: sortedAgents.map((agent): YamlAgent => {
+        const yamlAgent: YamlAgent = {
+          name: agent.name,
+        };
+
+        if (agent.objective) yamlAgent.objective = agent.objective;
+        if (agent.description) yamlAgent.description = agent.description;
+        if (agent.tools?.length) yamlAgent.tools = agent.tools;
+        if (agent.journeySteps?.length) yamlAgent.journeySteps = agent.journeySteps;
+        if (agent.demoLink) yamlAgent.demoLink = agent.demoLink;
+        if (agent.videoLink) yamlAgent.videoLink = agent.videoLink;
+
+        if (agent.metrics && Object.keys(agent.metrics).length > 0) {
+          yamlAgent.metrics = {};
+          if (agent.metrics.numberOfUsers !== undefined) yamlAgent.metrics.numberOfUsers = agent.metrics.numberOfUsers;
+          if (agent.metrics.timesUsed !== undefined) yamlAgent.metrics.timesUsed = agent.metrics.timesUsed;
+          if (agent.metrics.timeSaved !== undefined) yamlAgent.metrics.timeSaved = agent.metrics.timeSaved;
+          if (agent.metrics.roi !== undefined) yamlAgent.metrics.roi = agent.metrics.roi;
+        }
+
+        // Map 'category' back to 'department' in tags for YAML format
+        if (agent.category || agent.status) {
+          yamlAgent.tags = {};
+          if (agent.category) yamlAgent.tags.department = agent.category;
+          if (agent.status) yamlAgent.tags.status = agent.status;
+        }
+
+        return yamlAgent;
+      }),
+    };
+  });
+
+  return {
+    documentTitle: title,
+    agentGroups,
+  };
+}
+
+/**
+ * Export canvas and agents to YAML string
+ */
+export function exportToYaml(title: string, agents: Agent[]): string {
+  const doc = agentsToYamlDoc(title, agents);
+  return yaml.dump(doc, {
+    indent: 2,
+    lineWidth: -1, // Don't wrap lines
+    noRefs: true,
+    sortKeys: false,
+  });
 }
