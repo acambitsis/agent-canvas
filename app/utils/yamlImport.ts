@@ -27,8 +27,6 @@ interface YamlAgent {
   tags?: {
     department?: string;
     status?: string;
-    implementationStatus?: string;
-    priority?: string;
   };
 }
 
@@ -148,7 +146,7 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
           demoLink: agent.demoLink?.trim() || undefined,
           videoLink: agent.videoLink?.trim() || undefined,
           metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
-          category: agent.tags?.department || undefined, // Map legacy 'department' to 'category'
+          category: agent.tags?.department || undefined, // YAML uses 'department', schema uses 'category'
           status: agent.tags?.status || undefined,
         });
       }
