@@ -4,7 +4,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { Agent, AgentFormData, AgentMetrics } from '@/types/agent';
 import { Modal } from '../ui/Modal';
 import { useAgents } from '@/contexts/AgentContext';
@@ -59,6 +59,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
     api.agents.getDistinctDepartments,
     currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
+  const departmentDatalistId = useId();
 
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
@@ -254,7 +255,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
                 id="agent-department"
                 type="text"
                 className="form-input"
-                list="department-suggestions"
+                list={departmentDatalistId}
                 value={formData.department}
                 onChange={(e) => setFormData((prev) => ({ ...prev, department: e.target.value }))}
                 onBlur={(e) => {
@@ -266,7 +267,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
                 }}
                 placeholder="e.g., Sales, Engineering, Marketing"
               />
-              <datalist id="department-suggestions">
+              <datalist id={departmentDatalistId}>
                 {existingDepartments.map((dept) => (
                   <option key={dept} value={dept} />
                 ))}
