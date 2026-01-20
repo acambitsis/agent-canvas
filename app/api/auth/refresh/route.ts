@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
     const sessionToken = await encryptSession(newSession);
 
-    return new Response(JSON.stringify({ success: true, idToken: newSession.idToken }), {
+    return new Response(JSON.stringify({ success: true, idToken: newSession.idToken, idTokenExpiresAt }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',

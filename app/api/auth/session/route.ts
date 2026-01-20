@@ -23,6 +23,7 @@ export async function GET(request: Request) {
     user: session.user,
     orgs: session.orgs || [],
     idToken: session.idToken, // Expose id_token for Convex authentication
+    idTokenExpiresAt: session.idTokenExpiresAt, // Token expiry for proactive refresh
     needsRefresh, // Signal client to proactively refresh token
   });
 }

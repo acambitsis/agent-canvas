@@ -18,11 +18,13 @@ interface AuthContextValue {
   userOrgs: Organization[];
   currentOrgId: string | null;
   idToken: string | null;
+  idTokenExpiresAt: number | null;
   isInitialized: boolean;
   isAuthenticated: boolean;
   setCurrentOrgId: (orgId: string) => void;
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  refreshToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -32,13 +34,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userOrgs, setUserOrgs] = useState<Organization[]>([]);
   const [currentOrgId, setCurrentOrgIdState] = useLocalStorage<string | null>(CURRENT_ORG_KEY, null);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [idTokenExpiresAt, setIdTokenExpiresAt] = useState<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const currentOrgIdRef = useRef(currentOrgId);
+  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
 
   // Keep ref in sync with state
   useEffect(() => {
     currentOrgIdRef.current = currentOrgId;
   }, [currentOrgId]);
+
+  // Internal refresh implementation with retry logic
+  const doRefresh = useCallback(async (retryCount = 0): Promise<string | null> => {
+    try {
+      const refreshResponse = await fetch('/api/auth/refresh', { method: 'POST' });
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        if (refreshData.idToken) {
+          setIdToken(refreshData.idToken);
+          // Use server-provided expiry, fallback to 50 minutes
+          const expiry = refreshData.idTokenExpiresAt || (Date.now() + (50 * 60 * 1000));
+          setIdTokenExpiresAt(expiry);
+          return refreshData.idToken;
+        }
+      }
+
+      // 401 means invalid refresh token - must re-login
+      if (refreshResponse.status === 401) {
+        console.warn('Refresh token invalid, redirecting to login');
+        window.location.href = '/login';
+        return null;
+      }
+
+      // Other errors (500, network issues) - retry once
+      if (retryCount < 1) {
+        console.warn(`Token refresh failed (status ${refreshResponse.status}), retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return doRefresh(retryCount + 1);
+      }
+
+      // Retry exhausted - redirect to login
+      console.error('Token refresh failed after retry, redirecting to login');
+      window.location.href = '/login';
+      return null;
+    } catch (error) {
+      // Network error - retry once
+      if (retryCount < 1) {
+        console.warn('Token refresh network error, retrying...', error);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return doRefresh(retryCount + 1);
+      }
+
+      console.error('Token refresh failed after retry:', error);
+      window.location.href = '/login';
+      return null;
+    }
+  }, []);
+
+  // Refresh token with concurrent call coalescing
+  // Multiple callers will share the same refresh promise
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    // If a refresh is already in progress, wait for it
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current;
+    }
+
+    // Start new refresh and store the promise
+    refreshPromiseRef.current = doRefresh().finally(() => {
+      refreshPromiseRef.current = null;
+    });
+
+    return refreshPromiseRef.current;
+  }, [doRefresh]);
 
   const refreshAuth = useCallback(async () => {
     try {
@@ -49,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         setUserOrgs(data.orgs || []);
         setIdToken(data.idToken || null);
+        setIdTokenExpiresAt(data.idTokenExpiresAt || null);
 
         // Set current org from preference or first available (use ref to avoid dependency issues)
         const savedOrgId = currentOrgIdRef.current;
@@ -65,17 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Proactively refresh token if needed
         if (data.needsRefresh) {
-          try {
-            const refreshResponse = await fetch('/api/auth/refresh', { method: 'POST' });
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
-              if (refreshData.idToken) {
-                setIdToken(refreshData.idToken);
-              }
-            }
-          } catch (error) {
-            console.error('Token refresh failed:', error);
-          }
+          await refreshToken();
         }
 
         // If still no idToken, force re-authentication
@@ -84,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setUserOrgs([]);
           setIdToken(null);
+          setIdTokenExpiresAt(null);
           window.location.href = '/login';
           return;
         }
@@ -96,10 +156,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setUserOrgs([]);
       setIdToken(null);
+      setIdTokenExpiresAt(null);
     } finally {
       setIsInitialized(true);
     }
-  }, [setCurrentOrgIdState]);
+  }, [setCurrentOrgIdState, refreshToken]);
 
   // Initialize auth on mount (only once, even across React Strict Mode remounts)
   useEffect(() => {
@@ -118,6 +179,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refreshAuth]);
 
+  // Proactive background token refresh - refresh 5 minutes before expiry
+  useEffect(() => {
+    if (!idTokenExpiresAt || !isInitialized) return;
+
+    const checkAndRefresh = () => {
+      const now = Date.now();
+      const timeUntilExpiry = idTokenExpiresAt - now;
+
+      // Refresh if token expires in less than 5 minutes
+      if (timeUntilExpiry < 5 * 60 * 1000) {
+        refreshToken();
+      }
+    };
+
+    // Check every 2 minutes
+    const interval = setInterval(checkAndRefresh, 2 * 60 * 1000);
+
+    // Also check immediately in case we're already close to expiry
+    checkAndRefresh();
+
+    return () => clearInterval(interval);
+  }, [idTokenExpiresAt, isInitialized, refreshToken]);
+
   const setCurrentOrgId = useCallback((orgId: string) => {
     setCurrentOrgIdState(orgId);
     // Dispatch custom event for cross-component communication
@@ -133,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setUserOrgs([]);
       setIdToken(null);
+      setIdTokenExpiresAt(null);
       setCurrentOrgIdState(null);
       window.location.href = '/login';
     }
@@ -143,11 +228,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userOrgs,
     currentOrgId,
     idToken,
+    idTokenExpiresAt,
     isInitialized,
     isAuthenticated: !!user,
     setCurrentOrgId,
     signOut,
     refreshAuth,
+    refreshToken,
   };
 
   return (
@@ -177,9 +264,31 @@ export function useCurrentOrg() {
   return userOrgs.find(org => org.id === currentOrgId) || userOrgs[0] || null;
 }
 
+/**
+ * Hook for getting an ID token with automatic refresh.
+ * Returns a function that checks expiry and refreshes if needed.
+ */
 export function useIdToken() {
-  const { idToken } = useAuth();
-  return useCallback(() => idToken, [idToken]);
+  const { idToken, idTokenExpiresAt, refreshToken } = useAuth();
+
+  // Return a function that gets a fresh token, refreshing if expired
+  return useCallback(async (): Promise<string | null> => {
+    // If no token, return null
+    if (!idToken) return null;
+
+    // Check if token is expired or about to expire (within 2 minutes)
+    const now = Date.now();
+    const isExpired = idTokenExpiresAt && now > idTokenExpiresAt - (2 * 60 * 1000);
+
+    if (isExpired) {
+      // Token expired - refresh and return new token
+      const newToken = await refreshToken();
+      return newToken;
+    }
+
+    // Token is still valid
+    return idToken;
+  }, [idToken, idTokenExpiresAt, refreshToken]);
 }
 
 /**

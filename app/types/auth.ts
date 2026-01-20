@@ -21,5 +21,6 @@ export interface SessionData {
   user?: User;
   orgs?: Organization[];
   idToken?: string;
+  idTokenExpiresAt?: number;
   needsRefresh?: boolean;
 }

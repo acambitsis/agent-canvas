@@ -3,7 +3,6 @@
  * Uses official Convex React provider pattern
  */
 
-import { useMemo } from 'react';
 import { ConvexProvider as ConvexReactProvider, useQuery, useMutation, useAction } from 'convex/react';
 import { ConvexReactClient } from 'convex/react';
 
@@ -20,13 +19,18 @@ export function getConvexClient(convexUrl: string): ConvexReactClient {
 }
 
 /**
- * Set auth on the client
- * Returns undefined if token not available yet, allowing Convex to retry later
+ * Set auth on the client with automatic token refresh
+ * The getIdToken function should be async and handle token refresh internally
  */
-export function setConvexAuth(client: ConvexReactClient, getIdToken: () => string | null) {
+export function setConvexAuth(client: ConvexReactClient, getIdToken: () => Promise<string | null>) {
   client.setAuth(async () => {
-    const token = getIdToken();
-    return token || undefined;
+    try {
+      const token = await getIdToken();
+      return token || undefined;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return undefined;
+    }
   });
 }
 
