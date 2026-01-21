@@ -152,7 +152,7 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''} ${isDragging ? 'is-resizing' : ''}`}
+        className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''}`}
         style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
       >
         <div className="sidebar__header">
