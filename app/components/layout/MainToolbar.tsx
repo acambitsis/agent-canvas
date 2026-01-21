@@ -16,17 +16,48 @@ interface MainToolbarProps {
 }
 
 export function MainToolbar({ onAddAgent }: MainToolbarProps) {
-  const { currentCanvas } = useCanvas();
+  const { currentCanvas, currentCanvasId } = useCanvas();
   const { agents } = useAgents();
   const { activeTagType, setActiveTagType, viewMode, setViewMode } = useGrouping();
   const [isGroupingOpen, setIsGroupingOpen] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
 
   const activeTag = TAG_TYPES[activeTagType as keyof typeof TAG_TYPES];
+
+  const handleShare = async () => {
+    if (!currentCanvasId) return;
+    const url = `${window.location.origin}/c/${currentCanvasId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    } catch {
+      // Fallback for browsers that don't support clipboard API
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setShowCopied(true);
+      setTimeout(() => setShowCopied(false), 2000);
+    }
+  };
 
   return (
     <header className="toolbar">
       <div className="toolbar__left">
         <h1 className="toolbar__title">{currentCanvas?.title || ''}</h1>
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          onClick={handleShare}
+          title="Copy link to canvas"
+          disabled={!currentCanvasId}
+        >
+          <Icon name={showCopied ? 'check' : 'share-2'} />
+          {showCopied && <span className="toolbar__copied-badge">Copied!</span>}
+        </button>
         <span className="toolbar__badge">
           <Icon name="bot" />
           <span>{agents.length} Agents</span>

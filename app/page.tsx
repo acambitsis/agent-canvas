@@ -4,28 +4,13 @@
 
 'use client';
 
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ConvexClientProvider } from '@/contexts/ConvexClientProvider';
-import { CanvasProvider } from '@/contexts/CanvasContext';
-import { AgentProvider } from '@/contexts/AgentContext';
-import { GroupingProvider } from '@/contexts/GroupingContext';
-import { AppStateProvider } from '@/contexts/AppStateContext';
+import { AppProviders } from '@/components/AppProviders';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function HomePage() {
   return (
-    <AuthProvider>
-      <ConvexClientProvider>
-        <CanvasProvider>
-          <AgentProvider>
-            <GroupingProvider>
-              <AppStateProvider>
-                <AppLayout />
-              </AppStateProvider>
-            </GroupingProvider>
-          </AgentProvider>
-        </CanvasProvider>
-      </ConvexClientProvider>
-    </AuthProvider>
+    <AppProviders>
+      <AppLayout />
+    </AppProviders>
   );
 }

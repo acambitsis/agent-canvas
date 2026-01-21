@@ -2581,6 +2581,75 @@ a:hover {
     height: 20px;
 }
 
+.icon-btn--ghost {
+    width: auto;
+    height: auto;
+    padding: var(--space-1) var(--space-2);
+    position: relative;
+}
+
+.icon-btn--ghost svg {
+    width: 16px;
+    height: 16px;
+}
+
+.toolbar__copied-badge {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ============================================
+   CANVAS ERROR PAGE
+   ============================================ */
+
+.canvas-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--space-6);
+    background: var(--bg-primary);
+}
+
+.canvas-error__content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.canvas-error__content h1 {
+    margin: 0 0 var(--space-3);
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.canvas-error__content p {
+    margin: 0 0 var(--space-5);
+    color: var(--text-muted);
+}
+
+.canvas-error__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.canvas-error__loading p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
 /* ============================================
    LOADING STATES
    ============================================ */

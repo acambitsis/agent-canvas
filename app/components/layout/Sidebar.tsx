@@ -22,7 +22,7 @@ interface CanvasMenuState {
 
 // Context menu dimensions for viewport boundary calculations
 const MENU_WIDTH = 150;
-const MENU_HEIGHT = 80;
+const MENU_HEIGHT = 116; // 3 items
 const VIEWPORT_PADDING = 8;
 
 export function Sidebar() {
@@ -75,7 +75,7 @@ export function Sidebar() {
     setCanvasMenu({ canvasId, x, y });
   };
 
-  const handleMenuAction = (action: 'rename' | 'delete') => {
+  const handleMenuAction = async (action: 'rename' | 'delete' | 'share') => {
     if (!canvasMenu) return;
     const canvas = canvases.find((c) => c._id === canvasMenu.canvasId);
     if (!canvas) return;
@@ -84,6 +84,21 @@ export function Sidebar() {
       setRenameCanvas({ id: canvas._id, title: canvas.title });
     } else if (action === 'delete') {
       setDeleteConfirm({ id: canvas._id, title: canvas.title });
+    } else if (action === 'share') {
+      const url = `${window.location.origin}/c/${canvas._id}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied to clipboard', 'success');
+      } catch {
+        // Fallback for browsers that don't support clipboard API
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Link copied to clipboard', 'success');
+      }
     }
     setCanvasMenu(null);
   };
@@ -101,6 +116,13 @@ export function Sidebar() {
     }
   };
 
+  // Update URL when canvas changes and select it
+  const handleSelectCanvas = (canvasId: string) => {
+    setCurrentCanvasId(canvasId);
+    // Update URL for shareable links
+    window.history.replaceState(null, '', `/c/${canvasId}`);
+  };
+
   const handleCreateCanvas = async () => {
     const title = prompt('Enter canvas name:');
     if (!title?.trim()) return;
@@ -108,7 +130,7 @@ export function Sidebar() {
     try {
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const canvasId = await createCanvas(title.trim(), slug);
-      setCurrentCanvasId(canvasId);
+      handleSelectCanvas(canvasId);
       showToast('Canvas created successfully', 'success');
     } catch (error) {
       console.error('Failed to create canvas:', error);
@@ -178,14 +200,14 @@ export function Sidebar() {
               <div
                 key={canvas._id}
                 className={`sidebar__canvas-item ${currentCanvasId === canvas._id ? 'is-active' : ''}`}
-                onClick={() => setCurrentCanvasId(canvas._id)}
+                onClick={() => handleSelectCanvas(canvas._id)}
                 onContextMenu={(e) => handleCanvasContextMenu(e, canvas._id)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setCurrentCanvasId(canvas._id);
+                    handleSelectCanvas(canvas._id);
                   }
                 }}
               >
@@ -257,6 +279,13 @@ export function Sidebar() {
             zIndex: 1000,
           }}
         >
+          <button
+            className="context-menu__item"
+            onClick={() => handleMenuAction('share')}
+          >
+            <Icon name="share-2" />
+            <span>Copy link</span>
+          </button>
           <button
             className="context-menu__item"
             onClick={() => handleMenuAction('rename')}

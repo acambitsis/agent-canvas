@@ -23,6 +23,7 @@ export const list = query({
 
 /**
  * Get a single canvas by ID
+ * Returns null if not found or user lacks access (for graceful error handling)
  */
 export const get = query({
   args: { canvasId: v.id("canvases") },
@@ -31,10 +32,15 @@ export const get = query({
 
     const canvas = await ctx.db.get(canvasId);
     if (!canvas || canvas.deletedAt) {
-      throw new Error("NotFound: Canvas not found");
+      return null;
     }
 
-    requireOrgAccess(auth, canvas.workosOrgId);
+    // Check org access - return null instead of throwing to avoid leaking canvas existence
+    try {
+      requireOrgAccess(auth, canvas.workosOrgId);
+    } catch {
+      return null;
+    }
     return canvas;
   },
 });
