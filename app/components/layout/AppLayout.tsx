@@ -16,7 +16,7 @@ import { useAppState } from '@/contexts/AppStateContext';
 import { Icon } from '@/components/ui/Icon';
 
 export function AppLayout() {
-  const { isSidebarCollapsed, toggleSidebar } = useAppState();
+  const { isSidebarCollapsed, toggleSidebar, sidebarWidth } = useAppState();
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [defaultPhase, setDefaultPhase] = useState<string | undefined>();
@@ -36,7 +36,10 @@ export function AppLayout() {
   return (
     <>
       <Sidebar />
-      <div className={`main-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <div
+        className={`main-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+        style={!isSidebarCollapsed ? { '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties : undefined}
+      >
         {isSidebarCollapsed && (
           <button
             className="sidebar-expand-btn"

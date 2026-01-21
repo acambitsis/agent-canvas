@@ -4,15 +4,19 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth, useIsOrgAdmin } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useAppState } from '@/contexts/AppStateContext';
+import { useResizable } from '@/hooks/useResizable';
 import { Icon } from '@/components/ui/Icon';
 import { ImportYamlModal } from '../forms/ImportYamlModal';
 import { CanvasRenameModal } from '../forms/CanvasRenameModal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { MembersModal } from '../org/MembersModal';
+
+const SIDEBAR_MIN_WIDTH = 180;
+const SIDEBAR_MAX_WIDTH = 400;
 
 interface CanvasMenuState {
   canvasId: string;
@@ -28,7 +32,17 @@ const VIEWPORT_PADDING = 8;
 export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId, createCanvas, deleteCanvas } = useCanvas();
-  const { isSidebarCollapsed, toggleSidebar, showToast } = useAppState();
+  const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth } = useAppState();
+
+  const handleResize = useCallback((width: number) => {
+    setSidebarWidth(width);
+  }, [setSidebarWidth]);
+
+  const { isDragging, handleMouseDown } = useResizable({
+    minWidth: SIDEBAR_MIN_WIDTH,
+    maxWidth: SIDEBAR_MAX_WIDTH,
+    onResize: handleResize,
+  });
   const isOrgAdmin = useIsOrgAdmin();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
@@ -140,7 +154,10 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''}`}>
+      <aside
+        className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''}`}
+        style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
+      >
         <div className="sidebar__header">
           <div className="sidebar__logo">
             <Icon name="layout-grid" />
@@ -265,6 +282,11 @@ export function Sidebar() {
             currentUserId={user.id}
           />
         )}
+
+        <div
+          className={`sidebar__resize-handle ${isDragging ? 'is-dragging' : ''}`}
+          onMouseDown={(e) => handleMouseDown(e, sidebarWidth)}
+        />
       </aside>
 
       {/* Canvas Context Menu */}

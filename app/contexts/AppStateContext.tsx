@@ -18,23 +18,27 @@ interface AppStateContextValue {
   loadingMessage: string;
   toasts: Toast[];
   isSidebarCollapsed: boolean;
+  sidebarWidth: number;
   showLoading: (message: string) => void;
   hideLoading: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
   hideToast: (id: string) => void;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setSidebarWidth: (width: number) => void;
 }
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
 
 const SIDEBAR_COLLAPSED_KEY = 'agentcanvas-sidebar-collapsed';
+const SIDEBAR_WIDTH_KEY = 'agentcanvas-sidebar-width';
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage(SIDEBAR_WIDTH_KEY, 280);
 
   const showLoading = useCallback((message: string) => {
     setIsLoading(true);
@@ -73,12 +77,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     loadingMessage,
     toasts,
     isSidebarCollapsed,
+    sidebarWidth,
     showLoading,
     hideLoading,
     showToast,
     hideToast,
     toggleSidebar,
     setSidebarCollapsed,
+    setSidebarWidth,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

@@ -115,7 +115,8 @@ BASE_URL=http://localhost:3000
 │   ├── hooks/              # Custom React hooks
 │   │   ├── useConvex.ts
 │   │   ├── useLocalStorage.ts
-│   │   └── useLucideIcons.ts
+│   │   ├── useLucideIcons.ts
+│   │   └── useResizable.ts
 │   ├── types/              # TypeScript type definitions
 │   │   ├── agent.ts
 │   │   ├── auth.ts
@@ -209,6 +210,9 @@ await requireOrgAccess(ctx, auth, workosOrgId);  // Checks userOrgMemberships ta
 const agents = useQuery(api.agents.list, { canvasId });
 // Agents automatically update when changed in Convex
 ```
+
+### Persisted UI Preferences
+Use `useLocalStorage` hook + `AppStateContext` for UI state that persists across sessions (e.g., `sidebarWidth`, `isSidebarCollapsed`). Keys prefixed with `agentcanvas-`.
 
 ## Styling System
 
