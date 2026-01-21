@@ -210,15 +210,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Sign out error:', error);
-    } finally {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      const data: { success: boolean; logoutUrl?: string } = await response.json();
+
       setUser(null);
       setUserOrgs([]);
       setIdToken(null);
       setIdTokenExpiresAt(null);
       setCurrentOrgIdState(null);
+
+      // Redirect to WorkOS logout URL for full session clear
+      window.location.href = data.logoutUrl || '/login';
+    } catch (error) {
+      console.error('Sign out error:', error);
       window.location.href = '/login';
     }
   }, [setCurrentOrgIdState]);

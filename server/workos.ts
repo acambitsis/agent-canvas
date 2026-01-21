@@ -93,7 +93,7 @@ export async function refreshAccessToken(
  */
 export async function fetchUserOrgs(userId: string, apiKey: string): Promise<WorkOSOrgMembership[]> {
   const response = await fetch(
-    `https://api.workos.com/user_management/organization_memberships?user_id=${userId}`,
+    `https://api.workos.com/user_management/organization_memberships?user_id=${userId}&limit=100`,
     { headers: { Authorization: `Bearer ${apiKey}` } }
   );
   if (!response.ok) {
@@ -102,7 +102,6 @@ export async function fetchUserOrgs(userId: string, apiKey: string): Promise<Wor
     return [];
   }
   const data = await response.json();
-  console.log(`[Auth] fetchUserOrgs for user ${userId}: found ${data.data?.length || 0} memberships`);
   return data.data || [];
 }
 
