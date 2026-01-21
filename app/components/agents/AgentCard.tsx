@@ -156,7 +156,10 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete }: AgentCardProps
 
       {/* Description */}
       {agent.description && (
-        <p className="agent-card__description">{agent.description}</p>
+        <div className="agent-card__description-wrapper">
+          <p className="agent-card__description">{agent.description}</p>
+          <div className="agent-card__description-tooltip">{agent.description}</div>
+        </div>
       )}
 
       {/* Tools */}

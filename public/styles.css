@@ -1725,15 +1725,49 @@ a:hover {
 }
 
 /* Description */
+.agent-card__description-wrapper {
+    position: relative;
+    margin-bottom: var(--space-3);
+}
+
 .agent-card__description {
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     color: var(--text-secondary);
     line-height: var(--leading-normal);
-    margin-bottom: var(--space-3);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    margin: 0;
+}
+
+.agent-card__description-tooltip {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-3);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: all 0.15s var(--ease-out);
+    pointer-events: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.agent-card__description-wrapper:hover .agent-card__description-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 /* Tools */
