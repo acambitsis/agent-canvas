@@ -475,6 +475,21 @@ a:hover {
     background: var(--accent-primary-alpha);
 }
 
+.sidebar__resize-handle:focus {
+    outline: none;
+}
+
+.sidebar__resize-handle:focus-visible::after {
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 2px var(--accent-primary-alpha);
+}
+
+/* Disable transitions while resizing for smooth drag */
+body.is-resizing-sidebar .sidebar,
+body.is-resizing-sidebar .main-wrapper {
+    transition: none;
+}
+
 /* Sidebar Header */
 .sidebar__header {
     display: flex;

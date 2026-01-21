@@ -4,7 +4,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth, useIsOrgAdmin } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useAppState } from '@/contexts/AppStateContext';
@@ -34,14 +34,11 @@ export function Sidebar() {
   const { canvases, currentCanvasId, setCurrentCanvasId, createCanvas, deleteCanvas } = useCanvas();
   const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth } = useAppState();
 
-  const handleResize = useCallback((width: number) => {
-    setSidebarWidth(width);
-  }, [setSidebarWidth]);
-
-  const { isDragging, handleMouseDown } = useResizable({
+  const { isDragging, resizeHandleProps } = useResizable({
     minWidth: SIDEBAR_MIN_WIDTH,
     maxWidth: SIDEBAR_MAX_WIDTH,
-    onResize: handleResize,
+    currentWidth: sidebarWidth,
+    onResize: setSidebarWidth,
   });
   const isOrgAdmin = useIsOrgAdmin();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -155,7 +152,7 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''}`}
+        className={`sidebar ${isSidebarCollapsed ? 'is-collapsed' : ''} ${isDragging ? 'is-resizing' : ''}`}
         style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
       >
         <div className="sidebar__header">
@@ -285,7 +282,7 @@ export function Sidebar() {
 
         <div
           className={`sidebar__resize-handle ${isDragging ? 'is-dragging' : ''}`}
-          onMouseDown={(e) => handleMouseDown(e, sidebarWidth)}
+          {...resizeHandleProps}
         />
       </aside>
 
