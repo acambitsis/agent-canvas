@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuth, useIsOrgAdmin } from '@/contexts/AuthContext';
+import { useAuth, useIsOrgAdmin, useCurrentOrg } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useAppState } from '@/contexts/AppStateContext';
 import { useResizable } from '@/hooks/useResizable';
@@ -41,26 +41,46 @@ export function Sidebar() {
     onResize: setSidebarWidth,
   });
   const isOrgAdmin = useIsOrgAdmin();
+  const currentOrg = useCurrentOrg();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState | null>(null);
   const [renameCanvas, setRenameCanvas] = useState<{ id: string; title: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
+  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const orgDropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
+  // Get user initials for avatar
+  const getUserInitials = (): string => {
+    if (!user) return '??';
+    const first = user.firstName?.charAt(0) || '';
+    const last = user.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase() || user.email?.charAt(0).toUpperCase() || '??';
+  };
+
+  // Close menus on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setCanvasMenu(null);
+      }
+      if (orgDropdownRef.current && !orgDropdownRef.current.contains(target)) {
+        setOrgDropdownOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
       }
     };
 
-    if (canvasMenu) {
+    if (canvasMenu || orgDropdownOpen || userMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [canvasMenu]);
+  }, [canvasMenu, orgDropdownOpen, userMenuOpen]);
 
   const handleCanvasContextMenu = (e: React.MouseEvent, canvasId: string) => {
     e.preventDefault();
@@ -158,7 +178,36 @@ export function Sidebar() {
         <div className="sidebar__header">
           <div className="sidebar__logo">
             <Icon name="layout-grid" />
-            <span>Agent Canvas</span>
+          </div>
+          <div className="sidebar__org-switcher" ref={orgDropdownRef}>
+            {userOrgs.length > 1 ? (
+              <>
+                <button
+                  className="sidebar__org-trigger"
+                  onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
+                  title="Switch organization"
+                >
+                  <span className="sidebar__org-name">{currentOrg?.name}</span>
+                  <Icon name="chevron-down" className="sidebar__org-chevron" />
+                </button>
+                <div className={`sidebar__dropdown ${orgDropdownOpen ? 'open' : ''}`}>
+                  {userOrgs.map((org) => (
+                    <button
+                      key={org.id}
+                      className="sidebar__dropdown-item"
+                      onClick={() => {
+                        setCurrentOrgId(org.id);
+                        setOrgDropdownOpen(false);
+                      }}
+                    >
+                      {org.name || org.id}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <span className="sidebar__org-name">{currentOrg?.name}</span>
+            )}
           </div>
           <button
             className="sidebar__collapse-btn"
@@ -168,24 +217,6 @@ export function Sidebar() {
             <Icon name="panel-left-close" />
           </button>
         </div>
-
-        {userOrgs.length > 1 && (
-          <div className="sidebar__section">
-            <label htmlFor="org-select">Organization</label>
-            <select
-              id="org-select"
-              className="form-select"
-              value={currentOrgId || ''}
-              onChange={(e) => setCurrentOrgId(e.target.value)}
-            >
-              {userOrgs.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name || org.id}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         <div className="sidebar__section sidebar__section--grow">
           <div className="sidebar__section-header">
@@ -242,26 +273,45 @@ export function Sidebar() {
           </div>
         </div>
 
-        <div style={{ marginTop: 'auto' }}>
-          {isOrgAdmin && (
+        <div className="sidebar__user" ref={userMenuRef}>
+          <div className="sidebar__user-avatar">
+            {getUserInitials()}
+          </div>
+          <div className="sidebar__user-info">
+            <span className="sidebar__user-name">
+              {user?.firstName} {user?.lastName}
+            </span>
+            <span className="sidebar__user-email">{user?.email}</span>
+          </div>
+          <button
+            className="sidebar__user-menu-btn"
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            title="User menu"
+          >
+            <Icon name="more-vertical" />
+          </button>
+          <div className={`sidebar__dropdown sidebar__dropdown--up ${userMenuOpen ? 'open' : ''}`}>
+            {isOrgAdmin && (
+              <button
+                className="sidebar__dropdown-item"
+                onClick={() => {
+                  setIsMembersModalOpen(true);
+                  setUserMenuOpen(false);
+                }}
+              >
+                <Icon name="users" />
+                <span>Members</span>
+              </button>
+            )}
             <button
-              className="sidebar__admin-btn"
-              onClick={() => setIsMembersModalOpen(true)}
-              title="Manage organization members"
+              className="sidebar__dropdown-item"
+              onClick={() => {
+                signOut();
+                setUserMenuOpen(false);
+              }}
             >
-              <Icon name="users" />
-              <span>Members</span>
-            </button>
-          )}
-          <div className="sidebar__user">
-            <div className="sidebar__user-info">
-              <span className="sidebar__user-name">
-                {user?.firstName} {user?.lastName}
-              </span>
-              <span className="sidebar__user-email">{user?.email}</span>
-            </div>
-            <button className="icon-btn" onClick={signOut} title="Sign out">
               <Icon name="log-out" />
+              <span>Sign out</span>
             </button>
           </div>
         </div>
