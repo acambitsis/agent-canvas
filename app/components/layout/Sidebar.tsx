@@ -22,7 +22,7 @@ interface CanvasMenuState {
 
 // Context menu dimensions for viewport boundary calculations
 const MENU_WIDTH = 150;
-const MENU_HEIGHT = 80;
+const MENU_HEIGHT = 116; // 3 items
 const VIEWPORT_PADDING = 8;
 
 export function Sidebar() {
@@ -75,7 +75,7 @@ export function Sidebar() {
     setCanvasMenu({ canvasId, x, y });
   };
 
-  const handleMenuAction = (action: 'rename' | 'delete') => {
+  const handleMenuAction = async (action: 'rename' | 'delete' | 'share') => {
     if (!canvasMenu) return;
     const canvas = canvases.find((c) => c._id === canvasMenu.canvasId);
     if (!canvas) return;
@@ -84,6 +84,21 @@ export function Sidebar() {
       setRenameCanvas({ id: canvas._id, title: canvas.title });
     } else if (action === 'delete') {
       setDeleteConfirm({ id: canvas._id, title: canvas.title });
+    } else if (action === 'share') {
+      const url = `${window.location.origin}/c/${canvas._id}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied to clipboard', 'success');
+      } catch {
+        // Fallback for browsers that don't support clipboard API
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Link copied to clipboard', 'success');
+      }
     }
     setCanvasMenu(null);
   };
@@ -264,6 +279,13 @@ export function Sidebar() {
             zIndex: 1000,
           }}
         >
+          <button
+            className="context-menu__item"
+            onClick={() => handleMenuAction('share')}
+          >
+            <Icon name="share-2" />
+            <span>Copy link</span>
+          </button>
           <button
             className="context-menu__item"
             onClick={() => handleMenuAction('rename')}
