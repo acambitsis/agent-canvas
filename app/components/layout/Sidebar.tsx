@@ -49,9 +49,11 @@ export function Sidebar() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [canvasActionsOpen, setCanvasActionsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const orgDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const canvasActionsRef = useRef<HTMLDivElement>(null);
 
   // Get user initials for avatar
   const getUserInitials = useCallback((): string => {
@@ -74,13 +76,16 @@ export function Sidebar() {
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
       }
+      if (canvasActionsRef.current && !canvasActionsRef.current.contains(target)) {
+        setCanvasActionsOpen(false);
+      }
     };
 
-    if (canvasMenu || orgDropdownOpen || userMenuOpen) {
+    if (canvasMenu || orgDropdownOpen || userMenuOpen || canvasActionsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [canvasMenu, orgDropdownOpen, userMenuOpen]);
+  }, [canvasMenu, orgDropdownOpen, userMenuOpen, canvasActionsOpen]);
 
   // Close dropdowns on Escape key
   useEffect(() => {
@@ -89,14 +94,15 @@ export function Sidebar() {
         setCanvasMenu(null);
         setOrgDropdownOpen(false);
         setUserMenuOpen(false);
+        setCanvasActionsOpen(false);
       }
     };
 
-    if (canvasMenu || orgDropdownOpen || userMenuOpen) {
+    if (canvasMenu || orgDropdownOpen || userMenuOpen || canvasActionsOpen) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [canvasMenu, orgDropdownOpen, userMenuOpen]);
+  }, [canvasMenu, orgDropdownOpen, userMenuOpen, canvasActionsOpen]);
 
   const handleCanvasContextMenu = (e: React.MouseEvent, canvasId: string) => {
     e.preventDefault();
@@ -238,23 +244,38 @@ export function Sidebar() {
         <div className="sidebar__section sidebar__section--grow">
           <div className="sidebar__section-header">
             <h3 className="sidebar__section-title">Canvases</h3>
-            <div className="sidebar__section-actions">
+            <div className="sidebar__section-actions" ref={canvasActionsRef}>
               <button
                 type="button"
                 className="sidebar__action-btn"
-                onClick={handleCreateCanvas}
-                title="New canvas"
+                onClick={() => setCanvasActionsOpen(!canvasActionsOpen)}
+                aria-expanded={canvasActionsOpen}
+                title="Canvas actions"
               >
-                <Icon name="plus" />
+                <Icon name="more-horizontal" />
               </button>
-              <button
-                type="button"
-                className="sidebar__action-btn"
-                onClick={() => setIsImportModalOpen(true)}
-                title="Import from YAML"
-              >
-                <Icon name="upload" />
-              </button>
+              <div className={`sidebar__dropdown ${canvasActionsOpen ? 'open' : ''}`}>
+                <button
+                  className="sidebar__dropdown-item"
+                  onClick={() => {
+                    handleCreateCanvas();
+                    setCanvasActionsOpen(false);
+                  }}
+                >
+                  <Icon name="plus" />
+                  <span>New canvas</span>
+                </button>
+                <button
+                  className="sidebar__dropdown-item"
+                  onClick={() => {
+                    setIsImportModalOpen(true);
+                    setCanvasActionsOpen(false);
+                  }}
+                >
+                  <Icon name="upload" />
+                  <span>Import from YAML</span>
+                </button>
+              </div>
             </div>
           </div>
           <div className="sidebar__canvas-list">
