@@ -51,13 +51,15 @@ function FormSection({ title, children, defaultCollapsed = false }: FormSectionP
 export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalProps) {
   const { createAgent, updateAgent } = useAgents();
   const { showToast } = useAppState();
-  const { currentOrgId } = useAuth();
+  const { currentOrgId, isAuthenticated } = useAuth();
   const executeOperation = useAsyncOperation();
 
   // Get existing categories from org for autocomplete
+  // Must check isAuthenticated to avoid race condition on page refresh
+  // (currentOrgId loads from localStorage before auth is initialized)
   const existingCategories = useQuery(
     api.agents.getDistinctCategories,
-    currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+    isAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
   const categoryDatalistId = useId();
 
