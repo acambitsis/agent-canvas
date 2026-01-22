@@ -7,6 +7,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, Organization, SessionData } from '@/types/auth';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { ORG_ROLES } from '@/types/validationConstants';
 
 const CURRENT_ORG_KEY = 'agentcanvas-current-org';
 
@@ -302,5 +303,5 @@ export function useIsOrgAdmin() {
   const { userOrgs, currentOrgId } = useAuth();
   if (!currentOrgId) return false;
   const org = userOrgs.find(org => org.id === currentOrgId);
-  return org?.role === 'admin';
+  return org?.role === ORG_ROLES.ADMIN;
 }

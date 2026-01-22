@@ -13,6 +13,7 @@ import {
   type OrgClaim,
 } from '@/server/session-utils';
 import { exchangeCodeForTokens, fetchUserOrgs, fetchOrgDetails } from '@/server/workos';
+import { ORG_ROLES } from '@/types/validationConstants';
 
 export const runtime = 'edge';
 
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
         const details = await fetchOrgDetails(om.organization_id, workosApiKey);
         return {
           id: om.organization_id,
-          role: om.role?.slug || 'member',
+          role: om.role?.slug || ORG_ROLES.MEMBER,
           name: details?.name,
         };
       })
