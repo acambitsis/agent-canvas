@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Agent } from '@/types/agent';
-import { getToolDisplay } from '@/utils/config';
+import { getToolDisplay, getStatusColor } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
 
@@ -16,20 +16,6 @@ interface AgentCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onQuickLook?: () => void;
-}
-
-// Get status color
-function getStatusColor(status?: string): string {
-  switch (status) {
-    case 'active':
-      return '#10B981';
-    case 'draft':
-      return '#A8A29E';
-    case 'deprecated':
-      return '#EF4444';
-    default:
-      return '#6366F1';
-  }
 }
 
 export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: AgentCardProps) {

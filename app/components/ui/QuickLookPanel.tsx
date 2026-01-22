@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { Agent } from '@/types/agent';
-import { getToolDisplay } from '@/utils/config';
+import { getToolDisplay, getStatusConfig, getToolColorClass } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
 
@@ -19,37 +19,6 @@ interface QuickLookPanelProps {
   onDelete: () => void;
 }
 
-// Get status configuration
-function getStatusConfig(status?: string): { color: string; bgColor: string; label: string } {
-  switch (status) {
-    case 'active':
-      return { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', label: 'Active' };
-    case 'draft':
-      return { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', label: 'Draft' };
-    case 'deprecated':
-      return { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', label: 'Deprecated' };
-    default:
-      return { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: status || 'Unknown' };
-  }
-}
-
-// Map tool colors to CSS-friendly names
-function getToolColorClass(color: string): string {
-  const colorMap: Record<string, string> = {
-    '#06B6D4': 'cyan',
-    '#3B82F6': 'blue',
-    '#8B5CF6': 'violet',
-    '#A855F7': 'purple',
-    '#EC4899': 'pink',
-    '#F43F5E': 'rose',
-    '#F97316': 'orange',
-    '#F59E0B': 'amber',
-    '#10B981': 'emerald',
-    '#14B8A6': 'teal',
-  };
-  return colorMap[color] || 'default';
-}
-
 export function QuickLookPanel({
   agent,
   isOpen,
@@ -57,6 +26,9 @@ export function QuickLookPanel({
   onEdit,
   onDelete
 }: QuickLookPanelProps) {
+  // Store original overflow to restore on cleanup
+  const originalOverflowRef = useRef<string>('');
+
   // Close on Escape key
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && isOpen) {
@@ -69,15 +41,16 @@ export function QuickLookPanel({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Prevent body scroll when panel is open
+  // Prevent body scroll when panel is open (preserves original overflow)
   useEffect(() => {
     if (isOpen) {
+      originalOverflowRef.current = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = originalOverflowRef.current;
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = originalOverflowRef.current;
     };
   }, [isOpen]);
 

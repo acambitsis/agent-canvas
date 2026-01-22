@@ -11,21 +11,7 @@ import { ExpandedAgentCard } from './ExpandedAgentCard';
 import { CompactAgentRow } from './CompactAgentRow';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { Icon } from '@/components/ui/Icon';
-import { getToolDisplay } from '@/utils/config';
-
-// Get status color
-function getStatusColor(status?: string): string {
-  switch (status) {
-    case 'active':
-      return '#10B981';
-    case 'draft':
-      return '#A8A29E';
-    case 'deprecated':
-      return '#EF4444';
-    default:
-      return '#6366F1';
-  }
-}
+import { getToolDisplay, getStatusColor } from '@/utils/config';
 
 interface AgentGroupSectionProps {
   group: AgentGroup;
