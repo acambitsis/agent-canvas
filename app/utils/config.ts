@@ -131,8 +131,7 @@ export function getSectionColor(groupIndex: number): string {
  */
 export function getTagValue(tagType: string, valueId: string): TagValue | null {
   if (!isValidTagTypeId(tagType)) return null;
-  const validTagType: TagTypeId = tagType;
-  const tagDef = TAG_TYPES[validTagType];
+  const tagDef = TAG_TYPES[tagType];
   return tagDef.values.find((v: TagValue) => v.id === valueId) || null;
 }
 
@@ -141,8 +140,7 @@ export function getTagValue(tagType: string, valueId: string): TagValue | null {
  */
 export function getTagDefinition(tagType: string): TagType | null {
   if (!isValidTagTypeId(tagType)) return null;
-  const validTagType: TagTypeId = tagType;
-  return TAG_TYPES[validTagType];
+  return TAG_TYPES[tagType];
 }
 
 /**

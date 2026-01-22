@@ -123,7 +123,7 @@ export function filterAgents(agents: Agent[], filters: Record<string, string[]>)
       const agentValue = getAgentTagValue(agent, tagType);
 
       // If unknown tag type, skip this filter
-      if (agentValue === undefined && !Object.values(TAG_TYPE_ID).includes(tagType as typeof TAG_TYPE_ID[keyof typeof TAG_TYPE_ID])) {
+      if (agentValue === undefined && !isValidTagTypeId(tagType)) {
         continue;
       }
 
