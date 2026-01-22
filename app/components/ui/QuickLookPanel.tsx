@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay, getStatusConfig, getToolColorClass } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
@@ -26,9 +26,6 @@ export function QuickLookPanel({
   onEdit,
   onDelete
 }: QuickLookPanelProps) {
-  // Store original overflow to restore on cleanup
-  const originalOverflowRef = useRef<string>('');
-
   // Close on Escape key
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && isOpen) {
@@ -41,16 +38,15 @@ export function QuickLookPanel({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Prevent body scroll when panel is open (preserves original overflow)
+  // Prevent body scroll when panel is open
   useEffect(() => {
-    if (isOpen) {
-      originalOverflowRef.current = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = originalOverflowRef.current;
-    }
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     return () => {
-      document.body.style.overflow = originalOverflowRef.current;
+      document.body.style.overflow = originalOverflow;
     };
   }, [isOpen]);
 

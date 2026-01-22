@@ -11,6 +11,31 @@ import { useAgents } from '@/contexts/AgentContext';
 import { Icon } from '@/components/ui/Icon';
 import { TAG_TYPES } from '@/utils/config';
 
+/**
+ * CollapseToggle - Button to collapse/expand all agent group sections
+ * Only renders when there are 2+ groups
+ */
+function CollapseToggle() {
+  const { computedGroups, collapsedSections, collapseAll } = useGrouping();
+
+  if (computedGroups.length <= 1) return null;
+
+  const collapsedCount = computedGroups.filter(g => collapsedSections[g.id]).length;
+  const allCollapsed = collapsedCount === computedGroups.length;
+
+  return (
+    <button
+      type="button"
+      className="collapse-toggle-btn"
+      onClick={() => collapseAll(!allCollapsed)}
+      title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+    >
+      <Icon name={allCollapsed ? 'unfold-vertical' : 'fold-vertical'} />
+      <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
+    </button>
+  );
+}
+
 interface MainToolbarProps {
   onAddAgent: () => void;
 }
@@ -18,7 +43,7 @@ interface MainToolbarProps {
 export function MainToolbar({ onAddAgent }: MainToolbarProps) {
   const { currentCanvas, currentCanvasId } = useCanvas();
   const { agents } = useAgents();
-  const { activeTagType, setActiveTagType, viewMode, setViewMode, computedGroups, collapsedSections, collapseAll } = useGrouping();
+  const { activeTagType, setActiveTagType, viewMode, setViewMode } = useGrouping();
   const [isGroupingOpen, setIsGroupingOpen] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
 
@@ -118,21 +143,7 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
         </div>
 
         {/* Collapse Toggle */}
-        {computedGroups.length > 1 && (() => {
-          const collapsedCount = computedGroups.filter(g => collapsedSections[g.id]).length;
-          const allCollapsed = collapsedCount === computedGroups.length;
-          return (
-            <button
-              type="button"
-              className="collapse-toggle-btn"
-              onClick={() => collapseAll(!allCollapsed)}
-              title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
-            >
-              <Icon name={allCollapsed ? 'unfold-vertical' : 'fold-vertical'} />
-              <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
-            </button>
-          );
-        })()}
+        <CollapseToggle />
 
         {/* Add Agent Button */}
         <button type="button" className="btn btn--primary" onClick={onAddAgent}>
