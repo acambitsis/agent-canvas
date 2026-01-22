@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   COLLAPSED_SECTIONS: 'agentcanvas-collapsed-sections',
   SIDEBAR_COLLAPSED: 'agentcanvas-sidebar-collapsed',
   SIDEBAR_WIDTH: 'agentcanvas-sidebar-width',
+  THEME: 'agentcanvas-theme',
 } as const;
 
 export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];

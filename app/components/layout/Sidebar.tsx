@@ -15,6 +15,7 @@ import { CanvasRenameModal } from '../forms/CanvasRenameModal';
 import { CopyCanvasModal } from '../forms/CopyCanvasModal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { MembersModal } from '../org/MembersModal';
+import { THEMES, SYSTEM_THEME_OPTION, THEME_VALUES } from '@/constants/themes';
 
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
@@ -33,7 +34,7 @@ const VIEWPORT_PADDING = 8;
 export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId, createCanvas, deleteCanvas } = useCanvas();
-  const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth } = useAppState();
+  const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth, themePreference, setThemePreference } = useAppState();
 
   const { isDragging, resizeHandleProps } = useResizable({
     minWidth: SIDEBAR_MIN_WIDTH,
@@ -334,6 +335,32 @@ export function Sidebar() {
             <Icon name="more-vertical" />
           </button>
           <div className={`sidebar__dropdown sidebar__dropdown--up ${userMenuOpen ? 'open' : ''}`}>
+            {/* Theme Selection */}
+            <div className="sidebar__dropdown-header">Theme</div>
+            <button
+              className={`sidebar__dropdown-item ${themePreference === 'system' ? 'is-active' : ''}`}
+              onClick={() => { setThemePreference('system'); setUserMenuOpen(false); }}
+              role="menuitemradio"
+              aria-checked={themePreference === 'system'}
+            >
+              <Icon name={SYSTEM_THEME_OPTION.icon} />
+              <span>{SYSTEM_THEME_OPTION.label}</span>
+              {themePreference === 'system' && <Icon name="check" className="sidebar__dropdown-check" />}
+            </button>
+            {THEME_VALUES.map((theme) => (
+              <button
+                key={theme}
+                className={`sidebar__dropdown-item ${themePreference === theme ? 'is-active' : ''}`}
+                onClick={() => { setThemePreference(theme); setUserMenuOpen(false); }}
+                role="menuitemradio"
+                aria-checked={themePreference === theme}
+              >
+                <Icon name={THEMES[theme].icon} />
+                <span>{THEMES[theme].label}</span>
+                {themePreference === theme && <Icon name="check" className="sidebar__dropdown-check" />}
+              </button>
+            ))}
+            <div className="sidebar__dropdown-divider" />
             {isOrgAdmin && (
               <button
                 className="sidebar__dropdown-item"

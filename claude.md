@@ -134,7 +134,7 @@ BASE_URL=http://localhost:3000
 │       ├── config/route.ts         # App configuration endpoint
 │       └── auth/                   # Auth endpoints
 │           ├── url/route.ts        # Generate WorkOS auth URL
-│           ├── callback/route.ts   # OAuth callback + org membership sync
+│           ├── callback/route.ts   # OAuth callback handler
 │           ├── session/route.ts    # Get current session
 │           ├── refresh/route.ts    # Refresh access token
 │           ├── orgs/route.ts       # Get user organizations
@@ -145,12 +145,12 @@ BASE_URL=http://localhost:3000
 ├── public/                  # Static assets served by Next.js
 │   └── styles.css          # Main CSS stylesheet
 ├── convex/                  # Convex backend (TypeScript)
-│   ├── schema.ts           # Database schema (5 tables)
+│   ├── schema.ts           # Database schema
 │   ├── agents.ts           # Agent CRUD + history
 │   ├── canvases.ts         # Canvas CRUD
 │   ├── orgSettings.ts      # Org configuration
 │   ├── agentHistory.ts     # Audit trail queries
-│   ├── users.ts            # User org membership sync
+│   ├── users.ts            # (minimal - org membership moved to JWT)
 │   ├── auth.config.ts      # Convex auth provider config
 │   └── lib/auth.ts         # Auth helpers (requireAuth, requireOrgAccess)
 ├── next.config.js          # Next.js configuration
@@ -161,17 +161,16 @@ BASE_URL=http://localhost:3000
 ## Convex Schema
 
 ```typescript
-// 5 tables with proper indexes
+// Tables with proper indexes
 orgSettings          // Org-level config (tools, colors, defaults)
 canvases             // Canvas containers per org
 agents               // Individual agents (normalized from YAML)
 agentHistory         // Audit trail for all agent changes
-userOrgMemberships   // User→org access (synced from WorkOS on login)
 ```
 
 Key patterns:
 - All mutations use `requireAuth()` and `requireOrgAccess()` from `convex/lib/auth.ts`
-- Org access checked via `userOrgMemberships` table (not just JWT claims)
+- Org access checked via JWT claims (no database lookup)
 - Agent changes automatically record history
 - Real-time subscriptions via Convex enable collaborative editing
 
@@ -204,8 +203,8 @@ Session contains: `accessToken`, `refreshToken`, `idToken` (for Convex), `user`,
 ### Authorization
 ```typescript
 // In Convex functions (convex/lib/auth.ts)
-const auth = await requireAuth(ctx);  // Returns {workosUserId, email, isSuperAdmin}
-await requireOrgAccess(ctx, auth, workosOrgId);  // Checks userOrgMemberships table
+const auth = await requireAuth(ctx);  // Returns {workosUserId, email, isSuperAdmin, orgs}
+requireOrgAccess(auth, workosOrgId);  // Checks JWT claims (no await, no ctx)
 ```
 
 ### Real-time Updates
