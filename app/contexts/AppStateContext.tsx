@@ -6,6 +6,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Agent } from '@/types/agent';
 
 interface Toast {
   id: string;
@@ -19,6 +20,7 @@ interface AppStateContextValue {
   toasts: Toast[];
   isSidebarCollapsed: boolean;
   sidebarWidth: number;
+  quickLookAgent: Agent | null;
   showLoading: (message: string) => void;
   hideLoading: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -26,6 +28,7 @@ interface AppStateContextValue {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setSidebarWidth: (width: number) => void;
+  setQuickLookAgent: (agent: Agent | null) => void;
 }
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
@@ -39,6 +42,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
   const [sidebarWidth, setSidebarWidth] = useLocalStorage(SIDEBAR_WIDTH_KEY, 280);
+  const [quickLookAgent, setQuickLookAgent] = useState<Agent | null>(null);
 
   const showLoading = useCallback((message: string) => {
     setIsLoading(true);
@@ -78,6 +82,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     toasts,
     isSidebarCollapsed,
     sidebarWidth,
+    quickLookAgent,
     showLoading,
     hideLoading,
     showToast,
@@ -85,6 +90,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     toggleSidebar,
     setSidebarCollapsed,
     setSidebarWidth,
+    setQuickLookAgent,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

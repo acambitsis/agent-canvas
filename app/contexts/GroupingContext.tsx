@@ -14,7 +14,7 @@ import { useAgents } from './AgentContext';
 const GROUPING_PREFERENCE_KEY = 'agentcanvas-grouping-pref';
 const COLLAPSED_SECTIONS_KEY = 'agentcanvas-collapsed-sections';
 
-export type ViewMode = 'grid' | 'detail';
+export type ViewMode = 'compact' | 'grid' | 'detail';
 
 interface GroupingPreferences {
   activeTagType: string;
