@@ -1295,7 +1295,6 @@ body.is-resizing-sidebar .main-wrapper {
     background: var(--bg-secondary);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-2xl);
-    overflow: hidden;
     animation: fadeInUp var(--duration-slow) var(--ease-out) both;
     transition: all var(--duration-base) var(--ease-out);
     box-shadow: var(--shadow-sm);
@@ -1552,7 +1551,7 @@ body.is-resizing-sidebar .main-wrapper {
 }
 
 .agents-grid-inner {
-    overflow: hidden;
+    min-height: 0; /* Allows content to shrink for collapse animation */
 }
 
 .agents-grid {
@@ -1931,16 +1930,24 @@ body.is-resizing-sidebar .main-wrapper {
     padding: 0;
     background: transparent;
     border: none;
+    outline: none;
     border-radius: var(--radius-sm);
     color: var(--text-tertiary);
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-out);
     text-decoration: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .agent-card__footer-icon:hover {
     background: var(--bg-tertiary);
     color: var(--accent-primary);
+}
+
+.agent-card__footer-icon:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .agent-card__footer-icon svg {
@@ -3418,7 +3425,7 @@ body.is-resizing-sidebar .main-wrapper {
 .agent-card__journey-tooltip {
     position: absolute;
     bottom: calc(100% + 8px);
-    right: 0;
+    left: 0;
     min-width: 240px;
     max-width: 320px;
     background: var(--bg-secondary);
@@ -3498,7 +3505,7 @@ body.is-resizing-sidebar .main-wrapper {
 .agent-card__stats-tooltip {
     position: absolute;
     bottom: calc(100% + 8px);
-    right: 0;
+    left: 0;
     min-width: 180px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-default);
