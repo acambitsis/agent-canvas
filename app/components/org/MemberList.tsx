@@ -7,6 +7,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { MemberActions } from './MemberActions';
+import { API_ENDPOINTS } from '@/constants/api';
 
 export interface Member {
   id: string; // membership ID
@@ -36,7 +37,7 @@ export function MemberList({ orgId, currentUserId, onMemberUpdated }: MemberList
     setError(null);
 
     try {
-      const response = await fetch(`/api/org/${orgId}/members`);
+      const response = await fetch(API_ENDPOINTS.orgMembers(orgId));
       const data = await response.json();
 
       if (!response.ok) {

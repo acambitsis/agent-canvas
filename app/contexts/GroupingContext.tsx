@@ -10,9 +10,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { groupAgentsByTag, filterAgents } from '@/utils/grouping';
 import { DEFAULT_GROUPING_TAG } from '@/utils/config';
 import { useAgents } from './AgentContext';
-
-const GROUPING_PREFERENCE_KEY = 'agentcanvas-grouping-pref';
-const COLLAPSED_SECTIONS_KEY = 'agentcanvas-collapsed-sections';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 export type ViewMode = 'grid' | 'detail';
 
@@ -42,7 +40,7 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
   const { agents } = useAgents();
 
   const [preferences, setPreferences] = useLocalStorage<GroupingPreferences>(
-    GROUPING_PREFERENCE_KEY,
+    STORAGE_KEYS.GROUPING_PREFERENCE,
     {
       activeTagType: DEFAULT_GROUPING_TAG,
       sortOrder: 'asc',
@@ -63,7 +61,7 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
   }, [preferences.viewMode, setPreferences]);
 
   const [collapsedSections, setCollapsedSections] = useLocalStorage<Record<string, boolean>>(
-    COLLAPSED_SECTIONS_KEY,
+    STORAGE_KEYS.COLLAPSED_SECTIONS,
     {}
   );
 

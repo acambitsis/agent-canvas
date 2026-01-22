@@ -7,6 +7,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Agent } from '@/types/agent';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 interface Toast {
   id: string;
@@ -33,15 +34,12 @@ interface AppStateContextValue {
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
 
-const SIDEBAR_COLLAPSED_KEY = 'agentcanvas-sidebar-collapsed';
-const SIDEBAR_WIDTH_KEY = 'agentcanvas-sidebar-width';
-
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
-  const [sidebarWidth, setSidebarWidth] = useLocalStorage(SIDEBAR_WIDTH_KEY, 280);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage(STORAGE_KEYS.SIDEBAR_WIDTH, 280);
   const [quickLookAgent, setQuickLookAgent] = useState<Agent | null>(null);
 
   const showLoading = useCallback((message: string) => {

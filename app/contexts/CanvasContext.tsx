@@ -11,8 +11,7 @@ import { useQuery, useMutation } from '@/hooks/useConvex';
 import { useAuth } from './AuthContext';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-
-const CURRENT_CANVAS_KEY = 'agentcanvas-current-canvas';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 interface CanvasContextValue {
   canvases: Canvas[];
@@ -35,7 +34,7 @@ interface CanvasProviderProps {
 
 export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProps) {
   const { currentOrgId, isInitialized, isAuthenticated, userOrgs, setCurrentOrgId } = useAuth();
-  const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(CURRENT_CANVAS_KEY, null);
+  const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(STORAGE_KEYS.CURRENT_CANVAS, null);
   const [initialCanvasError, setInitialCanvasError] = useState<'not_found' | 'no_access' | null>(null);
   // Use state instead of ref so that setting it to true triggers a re-render
   // and causes the query to switch to 'skip' (fixes race condition)

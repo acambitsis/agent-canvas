@@ -96,3 +96,14 @@ export function getAgentStatusConfig(status?: string) {
 export const AGENT_STATUS_OPTIONS = Object.entries(AGENT_STATUS_CONFIG).map(
   ([value, config]) => ({ value: value as AgentStatus, label: config.label })
 );
+
+/**
+ * Organization role values
+ * Single source of truth for role-related logic
+ */
+export const ORG_ROLES = {
+  ADMIN: 'admin',
+  MEMBER: 'member',
+} as const;
+
+export type OrgRole = (typeof ORG_ROLES)[keyof typeof ORG_ROLES];

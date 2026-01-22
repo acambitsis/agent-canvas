@@ -7,8 +7,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, Organization, SessionData } from '@/types/auth';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-
-const CURRENT_ORG_KEY = 'agentcanvas-current-org';
+import { ORG_ROLES } from '@/types/validationConstants';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 // Module-level flag to prevent double-initialization in React Strict Mode
 let authInitialized = false;
@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userOrgs, setUserOrgs] = useState<Organization[]>([]);
-  const [currentOrgId, setCurrentOrgIdState] = useLocalStorage<string | null>(CURRENT_ORG_KEY, null);
+  const [currentOrgId, setCurrentOrgIdState] = useLocalStorage<string | null>(STORAGE_KEYS.CURRENT_ORG, null);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [idTokenExpiresAt, setIdTokenExpiresAt] = useState<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -302,5 +302,5 @@ export function useIsOrgAdmin() {
   const { userOrgs, currentOrgId } = useAuth();
   if (!currentOrgId) return false;
   const org = userOrgs.find(org => org.id === currentOrgId);
-  return org?.role === 'admin';
+  return org?.role === ORG_ROLES.ADMIN;
 }

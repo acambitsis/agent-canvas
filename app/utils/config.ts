@@ -2,7 +2,7 @@
  * Configuration utilities for tools and tags
  */
 
-import { AGENT_STATUS, AGENT_STATUS_CONFIG, AgentStatus, getAgentStatusConfig } from '@/types/validationConstants';
+import { AGENT_STATUS_CONFIG, AgentStatus, getAgentStatusConfig } from '@/types/validationConstants';
 
 export interface ToolDefinition {
   label: string;
@@ -40,6 +40,15 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   api: { label: 'API', color: '#14B8A6', icon: 'plug' },
 };
 
+// Tag type identifiers - used for grouping agents
+export const TAG_TYPE_ID = {
+  CATEGORY: 'category',
+  PHASE: 'phase',
+  STATUS: 'status',
+} as const;
+
+export type TagTypeId = typeof TAG_TYPE_ID[keyof typeof TAG_TYPE_ID];
+
 // Section color palette - cycles through for agent groups/phases
 export const SECTION_COLOR_PALETTE = [
   '#F59E0B', // Amber
@@ -53,25 +62,25 @@ export const SECTION_COLOR_PALETTE = [
 ];
 
 // Tag type definitions
-export const TAG_TYPES: Record<string, TagType> = {
-  category: {
-    id: 'category',
+export const TAG_TYPES: Record<TagTypeId, TagType> = {
+  [TAG_TYPE_ID.CATEGORY]: {
+    id: TAG_TYPE_ID.CATEGORY,
     label: 'Category',
     description: 'Visual grouping',
     isGroupable: true,
     icon: 'folder',
     values: [],
   },
-  phase: {
-    id: 'phase',
+  [TAG_TYPE_ID.PHASE]: {
+    id: TAG_TYPE_ID.PHASE,
     label: 'Implementation Phase',
     description: 'Implementation schedule',
     isGroupable: true,
     icon: 'milestone',
     values: [],
   },
-  status: {
-    id: 'status',
+  [TAG_TYPE_ID.STATUS]: {
+    id: TAG_TYPE_ID.STATUS,
     label: 'Status',
     description: 'Agent lifecycle status',
     isGroupable: true,
@@ -85,7 +94,14 @@ export const TAG_TYPES: Record<string, TagType> = {
   },
 };
 
-export const DEFAULT_GROUPING_TAG = 'category';
+export const DEFAULT_GROUPING_TAG = TAG_TYPE_ID.CATEGORY;
+
+/**
+ * Check if a string is a valid TagTypeId
+ */
+export function isValidTagTypeId(tagType: string): tagType is TagTypeId {
+  return Object.values(TAG_TYPE_ID).includes(tagType as TagTypeId);
+}
 
 // Default values for grouping fields
 export const DEFAULT_CATEGORY = 'Uncategorized';
@@ -114,16 +130,19 @@ export function getSectionColor(groupIndex: number): string {
  * Get tag value definition
  */
 export function getTagValue(tagType: string, valueId: string): TagValue | null {
-  const tagDef = TAG_TYPES[tagType];
-  if (!tagDef) return null;
-  return tagDef.values.find((v) => v.id === valueId) || null;
+  if (!isValidTagTypeId(tagType)) return null;
+  const validTagType: TagTypeId = tagType;
+  const tagDef = TAG_TYPES[validTagType];
+  return tagDef.values.find((v: TagValue) => v.id === valueId) || null;
 }
 
 /**
  * Get tag definition
  */
 export function getTagDefinition(tagType: string): TagType | null {
-  return TAG_TYPES[tagType] || null;
+  if (!isValidTagTypeId(tagType)) return null;
+  const validTagType: TagTypeId = tagType;
+  return TAG_TYPES[validTagType];
 }
 
 /**
