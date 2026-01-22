@@ -2,6 +2,8 @@
  * Configuration utilities for tools and tags
  */
 
+import { AGENT_STATUS } from '@/types/validationConstants';
+
 export interface ToolDefinition {
   label: string;
   color: string;
@@ -75,10 +77,10 @@ export const TAG_TYPES: Record<string, TagType> = {
     isGroupable: true,
     icon: 'activity',
     values: [
-      { id: 'active', label: 'Active', color: '#10B981', icon: 'check-circle' },
-      { id: 'draft', label: 'Draft', color: '#6B7280', icon: 'edit-3' },
-      { id: 'review', label: 'In Review', color: '#F59E0B', icon: 'eye' },
-      { id: 'deprecated', label: 'Deprecated', color: '#EF4444', icon: 'archive' },
+      { id: AGENT_STATUS.ACTIVE, label: 'Active', color: '#10B981', icon: 'check-circle' },
+      { id: AGENT_STATUS.DRAFT, label: 'Draft', color: '#6B7280', icon: 'edit-3' },
+      { id: AGENT_STATUS.REVIEW, label: 'In Review', color: '#F59E0B', icon: 'eye' },
+      { id: AGENT_STATUS.DEPRECATED, label: 'Deprecated', color: '#EF4444', icon: 'archive' },
     ],
   },
 };

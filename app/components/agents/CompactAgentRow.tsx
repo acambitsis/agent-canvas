@@ -9,6 +9,7 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay, getStatusColor } from '@/utils/config';
 import { Icon } from '@/components/ui/Icon';
+import { AGENT_STATUS } from '@/types/validationConstants';
 
 interface CompactAgentRowProps {
   agent: Agent;
@@ -87,9 +88,9 @@ export const CompactAgentRow = memo(function CompactAgentRow({
       </span>
 
       {/* Status badge */}
-      <span className={`compact-row__status status-dot--${agent.status || 'draft'}`}>
+      <span className={`compact-row__status status-dot--${agent.status || AGENT_STATUS.DRAFT}`}>
         <span className="status-dot" style={{ backgroundColor: statusColor }} />
-        <span className="compact-row__status-label">{agent.status || 'draft'}</span>
+        <span className="compact-row__status-label">{agent.status || AGENT_STATUS.DRAFT}</span>
       </span>
 
       {/* Tool indicators (colored dots) */}

@@ -8,6 +8,7 @@ import {
   exportToYaml,
 } from '@/utils/yaml';
 import { Agent } from '@/types/agent';
+import { Id } from '../../convex/_generated/dataModel';
 
 describe('YAML import', () => {
   it('parses YAML and converts agents to Convex format', () => {
@@ -136,9 +137,9 @@ describe('slug utilities', () => {
 
 describe('YAML export', () => {
   const mockAgent = (overrides: Partial<Agent> = {}): Agent => ({
-    _id: 'test-id',
+    _id: 'test-id' as Id<"agents">,
     _creationTime: Date.now(),
-    canvasId: 'canvas-id',
+    canvasId: 'canvas-id' as Id<"canvases">,
     phase: 'Phase 1',
     phaseOrder: 0,
     agentOrder: 0,
@@ -302,9 +303,9 @@ agentGroups:
 
     // Convert to Agent[] format (simulate what would be stored)
     const agents: Agent[] = imported.agents.map((a, i) => ({
-      _id: `id-${i}`,
+      _id: `id-${i}` as Id<"agents">,
       _creationTime: Date.now(),
-      canvasId: 'canvas-id',
+      canvasId: 'canvas-id' as Id<"canvases">,
       ...a,
       createdBy: 'user',
       updatedBy: 'user',

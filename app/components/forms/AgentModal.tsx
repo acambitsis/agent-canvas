@@ -14,6 +14,7 @@ import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { useQuery } from '@/hooks/useConvex';
 import { validateAgentForm } from '@/utils/validation';
 import { getAvailableTools, getToolDisplay, DEFAULT_PHASE } from '@/utils/config';
+import { AGENT_STATUS, AGENT_STATUS_OPTIONS } from '@/types/validationConstants';
 import { Icon } from '@/components/ui/Icon';
 import { api } from '../../../convex/_generated/api';
 
@@ -73,7 +74,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
     videoLink: '',
     metrics: {},
     category: '',
-    status: 'draft',
+    status: AGENT_STATUS.DRAFT,
     phase: defaultPhase || DEFAULT_PHASE,
     phaseOrder: 0,
     agentOrder: 0,
@@ -95,7 +96,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
         videoLink: agent.videoLink || '',
         metrics: agent.metrics || {},
         category: agent.category || '',
-        status: agent.status || 'draft',
+        status: agent.status || AGENT_STATUS.DRAFT,
         phase: agent.phase,
         phaseOrder: agent.phaseOrder,
         agentOrder: agent.agentOrder,
@@ -113,7 +114,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
         videoLink: '',
         metrics: {},
         category: '',
-        status: 'draft',
+        status: AGENT_STATUS.DRAFT,
         phase: defaultPhase || DEFAULT_PHASE,
         phaseOrder: 0,
         agentOrder: 0,
@@ -288,10 +289,11 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
               value={formData.status}
               onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
             >
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="review">In Review</option>
-              <option value="deprecated">Deprecated</option>
+              {AGENT_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         </FormSection>

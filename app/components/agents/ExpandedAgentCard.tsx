@@ -10,6 +10,7 @@ import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
+import { AGENT_STATUS } from '@/types/validationConstants';
 
 interface ExpandedAgentCardProps {
   agent: Agent;
@@ -38,12 +39,14 @@ function getToolColorClass(color: string): string {
 // Get status configuration
 function getStatusConfig(status?: string): { color: string; bgColor: string; label: string } {
   switch (status) {
-    case 'active':
+    case AGENT_STATUS.ACTIVE:
       return { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', label: 'Active' };
-    case 'draft':
+    case AGENT_STATUS.DRAFT:
       return { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', label: 'Draft' };
-    case 'deprecated':
+    case AGENT_STATUS.DEPRECATED:
       return { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', label: 'Deprecated' };
+    case AGENT_STATUS.REVIEW:
+      return { color: '#F59E0B', bgColor: 'rgba(245, 158, 11, 0.1)', label: 'In Review' };
     default:
       return { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: status || 'Unknown' };
   }
