@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay, getStatusColor } from '@/utils/config';
 import { Icon } from '@/components/ui/Icon';
@@ -18,7 +18,7 @@ interface CompactAgentRowProps {
   onQuickLook: () => void;
 }
 
-export function CompactAgentRow({
+export const CompactAgentRow = memo(function CompactAgentRow({
   agent,
   index,
   onEdit,
@@ -160,4 +160,4 @@ export function CompactAgentRow({
       </div>
     </div>
   );
-}
+});

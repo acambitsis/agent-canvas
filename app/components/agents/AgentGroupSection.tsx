@@ -11,7 +11,6 @@ import { ExpandedAgentCard } from './ExpandedAgentCard';
 import { CompactAgentRow } from './CompactAgentRow';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { Icon } from '@/components/ui/Icon';
-import { getToolDisplay, getStatusColor } from '@/utils/config';
 
 interface AgentGroupSectionProps {
   group: AgentGroup;
@@ -106,57 +105,26 @@ export function AgentGroupSection({
         </div>
       </div>
 
-      {/* Collapsed Preview - List Format */}
+      {/* Collapsed Preview - Compact Card View */}
       {isCollapsed && group.agents.length > 0 && (
-        <div className="agent-group__collapsed-list">
+        <div className="agents-compact-view">
           {group.agents.map((agent, idx) => (
-            <button
+            <CompactAgentRow
               key={agent._id}
-              className="collapsed-list-item"
-              onClick={() => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
-              title={agent.objective || agent.name}
-            >
-              <span className="collapsed-list-item__number">{idx + 1}</span>
-              <span className="collapsed-list-item__name">{agent.name}</span>
-              <span
-                className="collapsed-list-item__status"
-                style={{ backgroundColor: getStatusColor(agent.status) }}
-              />
-              <span className="collapsed-list-item__tools">
-                {agent.tools.slice(0, 3).map((tool, toolIdx) => (
-                  <span
-                    key={toolIdx}
-                    className="tool-dot"
-                    style={{ backgroundColor: getToolDisplay(tool).color }}
-                    title={getToolDisplay(tool).label}
-                  />
-                ))}
-                {agent.tools.length > 3 && (
-                  <span className="tool-dot tool-dot--more">+{agent.tools.length - 3}</span>
-                )}
-              </span>
-            </button>
+              agent={agent}
+              index={idx}
+              onEdit={() => onEditAgent(agent)}
+              onDelete={() => onDeleteAgent(agent)}
+              onQuickLook={() => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
+            />
           ))}
         </div>
       )}
 
-      {/* Expanded Content - Compact, Grid, or Detail View */}
+      {/* Expanded Content - Grid or Detail View */}
       {!isCollapsed && (
         <div className={`agent-group__content agent-group__content--${viewMode}`}>
-          {viewMode === 'compact' ? (
-            <div className="agents-compact-view">
-              {group.agents.map((agent, idx) => (
-                <CompactAgentRow
-                  key={agent._id}
-                  agent={agent}
-                  index={idx}
-                  onEdit={() => onEditAgent(agent)}
-                  onDelete={() => onDeleteAgent(agent)}
-                  onQuickLook={() => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
-                />
-              ))}
-            </div>
-          ) : viewMode === 'detail' ? (
+          {viewMode === 'detail' ? (
             <div className="agents-detail-view">
               {group.agents.map((agent, idx) => (
                 <ExpandedAgentCard

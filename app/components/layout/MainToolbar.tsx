@@ -11,6 +11,31 @@ import { useAgents } from '@/contexts/AgentContext';
 import { Icon } from '@/components/ui/Icon';
 import { TAG_TYPES } from '@/utils/config';
 
+/**
+ * CollapseToggle - Button to collapse/expand all agent group sections
+ * Only renders when there are 2+ groups
+ */
+function CollapseToggle() {
+  const { computedGroups, collapsedSections, collapseAll } = useGrouping();
+
+  if (computedGroups.length <= 1) return null;
+
+  const collapsedCount = computedGroups.filter(g => collapsedSections[g.id]).length;
+  const allCollapsed = collapsedCount === computedGroups.length;
+
+  return (
+    <button
+      type="button"
+      className="collapse-toggle-btn"
+      onClick={() => collapseAll(!allCollapsed)}
+      title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+    >
+      <Icon name={allCollapsed ? 'unfold-vertical' : 'fold-vertical'} />
+      <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
+    </button>
+  );
+}
+
 interface MainToolbarProps {
   onAddAgent: () => void;
 }
@@ -97,16 +122,6 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
         <div className="view-mode-toggle">
           <button
             type="button"
-            className={`view-mode-toggle__btn ${viewMode === 'compact' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('compact')}
-            title="Compact view"
-            aria-pressed={viewMode === 'compact'}
-          >
-            <Icon name="list" />
-            <span>Compact</span>
-          </button>
-          <button
-            type="button"
             className={`view-mode-toggle__btn ${viewMode === 'grid' ? 'is-active' : ''}`}
             onClick={() => setViewMode('grid')}
             title="Normal view"
@@ -126,6 +141,9 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             <span>Expanded</span>
           </button>
         </div>
+
+        {/* Collapse Toggle */}
+        <CollapseToggle />
 
         {/* Add Agent Button */}
         <button type="button" className="btn btn--primary" onClick={onAddAgent}>
