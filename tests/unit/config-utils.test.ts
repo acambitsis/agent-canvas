@@ -7,8 +7,8 @@ import {
   getToolColorClass,
   TOOL_DEFINITIONS,
   SECTION_COLOR_PALETTE,
-  STATUS_COLORS,
 } from '@/utils/config';
+import { AGENT_STATUS_CONFIG, getAgentStatusConfig } from '@/types/validationConstants';
 
 describe('Config Utilities', () => {
   describe('getToolDisplay', () => {
@@ -57,51 +57,49 @@ describe('Config Utilities', () => {
 
   describe('getStatusColor', () => {
     it('returns correct color for active status', () => {
-      expect(getStatusColor('active')).toBe('#10B981');
+      expect(getStatusColor('active')).toBe(AGENT_STATUS_CONFIG.active.color);
     });
 
     it('returns correct color for draft status', () => {
-      expect(getStatusColor('draft')).toBe('#A8A29E');
+      expect(getStatusColor('draft')).toBe(AGENT_STATUS_CONFIG.draft.color);
     });
 
     it('returns correct color for deprecated status', () => {
-      expect(getStatusColor('deprecated')).toBe('#EF4444');
+      expect(getStatusColor('deprecated')).toBe(AGENT_STATUS_CONFIG.deprecated.color);
     });
 
     it('returns default color for unknown status', () => {
-      expect(getStatusColor('unknown')).toBe(STATUS_COLORS.default.color);
+      expect(getStatusColor('unknown')).toBe(getAgentStatusConfig('unknown').color);
     });
 
     it('returns default color for undefined status', () => {
-      expect(getStatusColor(undefined)).toBe(STATUS_COLORS.default.color);
+      expect(getStatusColor(undefined)).toBe(getAgentStatusConfig(undefined).color);
     });
   });
 
   describe('getStatusConfig', () => {
     it('returns full config for active status', () => {
       const config = getStatusConfig('active');
-      expect(config).toEqual({
-        color: '#10B981',
-        bgColor: 'rgba(16, 185, 129, 0.1)',
-        label: 'Active',
-      });
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.active.color);
+      expect(config.bgColor).toBe(AGENT_STATUS_CONFIG.active.bgColor);
+      expect(config.label).toBe('Active');
     });
 
     it('returns full config for draft status', () => {
       const config = getStatusConfig('draft');
-      expect(config.color).toBe('#A8A29E');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.draft.color);
       expect(config.label).toBe('Draft');
     });
 
     it('returns full config for deprecated status', () => {
       const config = getStatusConfig('deprecated');
-      expect(config.color).toBe('#EF4444');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.deprecated.color);
       expect(config.label).toBe('Deprecated');
     });
 
     it('returns default config with custom label for unknown status', () => {
       const config = getStatusConfig('custom-status');
-      expect(config.color).toBe(STATUS_COLORS.default.color);
+      expect(config.color).toBe(getAgentStatusConfig('custom-status').color);
       expect(config.label).toBe('custom-status');
     });
 

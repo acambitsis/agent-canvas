@@ -10,6 +10,7 @@ import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
+import { getAgentStatusConfig } from '@/types/validationConstants';
 
 interface ExpandedAgentCardProps {
   agent: Agent;
@@ -35,25 +36,11 @@ function getToolColorClass(color: string): string {
   return colorMap[color] || 'default';
 }
 
-// Get status configuration
-function getStatusConfig(status?: string): { color: string; bgColor: string; label: string } {
-  switch (status) {
-    case 'active':
-      return { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', label: 'Active' };
-    case 'draft':
-      return { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', label: 'Draft' };
-    case 'deprecated':
-      return { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', label: 'Deprecated' };
-    default:
-      return { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: status || 'Unknown' };
-  }
-}
-
 export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: ExpandedAgentCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const metrics = agent.metrics || {};
-  const statusConfig = getStatusConfig(agent.status);
+  const statusConfig = getAgentStatusConfig(agent.status);
 
   return (
     <article
