@@ -15,9 +15,10 @@ import { Icon } from '@/components/ui/Icon';
 interface AgentGridProps {
   onEditAgent: (agent: Agent) => void;
   onAddAgent: (phase: string) => void;
+  onQuickLook?: (agent: Agent) => void;
 }
 
-export function AgentGrid({ onEditAgent, onAddAgent }: AgentGridProps) {
+export function AgentGrid({ onEditAgent, onAddAgent, onQuickLook }: AgentGridProps) {
   const { computedGroups } = useGrouping();
   const { deleteAgent, isLoading } = useAgents();
   const executeOperation = useAsyncOperation();
@@ -80,6 +81,7 @@ export function AgentGrid({ onEditAgent, onAddAgent }: AgentGridProps) {
           onEditAgent={onEditAgent}
           onDeleteAgent={handleDeleteAgent}
           onAddAgent={onAddAgent}
+          onQuickLook={onQuickLook}
         />
       ))}
     </div>
