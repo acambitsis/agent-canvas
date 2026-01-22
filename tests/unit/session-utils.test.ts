@@ -6,13 +6,30 @@ import {
   clearOAuthStateCookie,
   encryptSession,
   decryptSession,
-  generateIdToken,
   type SessionData,
 } from '../../server/session-utils';
+
+// Mock jose since jose@6 only ships webapi version which doesn't work in jsdom
+vi.mock('jose', () => ({
+  EncryptJWT: vi.fn().mockImplementation((payload) => ({
+    setProtectedHeader: vi.fn().mockReturnThis(),
+    setIssuedAt: vi.fn().mockReturnThis(),
+    setExpirationTime: vi.fn().mockReturnThis(),
+    encrypt: vi.fn().mockResolvedValue(`encrypted:${JSON.stringify(payload)}`),
+  })),
+  jwtDecrypt: vi.fn().mockImplementation(async (token: string) => {
+    if (!token.startsWith('encrypted:')) throw new Error('Invalid token');
+    return { payload: JSON.parse(token.replace('encrypted:', '')) };
+  }),
+  base64url: {
+    decode: vi.fn().mockReturnValue(new Uint8Array(32)),
+  },
+}));
 
 /**
  * Test session utilities
  * Tests the session management functions from server/session-utils.ts
+ * Note: jose is mocked since jose@6 webapi doesn't work in jsdom environment
  */
 
 describe('Session Utilities', () => {
