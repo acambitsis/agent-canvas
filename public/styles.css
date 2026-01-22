@@ -4110,6 +4110,36 @@ body.is-resizing-sidebar .main-wrapper {
 }
 
 /* ============================================
+   COLLAPSE TOGGLE BUTTON (Toolbar)
+   ============================================ */
+
+.collapse-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-muted);
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.collapse-toggle-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+.collapse-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
    LOADING OVERLAY ENHANCEMENTS
    ============================================ */
 

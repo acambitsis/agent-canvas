@@ -18,7 +18,7 @@ interface MainToolbarProps {
 export function MainToolbar({ onAddAgent }: MainToolbarProps) {
   const { currentCanvas, currentCanvasId } = useCanvas();
   const { agents } = useAgents();
-  const { activeTagType, setActiveTagType, viewMode, setViewMode } = useGrouping();
+  const { activeTagType, setActiveTagType, viewMode, setViewMode, computedGroups, collapsedSections, collapseAll } = useGrouping();
   const [isGroupingOpen, setIsGroupingOpen] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
 
@@ -116,6 +116,23 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             <span>Expanded</span>
           </button>
         </div>
+
+        {/* Collapse Toggle */}
+        {computedGroups.length > 1 && (() => {
+          const collapsedCount = computedGroups.filter(g => collapsedSections[g.id]).length;
+          const allCollapsed = collapsedCount === computedGroups.length;
+          return (
+            <button
+              type="button"
+              className="collapse-toggle-btn"
+              onClick={() => collapseAll(!allCollapsed)}
+              title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+            >
+              <Icon name={allCollapsed ? 'unfold-vertical' : 'fold-vertical'} />
+              <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
+            </button>
+          );
+        })()}
 
         {/* Add Agent Button */}
         <button type="button" className="btn btn--primary" onClick={onAddAgent}>
