@@ -340,6 +340,8 @@ export function Sidebar() {
             <button
               className={`sidebar__dropdown-item ${themePreference === 'system' ? 'is-active' : ''}`}
               onClick={() => setThemePreference('system')}
+              role="menuitemradio"
+              aria-checked={themePreference === 'system'}
             >
               <Icon name={SYSTEM_THEME_OPTION.icon} />
               <span>{SYSTEM_THEME_OPTION.label}</span>
@@ -350,6 +352,8 @@ export function Sidebar() {
                 key={theme}
                 className={`sidebar__dropdown-item ${themePreference === theme ? 'is-active' : ''}`}
                 onClick={() => setThemePreference(theme)}
+                role="menuitemradio"
+                aria-checked={themePreference === theme}
               >
                 <Icon name={THEMES[theme].icon} />
                 <span>{THEMES[theme].label}</span>
