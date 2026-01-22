@@ -130,3 +130,54 @@ export function getTagDefinition(tagType: string): TagType | null {
 export function getAvailableTools(): string[] {
   return Object.keys(TOOL_DEFINITIONS);
 }
+
+/**
+ * Status color definitions
+ */
+export const STATUS_COLORS: Record<string, { color: string; bgColor: string; label: string }> = {
+  active: { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', label: 'Active' },
+  draft: { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', label: 'Draft' },
+  deprecated: { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', label: 'Deprecated' },
+  default: { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: 'Unknown' },
+};
+
+/**
+ * Get status color by status name
+ */
+export function getStatusColor(status?: string): string {
+  return STATUS_COLORS[status || 'default']?.color || STATUS_COLORS.default.color;
+}
+
+/**
+ * Get full status configuration (color, bgColor, label)
+ */
+export function getStatusConfig(status?: string): { color: string; bgColor: string; label: string } {
+  const config = STATUS_COLORS[status || 'default'];
+  if (config) {
+    return { ...config, label: config.label === 'Unknown' && status ? status : config.label };
+  }
+  return { ...STATUS_COLORS.default, label: status || 'Unknown' };
+}
+
+/**
+ * Map tool colors to CSS-friendly class names
+ */
+const TOOL_COLOR_CLASS_MAP: Record<string, string> = {
+  '#06B6D4': 'cyan',
+  '#3B82F6': 'blue',
+  '#8B5CF6': 'violet',
+  '#A855F7': 'purple',
+  '#EC4899': 'pink',
+  '#F43F5E': 'rose',
+  '#F97316': 'orange',
+  '#F59E0B': 'amber',
+  '#10B981': 'emerald',
+  '#14B8A6': 'teal',
+};
+
+/**
+ * Get CSS-friendly color class name from hex color
+ */
+export function getToolColorClass(color: string): string {
+  return TOOL_COLOR_CLASS_MAP[color] || 'default';
+}

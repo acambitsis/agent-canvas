@@ -4,8 +4,8 @@
 
 'use client';
 
-import React, { createContext, useContext, useMemo, useCallback } from 'react';
-import { Agent, AgentGroup } from '@/types/agent';
+import React, { createContext, useContext, useMemo, useCallback, useEffect, useRef } from 'react';
+import { AgentGroup } from '@/types/agent';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { groupAgentsByTag, filterAgents } from '@/utils/grouping';
 import { DEFAULT_GROUPING_TAG } from '@/utils/config';
@@ -50,6 +50,17 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
       viewMode: 'grid',
     }
   );
+
+  // Migrate 'compact' viewMode to 'grid' for existing users (one-time migration)
+  const hasMigrated = useRef(false);
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentViewMode = preferences.viewMode as any;
+    if (!hasMigrated.current && currentViewMode === 'compact') {
+      hasMigrated.current = true;
+      setPreferences((prev) => ({ ...prev, viewMode: 'grid' }));
+    }
+  }, [preferences.viewMode, setPreferences]);
 
   const [collapsedSections, setCollapsedSections] = useLocalStorage<Record<string, boolean>>(
     COLLAPSED_SECTIONS_KEY,

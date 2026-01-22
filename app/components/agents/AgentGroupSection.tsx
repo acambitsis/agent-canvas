@@ -8,6 +8,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Agent, AgentGroup } from '@/types/agent';
 import { AgentCard } from './AgentCard';
 import { ExpandedAgentCard } from './ExpandedAgentCard';
+import { CompactAgentRow } from './CompactAgentRow';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { Icon } from '@/components/ui/Icon';
 
@@ -17,6 +18,7 @@ interface AgentGroupSectionProps {
   onEditAgent: (agent: Agent) => void;
   onDeleteAgent: (agent: Agent) => void;
   onAddAgent: (phase: string) => void;
+  onQuickLook?: (agent: Agent) => void;
 }
 
 export function AgentGroupSection({
@@ -24,7 +26,8 @@ export function AgentGroupSection({
   groupIndex = 0,
   onEditAgent,
   onDeleteAgent,
-  onAddAgent
+  onAddAgent,
+  onQuickLook
 }: AgentGroupSectionProps) {
   const { collapsedSections, toggleSectionCollapse, viewMode } = useGrouping();
   const isCollapsed = collapsedSections[group.id] || false;
@@ -102,24 +105,19 @@ export function AgentGroupSection({
         </div>
       </div>
 
-      {/* Collapsed Preview - Pills */}
+      {/* Collapsed Preview - Compact Card View */}
       {isCollapsed && group.agents.length > 0 && (
-        <div className="agent-group__collapsed-preview">
-          {group.agents.slice(0, 5).map((agent, idx) => (
-            <button
+        <div className="agents-compact-view">
+          {group.agents.map((agent, idx) => (
+            <CompactAgentRow
               key={agent._id}
-              className={`collapsed-pill pill-palette-${idx % 5}`}
-              onClick={() => onEditAgent(agent)}
-              title={`Edit ${agent.name}`}
-            >
-              {agent.name}
-            </button>
+              agent={agent}
+              index={idx}
+              onEdit={() => onEditAgent(agent)}
+              onDelete={() => onDeleteAgent(agent)}
+              onQuickLook={() => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
+            />
           ))}
-          {group.agents.length > 5 && (
-            <span className="collapsed-pill collapsed-pill--more">
-              +{group.agents.length - 5} more
-            </span>
-          )}
         </div>
       )}
 
@@ -147,6 +145,7 @@ export function AgentGroupSection({
                   index={idx}
                   onEdit={() => onEditAgent(agent)}
                   onDelete={() => onDeleteAgent(agent)}
+                  onQuickLook={() => onQuickLook?.(agent)}
                 />
               ))}
             </div>
