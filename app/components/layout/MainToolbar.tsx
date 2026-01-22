@@ -18,7 +18,7 @@ import { TAG_TYPES } from '@/utils/config';
 function CollapseToggle() {
   const { computedGroups, collapsedSections, collapseAll } = useGrouping();
 
-  if (computedGroups.length <= 1) return null;
+  if (computedGroups.length < 1) return null;
 
   const collapsedCount = computedGroups.filter(g => collapsedSections[g.id]).length;
   const allCollapsed = collapsedCount === computedGroups.length;
@@ -134,11 +134,11 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             type="button"
             className={`view-mode-toggle__btn ${viewMode === 'detail' ? 'is-active' : ''}`}
             onClick={() => setViewMode('detail')}
-            title="Expanded view"
+            title="Detailed view"
             aria-pressed={viewMode === 'detail'}
           >
             <Icon name="layout-list" />
-            <span>Expanded</span>
+            <span>Detailed</span>
           </button>
         </div>
 

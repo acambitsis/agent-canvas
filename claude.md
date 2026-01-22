@@ -49,8 +49,12 @@ pnpm test:ui     # browser UI
 
 ## Git Workflow
 
-- **Minor fixes** (typos, small doc updates): commit directly to `dev`
-- **Features/bug series**: feature branch → `dev` → test → `main` (prod)
+**NEVER commit/push directly to `main`. All changes require PRs.**
+
+| Change Type | Workflow |
+|-------------|----------|
+| Minor fixes (typos, <3 files) | Commit to `dev` → PR to `main` |
+| Features (3+ files, new functionality, behavior changes) | Feature branch → PR to `dev` → PR to `main` |
 
 ## Convex Deployments
 

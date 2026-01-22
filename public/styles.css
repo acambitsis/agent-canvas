@@ -4808,17 +4808,21 @@ body.is-resizing-sidebar .main-wrapper {
 }
 
 /* ============================================
-   QUICK LOOK PANEL
+   QUICK LOOK MODAL (Agent Detail View)
    ============================================ */
 
 .quick-look-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 999;
     opacity: 0;
     visibility: hidden;
     transition: all var(--duration-base) var(--ease-out);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
 }
 
 .quick-look-overlay.is-open {
@@ -4827,25 +4831,27 @@ body.is-resizing-sidebar .main-wrapper {
 }
 
 .quick-look-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 420px;
+    position: relative;
+    width: 560px;
     max-width: 100%;
+    max-height: calc(100vh - var(--space-12));
     background: var(--bg-secondary);
-    border-left: 1px solid var(--border-muted);
+    border: 1px solid var(--border-muted);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xl);
     z-index: 1000;
-    transform: translateX(100%);
-    transition: transform var(--duration-base) var(--ease-out);
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform var(--duration-base) var(--ease-out),
+                opacity var(--duration-base) var(--ease-out);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .quick-look-panel.is-open {
-    transform: translateX(0);
+    transform: scale(1);
+    opacity: 1;
 }
 
 .quick-look-panel__header {

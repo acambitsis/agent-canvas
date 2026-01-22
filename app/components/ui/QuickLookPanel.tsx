@@ -56,20 +56,18 @@ export function QuickLookPanel({
   const metrics = agent.metrics || {};
 
   return (
-    <>
-      {/* Overlay */}
-      <div
-        className={`quick-look-overlay ${isOpen ? 'is-open' : ''}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
+    <div
+      className={`quick-look-overlay ${isOpen ? 'is-open' : ''}`}
+      onClick={onClose}
+      role="presentation"
+    >
+      {/* Modal */}
       <div
         className={`quick-look-panel ${isOpen ? 'is-open' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={`Agent details: ${agent.name}`}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <header className="quick-look-panel__header">
@@ -279,6 +277,6 @@ export function QuickLookPanel({
           </button>
         </footer>
       </div>
-    </>
+    </div>
   );
 }
