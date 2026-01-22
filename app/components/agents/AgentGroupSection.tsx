@@ -127,7 +127,7 @@ export function AgentGroupSection({
             <button
               key={agent._id}
               className="collapsed-list-item"
-              onClick={() => onQuickLook?.(agent) || onEditAgent(agent)}
+              onClick={() => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
               title={agent.objective || agent.name}
             >
               <span className="collapsed-list-item__number">{idx + 1}</span>
@@ -166,7 +166,7 @@ export function AgentGroupSection({
                   index={idx}
                   onEdit={() => onEditAgent(agent)}
                   onDelete={() => onDeleteAgent(agent)}
-                  onQuickLook={() => onQuickLook?.(agent) || onEditAgent(agent)}
+                  onQuickLook={() => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
                 />
               ))}
             </div>
