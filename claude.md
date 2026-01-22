@@ -228,6 +228,12 @@ Use `useLocalStorage` hook + `AppStateContext` for UI state that persists across
 
 ## Code Standards
 
+### DRY & Type Safety
+- **Derive frontend types from Convex schema** using `Doc<"tableName">` - never duplicate interfaces
+- **Centralize constants** - grep before adding any string literal; if it exists elsewhere, extract to shared constant
+- **Constants locations**: `app/types/validationConstants.ts` (domain values), `app/utils/config.ts` (UI config)
+
+### Naming
 - **Functions/Variables**: camelCase
 - **CSS Classes**: kebab-case
 - **React Components**: PascalCase, functional components with hooks
