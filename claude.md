@@ -165,8 +165,8 @@ BASE_URL=http://localhost:3000
 ```typescript
 // Tables with proper indexes
 orgSettings          // Org-level config (tools, colors, defaults)
-canvases             // Canvas containers per org
-agents               // Individual agents (normalized from YAML)
+canvases             // Canvas containers per org (includes phases[], categories[] for ordering)
+agents               // Individual agents (phase, agentOrder, name, tools, metrics, category, status)
 agentHistory         // Audit trail for all agent changes
 ```
 
