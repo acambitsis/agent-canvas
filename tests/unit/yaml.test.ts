@@ -79,6 +79,54 @@ agentGroups:
     expect(result.phases).toEqual(['Sales']);
   });
 
+  it('returns complete structure for canvas creation', () => {
+    const yamlText = `
+documentTitle: Complete Canvas
+agentGroups:
+  - groupName: Discovery
+    agents:
+      - name: Research Agent
+        tags:
+          department: Engineering
+  - groupName: Development
+    agents:
+      - name: Build Agent
+        tags:
+          department: Engineering
+      - name: Test Agent
+        tags:
+          department: QA
+    `.trim();
+
+    const result = prepareYamlImport({
+      yamlText,
+      existingSlugs: new Set(),
+    });
+
+    // Verify all fields needed by ImportYamlModal -> canvases.create
+    expect(result).toHaveProperty('title', 'Complete Canvas');
+    expect(result).toHaveProperty('slug', 'complete-canvas');
+    expect(result).toHaveProperty('phases');
+    expect(result).toHaveProperty('categories');
+    expect(result).toHaveProperty('agents');
+
+    // Phases in document order
+    expect(result.phases).toEqual(['Discovery', 'Development']);
+
+    // Categories extracted from agents (unique values)
+    expect(result.categories).toEqual(['Engineering', 'QA']);
+
+    // Agents have required fields
+    expect(result.agents).toHaveLength(3);
+    result.agents.forEach((agent) => {
+      expect(agent).toHaveProperty('name');
+      expect(agent).toHaveProperty('phase');
+      expect(agent).toHaveProperty('agentOrder');
+      expect(agent).toHaveProperty('tools');
+      expect(agent).toHaveProperty('journeySteps');
+    });
+  });
+
   it('handles YAML with no agents', () => {
     const yamlText = `
 documentTitle: Empty

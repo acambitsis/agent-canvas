@@ -293,7 +293,8 @@ export const bulkCreate = mutation({
       if (agent.category) newCategories.add(agent.category);
     }
 
-    // Update canvas with any new phases/categories
+    // Append only NEW phases/categories not already in canvas
+    // (ImportYamlModal passes phases/categories at canvas creation, so we only add extras here)
     const canvasPhases = canvas.phases ?? ["Backlog"];
     const canvasCategories = canvas.categories ?? ["Uncategorized"];
     const phasesToAdd = [...newPhases].filter(p => !canvasPhases.includes(p));
