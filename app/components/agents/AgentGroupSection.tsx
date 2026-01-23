@@ -11,6 +11,7 @@ import { ExpandedAgentCard } from './ExpandedAgentCard';
 import { CompactAgentRow } from './CompactAgentRow';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface AgentGroupSectionProps {
   group: AgentGroup;
@@ -95,13 +96,14 @@ export function AgentGroupSection({
 
         {/* Actions */}
         <div className="agent-group__actions">
-          <button
-            className="btn btn--sm btn--primary"
-            onClick={() => onAddAgent(group.id)}
-            title={`Add agent to ${group.label}`}
-          >
-            <Icon name="plus" />
-          </button>
+          <Tooltip content={`Add agent to ${group.label}`} placement="top">
+            <button
+              className="btn btn--sm btn--primary"
+              onClick={() => onAddAgent(group.id)}
+            >
+              <Icon name="plus" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 

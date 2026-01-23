@@ -9,6 +9,7 @@ import { Agent } from '@/types/agent';
 import { getToolDisplay, getStatusColor } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { getAgentStatusConfig } from '@/types/validationConstants';
 
 interface AgentCardProps {
@@ -164,8 +165,10 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: A
         </div>
       </div>
 
-      {/* Title - line clamped to 2 lines */}
-      <h3 className="agent-card__name" title={agent.name}>{agent.name}</h3>
+      {/* Title - line clamped to 2 lines, tooltip shows full name when truncated */}
+      <Tooltip content={agent.name} placement="top" showOnlyWhenTruncated>
+        <h3 className="agent-card__name">{agent.name}</h3>
+      </Tooltip>
 
       {/* Objective - highlighted (primary content) */}
       {agent.objective && (
@@ -175,28 +178,30 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: A
       {/* Footer with Links, Metrics, and Journey - icons only with tooltips */}
       <div className="agent-card__footer">
         {agent.demoLink && (
-          <a
-            href={agent.demoLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="agent-card__footer-icon"
-            title="View Demo"
-            aria-label="View Demo"
-          >
-            <Icon name="play-circle" />
-          </a>
+          <Tooltip content="View Demo" placement="top">
+            <a
+              href={agent.demoLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="agent-card__footer-icon"
+              aria-label="View Demo"
+            >
+              <Icon name="play-circle" />
+            </a>
+          </Tooltip>
         )}
         {agent.videoLink && (
-          <a
-            href={agent.videoLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="agent-card__footer-icon"
-            title="Watch Video"
-            aria-label="Watch Video"
-          >
-            <Icon name="video" />
-          </a>
+          <Tooltip content="Watch Video" placement="top">
+            <a
+              href={agent.videoLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="agent-card__footer-icon"
+              aria-label="Watch Video"
+            >
+              <Icon name="video" />
+            </a>
+          </Tooltip>
         )}
         {(metrics.numberOfUsers !== undefined || metrics.timesUsed !== undefined ||
           metrics.timeSaved !== undefined || metrics.roi !== undefined) && (
@@ -204,7 +209,6 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: A
             <button
               type="button"
               className="agent-card__footer-icon"
-              title="View Stats"
               aria-label="View performance stats"
             >
               <Icon name="bar-chart-2" />
@@ -249,7 +253,6 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: A
             <button
               type="button"
               className="agent-card__footer-icon"
-              title={`${agent.journeySteps.length} Journey Steps`}
               aria-label="View user journey steps"
             >
               <Icon name="route" />

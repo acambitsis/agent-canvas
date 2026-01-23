@@ -16,6 +16,7 @@ import { validateAgentForm } from '@/utils/validation';
 import { getAvailableTools, getToolDisplay, DEFAULT_PHASE } from '@/utils/config';
 import { AGENT_STATUS, AGENT_STATUS_OPTIONS } from '@/types/validationConstants';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { api } from '../../../convex/_generated/api';
 
 interface AgentModalProps {
@@ -396,14 +397,15 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
                   <div key={index} className="journey-editor__item">
                     <div className="journey-editor__item-number">{index + 1}</div>
                     <div className="journey-editor__item-text">{step}</div>
-                    <button
-                      type="button"
-                      className="journey-editor__item-remove"
-                      onClick={() => handleRemoveJourneyStep(index)}
-                      title="Remove step"
-                    >
-                      <Icon name="x" />
-                    </button>
+                    <Tooltip content="Remove step" placement="left">
+                      <button
+                        type="button"
+                        className="journey-editor__item-remove"
+                        onClick={() => handleRemoveJourneyStep(index)}
+                      >
+                        <Icon name="x" />
+                      </button>
+                    </Tooltip>
                   </div>
                 ))}
               </div>

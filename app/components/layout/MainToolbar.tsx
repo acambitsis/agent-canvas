@@ -9,6 +9,7 @@ import { useCanvas } from '@/contexts/CanvasContext';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { useAgents } from '@/contexts/AgentContext';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { TAG_TYPES } from '@/utils/config';
 
 /**
@@ -24,15 +25,16 @@ function CollapseToggle() {
   const allCollapsed = collapsedCount === computedGroups.length;
 
   return (
-    <button
-      type="button"
-      className="collapse-toggle-btn"
-      onClick={() => collapseAll(!allCollapsed)}
-      title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
-    >
-      <Icon name={allCollapsed ? 'unfold-vertical' : 'fold-vertical'} />
-      <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
-    </button>
+    <Tooltip content={allCollapsed ? 'Expand all sections' : 'Collapse all sections'} placement="bottom">
+      <button
+        type="button"
+        className="collapse-toggle-btn"
+        onClick={() => collapseAll(!allCollapsed)}
+      >
+        <Icon name={allCollapsed ? 'unfold-vertical' : 'fold-vertical'} />
+        <span>{allCollapsed ? 'Expand' : 'Collapse'}</span>
+      </button>
+    </Tooltip>
   );
 }
 
@@ -73,16 +75,17 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
     <header className="toolbar">
       <div className="toolbar__left">
         <h1 className="toolbar__title">{currentCanvas?.title || ''}</h1>
-        <button
-          type="button"
-          className="icon-btn icon-btn--ghost"
-          onClick={handleShare}
-          title="Copy link to canvas"
-          disabled={!currentCanvasId}
-        >
-          <Icon name={showCopied ? 'check' : 'share-2'} />
-          {showCopied && <span className="toolbar__copied-badge">Copied!</span>}
-        </button>
+        <Tooltip content="Copy link to canvas" placement="bottom">
+          <button
+            type="button"
+            className="icon-btn icon-btn--ghost"
+            onClick={handleShare}
+            disabled={!currentCanvasId}
+          >
+            <Icon name={showCopied ? 'check' : 'share-2'} />
+            {showCopied && <span className="toolbar__copied-badge">Copied!</span>}
+          </button>
+        </Tooltip>
         <span className="toolbar__badge">
           <Icon name="bot" />
           <span>{agents.length} Agents</span>
@@ -124,7 +127,6 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             type="button"
             className={`view-mode-toggle__btn ${viewMode === 'grid' ? 'is-active' : ''}`}
             onClick={() => setViewMode('grid')}
-            title="Normal view"
             aria-pressed={viewMode === 'grid'}
           >
             <Icon name="layout-grid" />
@@ -134,7 +136,6 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             type="button"
             className={`view-mode-toggle__btn ${viewMode === 'detail' ? 'is-active' : ''}`}
             onClick={() => setViewMode('detail')}
-            title="Detailed view"
             aria-pressed={viewMode === 'detail'}
           >
             <Icon name="layout-list" />

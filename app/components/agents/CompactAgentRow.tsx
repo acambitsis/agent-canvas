@@ -9,6 +9,7 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { Agent } from '@/types/agent';
 import { getToolDisplay, getStatusColor } from '@/utils/config';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { AGENT_STATUS, getAgentStatusConfig } from '@/types/validationConstants';
 
 interface CompactAgentRowProps {
@@ -71,7 +72,6 @@ export const CompactAgentRow = memo(function CompactAgentRow({
       className="compact-row"
       data-agent-id={agent._id}
       onClick={handleRowClick}
-      title={agent.objective || agent.name}
       style={{
         '--status-color': statusColor,
         '--animation-delay': `${index * 30}ms`
@@ -82,10 +82,12 @@ export const CompactAgentRow = memo(function CompactAgentRow({
         {(agent.agentOrder ?? index) + 1}
       </span>
 
-      {/* Agent name */}
-      <span className="compact-row__name">
-        {agent.name}
-      </span>
+      {/* Agent name - tooltip shows objective or full name on hover */}
+      <Tooltip content={agent.objective || agent.name} placement="top">
+        <span className="compact-row__name">
+          {agent.name}
+        </span>
+      </Tooltip>
 
       {/* Status badge */}
       <span className={`compact-row__status status-dot--${agent.status || AGENT_STATUS.DRAFT}`}>
@@ -96,12 +98,12 @@ export const CompactAgentRow = memo(function CompactAgentRow({
       {/* Tool indicators (colored dots) */}
       <span className="compact-row__tools">
         {toolDisplays.map((tool, idx) => (
-          <span
-            key={idx}
-            className="tool-dot"
-            style={{ backgroundColor: tool.color }}
-            title={tool.label}
-          />
+          <Tooltip key={idx} content={tool.label} placement="top">
+            <span
+              className="tool-dot"
+              style={{ backgroundColor: tool.color }}
+            />
+          </Tooltip>
         ))}
         {extraToolsCount > 0 && (
           <span className="tool-dot tool-dot--more">+{extraToolsCount}</span>
