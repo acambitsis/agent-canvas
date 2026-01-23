@@ -54,26 +54,14 @@ export default defineSchema({
     // Fixed tag fields for grouping and filtering (same across all orgs)
     category: v.optional(v.string()), // Visual grouping: "Recruitment", "Onboarding", etc.
     department: v.optional(v.string()), // DEPRECATED: Legacy field, use category instead
-    // Status includes legacy values for backward compatibility with existing data
     status: v.optional(
       v.union(
-        // Current status values (preferred)
         v.literal("idea"),
         v.literal("approved"),
         v.literal("wip"),
         v.literal("testing"),
         v.literal("live"),
-        v.literal("shelved"),
-        // Legacy values (for existing data - do not use in new code)
-        v.literal("in_concept"),
-        v.literal("in_development"),
-        v.literal("in_testing"),
-        v.literal("deployed"),
-        v.literal("abandoned"),
-        v.literal("draft"),
-        v.literal("active"),
-        v.literal("review"),
-        v.literal("deprecated")
+        v.literal("shelved")
       )
     ),
     // payload removed - we're Convex-native, no need for round-trip fidelity
