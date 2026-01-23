@@ -25,12 +25,12 @@ export const VALIDATION_CONSTANTS = {
  * Single source of truth for all status-related logic
  */
 export const AGENT_STATUS = {
-  IN_CONCEPT: 'in_concept',
+  IDEA: 'idea',
   APPROVED: 'approved',
-  IN_DEVELOPMENT: 'in_development',
-  IN_TESTING: 'in_testing',
-  DEPLOYED: 'deployed',
-  ABANDONED: 'abandoned',
+  WIP: 'wip',
+  TESTING: 'testing',
+  LIVE: 'live',
+  SHELVED: 'shelved',
 } as const;
 
 export type AgentStatus = (typeof AGENT_STATUS)[keyof typeof AGENT_STATUS];
@@ -46,8 +46,8 @@ export const AGENT_STATUS_CONFIG: Record<AgentStatus, {
   icon: string;
   badgeVariant: 'success' | 'warning' | 'error' | 'default';
 }> = {
-  [AGENT_STATUS.IN_CONCEPT]: {
-    label: 'In Concept',
+  [AGENT_STATUS.IDEA]: {
+    label: 'Idea',
     color: '#6B7280',
     bgColor: 'rgba(107, 114, 128, 0.1)',
     icon: 'lightbulb',
@@ -60,29 +60,29 @@ export const AGENT_STATUS_CONFIG: Record<AgentStatus, {
     icon: 'check',
     badgeVariant: 'default',
   },
-  [AGENT_STATUS.IN_DEVELOPMENT]: {
-    label: 'In Development',
+  [AGENT_STATUS.WIP]: {
+    label: 'WIP',
     color: '#F59E0B',
     bgColor: 'rgba(245, 158, 11, 0.1)',
     icon: 'code',
     badgeVariant: 'warning',
   },
-  [AGENT_STATUS.IN_TESTING]: {
-    label: 'In Testing',
+  [AGENT_STATUS.TESTING]: {
+    label: 'Testing',
     color: '#8B5CF6',
     bgColor: 'rgba(139, 92, 246, 0.1)',
     icon: 'flask-conical',
     badgeVariant: 'warning',
   },
-  [AGENT_STATUS.DEPLOYED]: {
-    label: 'Deployed',
+  [AGENT_STATUS.LIVE]: {
+    label: 'Live',
     color: '#10B981',
     bgColor: 'rgba(16, 185, 129, 0.1)',
     icon: 'rocket',
     badgeVariant: 'success',
   },
-  [AGENT_STATUS.ABANDONED]: {
-    label: 'Abandoned',
+  [AGENT_STATUS.SHELVED]: {
+    label: 'Shelved',
     color: '#EF4444',
     bgColor: 'rgba(239, 68, 68, 0.1)',
     icon: 'archive',

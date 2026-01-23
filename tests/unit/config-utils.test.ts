@@ -56,16 +56,16 @@ describe('Config Utilities', () => {
   });
 
   describe('getStatusColor', () => {
-    it('returns correct color for deployed status', () => {
-      expect(getStatusColor('deployed')).toBe(AGENT_STATUS_CONFIG.deployed.color);
+    it('returns correct color for live status', () => {
+      expect(getStatusColor('live')).toBe(AGENT_STATUS_CONFIG.live.color);
     });
 
-    it('returns correct color for in_concept status', () => {
-      expect(getStatusColor('in_concept')).toBe(AGENT_STATUS_CONFIG.in_concept.color);
+    it('returns correct color for idea status', () => {
+      expect(getStatusColor('idea')).toBe(AGENT_STATUS_CONFIG.idea.color);
     });
 
-    it('returns correct color for abandoned status', () => {
-      expect(getStatusColor('abandoned')).toBe(AGENT_STATUS_CONFIG.abandoned.color);
+    it('returns correct color for shelved status', () => {
+      expect(getStatusColor('shelved')).toBe(AGENT_STATUS_CONFIG.shelved.color);
     });
 
     it('returns default color for unknown status', () => {
@@ -78,23 +78,23 @@ describe('Config Utilities', () => {
   });
 
   describe('getStatusConfig', () => {
-    it('returns full config for deployed status', () => {
-      const config = getStatusConfig('deployed');
-      expect(config.color).toBe(AGENT_STATUS_CONFIG.deployed.color);
-      expect(config.bgColor).toBe(AGENT_STATUS_CONFIG.deployed.bgColor);
-      expect(config.label).toBe('Deployed');
+    it('returns full config for live status', () => {
+      const config = getStatusConfig('live');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.live.color);
+      expect(config.bgColor).toBe(AGENT_STATUS_CONFIG.live.bgColor);
+      expect(config.label).toBe('Live');
     });
 
-    it('returns full config for in_concept status', () => {
-      const config = getStatusConfig('in_concept');
-      expect(config.color).toBe(AGENT_STATUS_CONFIG.in_concept.color);
-      expect(config.label).toBe('In Concept');
+    it('returns full config for idea status', () => {
+      const config = getStatusConfig('idea');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.idea.color);
+      expect(config.label).toBe('Idea');
     });
 
-    it('returns full config for abandoned status', () => {
-      const config = getStatusConfig('abandoned');
-      expect(config.color).toBe(AGENT_STATUS_CONFIG.abandoned.color);
-      expect(config.label).toBe('Abandoned');
+    it('returns full config for shelved status', () => {
+      const config = getStatusConfig('shelved');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.shelved.color);
+      expect(config.label).toBe('Shelved');
     });
 
     it('returns default config with custom label for unknown status', () => {

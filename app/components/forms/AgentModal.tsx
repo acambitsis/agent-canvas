@@ -75,7 +75,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
     videoLink: '',
     metrics: {},
     category: '',
-    status: AGENT_STATUS.IN_CONCEPT,
+    status: AGENT_STATUS.IDEA,
     phase: defaultPhase || DEFAULT_PHASE,
     agentOrder: 0,
   });
@@ -96,7 +96,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
         videoLink: agent.videoLink || '',
         metrics: agent.metrics || {},
         category: agent.category || '',
-        status: agent.status || AGENT_STATUS.IN_CONCEPT,
+        status: agent.status || AGENT_STATUS.IDEA,
         phase: agent.phase,
         agentOrder: agent.agentOrder,
       });
@@ -113,7 +113,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
         videoLink: '',
         metrics: {},
         category: '',
-        status: AGENT_STATUS.IN_CONCEPT,
+        status: AGENT_STATUS.IDEA,
         phase: defaultPhase || DEFAULT_PHASE,
         agentOrder: 0,
       });

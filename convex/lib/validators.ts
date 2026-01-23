@@ -7,23 +7,15 @@ import { v } from "convex/values";
 
 /**
  * Status union type validator
- * Includes legacy values (draft, active, review, deprecated) for backward compatibility
- * with existing production data. New code uses the new values only.
  */
 export const statusValidator = v.optional(
   v.union(
-    // New status values (preferred)
-    v.literal("in_concept"),
+    v.literal("idea"),
     v.literal("approved"),
-    v.literal("in_development"),
-    v.literal("in_testing"),
-    v.literal("deployed"),
-    v.literal("abandoned"),
-    // Legacy values (for existing data - do not use in new code)
-    v.literal("draft"),
-    v.literal("active"),
-    v.literal("review"),
-    v.literal("deprecated")
+    v.literal("wip"),
+    v.literal("testing"),
+    v.literal("live"),
+    v.literal("shelved")
   )
 );
 
