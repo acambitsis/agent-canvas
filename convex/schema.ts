@@ -18,8 +18,8 @@ export default defineSchema({
     workosOrgId: v.string(),
     title: v.string(),
     slug: v.string(), // Document name/identifier
-    phases: v.array(v.string()), // Ordered phase names
-    categories: v.array(v.string()), // Ordered category names
+    phases: v.optional(v.array(v.string())), // Ordered phase names (optional for legacy data)
+    categories: v.optional(v.array(v.string())), // Ordered category names (optional for legacy data)
     deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(), // WorkOS user ID
     updatedBy: v.string(),
@@ -34,6 +34,7 @@ export default defineSchema({
   agents: defineTable({
     canvasId: v.id("canvases"),
     phase: v.string(), // Implementation phase: "Phase 1", "Backlog", etc.
+    phaseOrder: v.optional(v.number()), // DEPRECATED: Legacy field, kept for existing data
     agentOrder: v.number(), // Sort order within phase
     name: v.string(),
     objective: v.optional(v.string()),
@@ -52,14 +53,22 @@ export default defineSchema({
     ),
     // Fixed tag fields for grouping and filtering (same across all orgs)
     category: v.optional(v.string()), // Visual grouping: "Recruitment", "Onboarding", etc.
+    department: v.optional(v.string()), // DEPRECATED: Legacy field, use category instead
+    // Status includes legacy values for backward compatibility with existing data
     status: v.optional(
       v.union(
+        // New status values (preferred)
         v.literal("in_concept"),
         v.literal("approved"),
         v.literal("in_development"),
         v.literal("in_testing"),
         v.literal("deployed"),
-        v.literal("abandoned")
+        v.literal("abandoned"),
+        // Legacy values (for existing data)
+        v.literal("draft"),
+        v.literal("active"),
+        v.literal("review"),
+        v.literal("deprecated")
       )
     ),
     // payload removed - we're Convex-native, no need for round-trip fidelity
