@@ -21,10 +21,12 @@ function parseStatus(value: string | undefined): AgentStatus | undefined {
 }
 
 /**
- * YAML document structure (legacy format)
+ * YAML document structure (flat format matching database schema)
  */
 interface YamlAgent {
   name?: string;
+  phase?: string;
+  agentOrder?: number;
   objective?: string;
   description?: string;
   tools?: string[];
@@ -37,20 +39,13 @@ interface YamlAgent {
     timeSaved?: number | string; // hours
     roi?: number | string; // integer currency
   };
-  tags?: {
-    department?: string;
-    status?: string;
-  };
-}
-
-interface YamlAgentGroup {
-  groupName?: string;
-  agents?: YamlAgent[];
+  category?: string;
+  status?: string;
 }
 
 interface YamlDocument {
   documentTitle?: string;
-  agentGroups?: YamlAgentGroup[];
+  agents?: YamlAgent[];
 }
 
 /**
@@ -117,72 +112,71 @@ interface YamlConversionResult {
 }
 
 /**
+ * Parse a metric value from YAML (can be number or string)
+ */
+function parseMetricValue(val: number | string | undefined): number | undefined {
+  if (val === undefined) return undefined;
+  const num = typeof val === 'number' ? val : parseFloat(String(val));
+  return isNaN(num) ? undefined : num;
+}
+
+/**
  * Convert YAML document to Convex agent format
  * Also extracts phases and categories for canvas-level storage
  */
 function yamlToConvexAgents(yamlDoc: YamlDocument): YamlConversionResult {
-  if (!yamlDoc || !yamlDoc.agentGroups || !Array.isArray(yamlDoc.agentGroups)) {
+  if (!yamlDoc || !yamlDoc.agents || !Array.isArray(yamlDoc.agents)) {
     return { agents: [], phases: [], categories: [] };
   }
 
   const agents: AgentFormData[] = [];
-  const phases: string[] = [];
+  const phasesSet = new Set<string>();
   const categoriesSet = new Set<string>();
-  let phaseIndex = 0;
 
-  for (const group of yamlDoc.agentGroups) {
-    const phase = group.groupName || `Phase ${phaseIndex + 1}`;
-    phases.push(phase);
-    let agentOrder = 0;
-
-    if (group.agents && Array.isArray(group.agents)) {
-      for (const agent of group.agents) {
-        // Validate required fields
-        if (!agent.name?.trim()) {
-          throw new Error(`Agent in phase "${phase}" is missing a name`);
-        }
-
-        // Parse metrics - convert string values to numbers
-        const parseMetricValue = (val: number | string | undefined): number | undefined => {
-          if (val === undefined) return undefined;
-          const num = typeof val === 'number' ? val : parseFloat(String(val));
-          return isNaN(num) ? undefined : num;
-        };
-
-        const metrics: { numberOfUsers?: number; timesUsed?: number; timeSaved?: number; roi?: number } = {};
-        const numberOfUsers = parseMetricValue(agent.metrics?.numberOfUsers);
-        const timesUsed = parseMetricValue(agent.metrics?.timesUsed);
-        const timeSaved = parseMetricValue(agent.metrics?.timeSaved);
-        const roi = parseMetricValue(agent.metrics?.roi);
-
-        if (numberOfUsers !== undefined) metrics.numberOfUsers = numberOfUsers;
-        if (timesUsed !== undefined) metrics.timesUsed = timesUsed;
-        if (timeSaved !== undefined) metrics.timeSaved = timeSaved;
-        if (roi !== undefined) metrics.roi = roi;
-
-        // Track category for canvas-level storage
-        const category = agent.tags?.department || undefined;
-        if (category) categoriesSet.add(category);
-
-        agents.push({
-          phase,
-          agentOrder: agentOrder++,
-          name: agent.name.trim(),
-          objective: agent.objective?.trim() || undefined,
-          description: agent.description?.trim() || undefined,
-          tools: Array.isArray(agent.tools) ? agent.tools : [],
-          journeySteps: Array.isArray(agent.journeySteps) ? agent.journeySteps : [],
-          demoLink: agent.demoLink?.trim() || undefined,
-          videoLink: agent.videoLink?.trim() || undefined,
-          metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
-          category, // YAML uses 'department', schema uses 'category'
-          status: parseStatus(agent.tags?.status),
-        });
-      }
+  for (const agent of yamlDoc.agents) {
+    // Validate required fields
+    if (!agent.name?.trim()) {
+      throw new Error('Agent is missing a name');
     }
 
-    phaseIndex++;
+    // Phase is optional, defaults to "Backlog"
+    const phase = agent.phase?.trim() || 'Backlog';
+    phasesSet.add(phase);
+
+    // Parse metrics - convert string values to numbers
+    const metrics: { numberOfUsers?: number; timesUsed?: number; timeSaved?: number; roi?: number } = {};
+    const numberOfUsers = parseMetricValue(agent.metrics?.numberOfUsers);
+    const timesUsed = parseMetricValue(agent.metrics?.timesUsed);
+    const timeSaved = parseMetricValue(agent.metrics?.timeSaved);
+    const roi = parseMetricValue(agent.metrics?.roi);
+
+    if (numberOfUsers !== undefined) metrics.numberOfUsers = numberOfUsers;
+    if (timesUsed !== undefined) metrics.timesUsed = timesUsed;
+    if (timeSaved !== undefined) metrics.timeSaved = timeSaved;
+    if (roi !== undefined) metrics.roi = roi;
+
+    // Track category for canvas-level storage
+    const category = agent.category?.trim() || undefined;
+    if (category) categoriesSet.add(category);
+
+    agents.push({
+      phase,
+      agentOrder: agent.agentOrder ?? 0,
+      name: agent.name.trim(),
+      objective: agent.objective?.trim() || undefined,
+      description: agent.description?.trim() || undefined,
+      tools: Array.isArray(agent.tools) ? agent.tools : [],
+      journeySteps: Array.isArray(agent.journeySteps) ? agent.journeySteps : [],
+      demoLink: agent.demoLink?.trim() || undefined,
+      videoLink: agent.videoLink?.trim() || undefined,
+      metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
+      category,
+      status: parseStatus(agent.status),
+    });
   }
+
+  // Extract phases in order of first appearance
+  const phases = Array.from(phasesSet);
 
   return {
     agents,
@@ -266,76 +260,63 @@ export function prepareYamlImport({
  * Uses canvas-level phaseOrder array for phase ordering
  */
 function agentsToYamlDoc(title: string, agents: Agent[], phaseOrder?: string[]): YamlDocument {
-  // Group agents by phase
-  const phaseMap = new Map<string, Agent[]>();
-
-  for (const agent of agents) {
-    const existing = phaseMap.get(agent.phase);
-    if (existing) {
-      existing.push(agent);
-    } else {
-      phaseMap.set(agent.phase, [agent]);
-    }
-  }
-
-  // Sort phases using canvas-level phaseOrder, or alphabetically if not provided
-  let sortedPhaseNames: string[];
-  if (phaseOrder && phaseOrder.length > 0) {
-    sortedPhaseNames = [...phaseMap.keys()].sort((a, b) => {
-      const aIndex = phaseOrder.indexOf(a);
-      const bIndex = phaseOrder.indexOf(b);
+  // Sort agents by phase order, then by agentOrder within phase
+  const sortedAgents = [...agents].sort((a, b) => {
+    // First sort by phase
+    let phaseCompare: number;
+    if (phaseOrder && phaseOrder.length > 0) {
+      const aIndex = phaseOrder.indexOf(a.phase);
+      const bIndex = phaseOrder.indexOf(b.phase);
       // Unknown phases go to the end alphabetically
-      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
-      if (aIndex === -1) return 1;
-      if (bIndex === -1) return -1;
-      return aIndex - bIndex;
-    });
-  } else {
-    sortedPhaseNames = [...phaseMap.keys()].sort();
-  }
+      if (aIndex === -1 && bIndex === -1) {
+        phaseCompare = a.phase.localeCompare(b.phase);
+      } else if (aIndex === -1) {
+        phaseCompare = 1;
+      } else if (bIndex === -1) {
+        phaseCompare = -1;
+      } else {
+        phaseCompare = aIndex - bIndex;
+      }
+    } else {
+      phaseCompare = a.phase.localeCompare(b.phase);
+    }
 
-  const agentGroups: YamlAgentGroup[] = sortedPhaseNames.map((phaseName) => {
-    const phaseAgents = phaseMap.get(phaseName) || [];
-    // Sort agents within phase by agentOrder
-    const sortedAgents = [...phaseAgents].sort((a, b) => a.agentOrder - b.agentOrder);
+    // If same phase, sort by agentOrder
+    if (phaseCompare !== 0) return phaseCompare;
+    return a.agentOrder - b.agentOrder;
+  });
 
-    return {
-      groupName: phaseName,
-      agents: sortedAgents.map((agent): YamlAgent => {
-        const yamlAgent: YamlAgent = {
-          name: agent.name,
-        };
-
-        if (agent.objective) yamlAgent.objective = agent.objective;
-        if (agent.description) yamlAgent.description = agent.description;
-        if (agent.tools?.length) yamlAgent.tools = agent.tools;
-        if (agent.journeySteps?.length) yamlAgent.journeySteps = agent.journeySteps;
-        if (agent.demoLink) yamlAgent.demoLink = agent.demoLink;
-        if (agent.videoLink) yamlAgent.videoLink = agent.videoLink;
-
-        if (agent.metrics && Object.keys(agent.metrics).length > 0) {
-          yamlAgent.metrics = {};
-          if (agent.metrics.numberOfUsers !== undefined) yamlAgent.metrics.numberOfUsers = agent.metrics.numberOfUsers;
-          if (agent.metrics.timesUsed !== undefined) yamlAgent.metrics.timesUsed = agent.metrics.timesUsed;
-          if (agent.metrics.timeSaved !== undefined) yamlAgent.metrics.timeSaved = agent.metrics.timeSaved;
-          if (agent.metrics.roi !== undefined) yamlAgent.metrics.roi = agent.metrics.roi;
-        }
-
-        // Map 'category' back to 'department' in tags for YAML format
-        if (agent.category || agent.status) {
-          yamlAgent.tags = {};
-          if (agent.category) yamlAgent.tags.department = agent.category;
-          if (agent.status) yamlAgent.tags.status = agent.status;
-        }
-
-        return yamlAgent;
-      }),
+  const yamlAgents: YamlAgent[] = sortedAgents.map((agent): YamlAgent => {
+    const yamlAgent: YamlAgent = {
+      name: agent.name,
+      phase: agent.phase,
+      agentOrder: agent.agentOrder,
     };
+
+    if (agent.objective) yamlAgent.objective = agent.objective;
+    if (agent.description) yamlAgent.description = agent.description;
+    if (agent.tools?.length) yamlAgent.tools = agent.tools;
+    if (agent.journeySteps?.length) yamlAgent.journeySteps = agent.journeySteps;
+    if (agent.demoLink) yamlAgent.demoLink = agent.demoLink;
+    if (agent.videoLink) yamlAgent.videoLink = agent.videoLink;
+
+    if (agent.metrics && Object.keys(agent.metrics).length > 0) {
+      yamlAgent.metrics = {};
+      if (agent.metrics.numberOfUsers !== undefined) yamlAgent.metrics.numberOfUsers = agent.metrics.numberOfUsers;
+      if (agent.metrics.timesUsed !== undefined) yamlAgent.metrics.timesUsed = agent.metrics.timesUsed;
+      if (agent.metrics.timeSaved !== undefined) yamlAgent.metrics.timeSaved = agent.metrics.timeSaved;
+      if (agent.metrics.roi !== undefined) yamlAgent.metrics.roi = agent.metrics.roi;
+    }
+
+    if (agent.category) yamlAgent.category = agent.category;
+    if (agent.status) yamlAgent.status = agent.status;
+
+    return yamlAgent;
   });
 
   return {
     documentTitle: title,
-    agentGroups,
+    agents: yamlAgents,
   };
 }
 
