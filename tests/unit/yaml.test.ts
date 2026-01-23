@@ -14,24 +14,23 @@ describe('YAML import', () => {
   it('parses YAML and converts agents to Convex format', () => {
     const yamlText = `
 documentTitle: Example Canvas
-agentGroups:
-  - groupName: Sales
-    agents:
-      - name: Lead Qualifier
-        objective: Qualify leads
-        tools: [CRM]
-        journeySteps: [Step 1]
-        metrics:
-          numberOfUsers: 10
-          timeSaved: "5"
-        tags:
-          department: Sales
-          status: deployed
-  - groupName: Support
-    agents:
-      - name: Triage Bot
-        tools: []
-        journeySteps: []
+agents:
+  - name: Lead Qualifier
+    phase: Sales
+    agentOrder: 0
+    objective: Qualify leads
+    tools: [CRM]
+    journeySteps: [Step 1]
+    metrics:
+      numberOfUsers: 10
+      timeSaved: "5"
+    category: Sales
+    status: deployed
+  - name: Triage Bot
+    phase: Support
+    agentOrder: 0
+    tools: []
+    journeySteps: []
     `.trim();
 
     const result = parseYaml(yamlText);
@@ -61,10 +60,9 @@ agentGroups:
   it('prepares import with unique slug generation', () => {
     const yamlText = `
 documentTitle: Example Canvas
-agentGroups:
-  - groupName: Sales
-    agents:
-      - name: Lead Qualifier
+agents:
+  - name: Lead Qualifier
+    phase: Sales
     `.trim();
 
     const result = prepareYamlImport({
@@ -82,20 +80,19 @@ agentGroups:
   it('returns complete structure for canvas creation', () => {
     const yamlText = `
 documentTitle: Complete Canvas
-agentGroups:
-  - groupName: Discovery
-    agents:
-      - name: Research Agent
-        tags:
-          department: Engineering
-  - groupName: Development
-    agents:
-      - name: Build Agent
-        tags:
-          department: Engineering
-      - name: Test Agent
-        tags:
-          department: QA
+agents:
+  - name: Research Agent
+    phase: Discovery
+    agentOrder: 0
+    category: Engineering
+  - name: Build Agent
+    phase: Development
+    agentOrder: 0
+    category: Engineering
+  - name: Test Agent
+    phase: Development
+    agentOrder: 1
+    category: QA
     `.trim();
 
     const result = prepareYamlImport({
@@ -110,7 +107,7 @@ agentGroups:
     expect(result).toHaveProperty('categories');
     expect(result).toHaveProperty('agents');
 
-    // Phases in document order
+    // Phases in order of first appearance
     expect(result.phases).toEqual(['Discovery', 'Development']);
 
     // Categories extracted from agents (unique values)
@@ -130,7 +127,7 @@ agentGroups:
   it('handles YAML with no agents', () => {
     const yamlText = `
 documentTitle: Empty
-agentGroups: []
+agents: []
     `.trim();
 
     const result = prepareYamlImport({
@@ -147,7 +144,7 @@ agentGroups: []
   it('extracts title from YAML', () => {
     const yamlText = `
 documentTitle: Test Canvas
-agentGroups: []
+agents: []
     `.trim();
 
     const title = extractTitleFromYaml(yamlText);
@@ -162,24 +159,31 @@ agentGroups: []
   it('throws error for agents without names', () => {
     const yamlText = `
 documentTitle: Test
-agentGroups:
-  - groupName: Phase
-    agents:
-      - objective: Has objective but no name
+agents:
+  - phase: Phase
+    objective: Has objective but no name
     `.trim();
 
     expect(() => parseYaml(yamlText)).toThrow(/missing a name/);
   });
 
+  it('throws error for agents without phase', () => {
+    const yamlText = `
+documentTitle: Test
+agents:
+  - name: Agent without phase
+    `.trim();
+
+    expect(() => parseYaml(yamlText)).toThrow(/missing a phase/);
+  });
+
   it('ignores invalid status values', () => {
     const yamlText = `
 documentTitle: Test Canvas
-agentGroups:
-  - groupName: Phase
-    agents:
-      - name: Agent with invalid status
-        tags:
-          status: invalid_status_value
+agents:
+  - name: Agent with invalid status
+    phase: Phase
+    status: invalid_status_value
     `.trim();
 
     const result = parseYaml(yamlText);
@@ -191,15 +195,13 @@ agentGroups:
   it('parses valid status values', () => {
     const yamlText = `
 documentTitle: Test Canvas
-agentGroups:
-  - groupName: Phase
-    agents:
-      - name: Active Agent
-        tags:
-          status: deployed
-      - name: Draft Agent
-        tags:
-          status: in_concept
+agents:
+  - name: Active Agent
+    phase: Phase
+    status: deployed
+  - name: Draft Agent
+    phase: Phase
+    status: in_concept
     `.trim();
 
     const result = parseYaml(yamlText);
@@ -207,6 +209,43 @@ agentGroups:
     expect(result.agents).toHaveLength(2);
     expect(result.agents[0].status).toBe('deployed');
     expect(result.agents[1].status).toBe('in_concept');
+  });
+
+  it('defaults agentOrder to 0 when not specified', () => {
+    const yamlText = `
+documentTitle: Test Canvas
+agents:
+  - name: Agent without order
+    phase: Phase
+    `.trim();
+
+    const result = parseYaml(yamlText);
+
+    expect(result.agents).toHaveLength(1);
+    expect(result.agents[0].agentOrder).toBe(0);
+  });
+
+  it('preserves explicit agentOrder values', () => {
+    const yamlText = `
+documentTitle: Test Canvas
+agents:
+  - name: Third Agent
+    phase: Phase
+    agentOrder: 2
+  - name: First Agent
+    phase: Phase
+    agentOrder: 0
+  - name: Second Agent
+    phase: Phase
+    agentOrder: 1
+    `.trim();
+
+    const result = parseYaml(yamlText);
+
+    expect(result.agents).toHaveLength(3);
+    expect(result.agents[0].agentOrder).toBe(2);
+    expect(result.agents[1].agentOrder).toBe(0);
+    expect(result.agents[2].agentOrder).toBe(1);
   });
 });
 
@@ -263,11 +302,11 @@ describe('YAML export', () => {
     const yaml = exportToYaml('Test Canvas', agents);
 
     expect(yaml).toContain('documentTitle: Test Canvas');
-    expect(yaml).toContain('groupName: Discovery');
+    expect(yaml).toContain('phase: Discovery');
     expect(yaml).toContain('name: Agent 1');
     expect(yaml).toContain('objective: First objective');
     expect(yaml).toContain('- Tool A');
-    expect(yaml).toContain('department: Sales');
+    expect(yaml).toContain('category: Sales');
     expect(yaml).toContain('status: deployed');
     expect(yaml).toContain('name: Agent 2');
   });
@@ -301,7 +340,7 @@ describe('YAML export', () => {
     expect(yaml).not.toContain('objective:');
     expect(yaml).not.toContain('description:');
     expect(yaml).not.toContain('metrics:');
-    expect(yaml).not.toContain('tags:');
+    expect(yaml).not.toContain('category:');
   });
 
   it('maintains phase ordering using canvas phaseOrder', () => {
@@ -343,7 +382,7 @@ describe('YAML export', () => {
     const yaml = exportToYaml('Empty Canvas', []);
 
     expect(yaml).toContain('documentTitle: Empty Canvas');
-    expect(yaml).toContain('agentGroups: []');
+    expect(yaml).toContain('agents: []');
   });
 
   it('throws error for invalid title', () => {
@@ -356,33 +395,32 @@ describe('YAML round-trip', () => {
   it('import then export produces equivalent structure', () => {
     const originalYaml = `
 documentTitle: Round Trip Test
-agentGroups:
-  - groupName: Phase One
-    agents:
-      - name: Agent Alpha
-        objective: Do something
-        description: Description here
-        tools:
-          - Tool 1
-          - Tool 2
-        journeySteps:
-          - Step A
-          - Step B
-        demoLink: https://example.com/demo
-        videoLink: https://example.com/video
-        metrics:
-          numberOfUsers: 42
-          timesUsed: 100
-          timeSaved: 5
-          roi: 1000
-        tags:
-          department: Engineering
-          status: deployed
-  - groupName: Phase Two
-    agents:
-      - name: Agent Beta
-        tools: []
-        journeySteps: []
+agents:
+  - name: Agent Alpha
+    phase: Phase One
+    agentOrder: 0
+    objective: Do something
+    description: Description here
+    tools:
+      - Tool 1
+      - Tool 2
+    journeySteps:
+      - Step A
+      - Step B
+    demoLink: https://example.com/demo
+    videoLink: https://example.com/video
+    metrics:
+      numberOfUsers: 42
+      timesUsed: 100
+      timeSaved: 5
+      roi: 1000
+    category: Engineering
+    status: deployed
+  - name: Agent Beta
+    phase: Phase Two
+    agentOrder: 0
+    tools: []
+    journeySteps: []
     `.trim();
 
     // Import
@@ -414,6 +452,7 @@ agentGroups:
     for (let i = 0; i < imported.agents.length; i++) {
       expect(reimported.agents[i].name).toBe(imported.agents[i].name);
       expect(reimported.agents[i].phase).toBe(imported.agents[i].phase);
+      expect(reimported.agents[i].agentOrder).toBe(imported.agents[i].agentOrder);
       expect(reimported.agents[i].objective).toBe(imported.agents[i].objective);
       expect(reimported.agents[i].description).toBe(imported.agents[i].description);
       expect(reimported.agents[i].tools).toEqual(imported.agents[i].tools);
