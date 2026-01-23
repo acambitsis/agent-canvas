@@ -2,6 +2,8 @@
  * Configuration utilities for tools and tags
  */
 
+import { AGENT_STATUS_CONFIG, AgentStatus, getAgentStatusConfig } from '@/types/validationConstants';
+
 export interface ToolDefinition {
   label: string;
   color: string;
@@ -38,6 +40,15 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   api: { label: 'API', color: '#14B8A6', icon: 'plug' },
 };
 
+// Tag type identifiers - used for grouping agents
+export const TAG_TYPE_ID = {
+  CATEGORY: 'category',
+  PHASE: 'phase',
+  STATUS: 'status',
+} as const;
+
+export type TagTypeId = typeof TAG_TYPE_ID[keyof typeof TAG_TYPE_ID];
+
 // Section color palette - cycles through for agent groups/phases
 export const SECTION_COLOR_PALETTE = [
   '#F59E0B', // Amber
@@ -51,39 +62,46 @@ export const SECTION_COLOR_PALETTE = [
 ];
 
 // Tag type definitions
-export const TAG_TYPES: Record<string, TagType> = {
-  category: {
-    id: 'category',
+export const TAG_TYPES: Record<TagTypeId, TagType> = {
+  [TAG_TYPE_ID.CATEGORY]: {
+    id: TAG_TYPE_ID.CATEGORY,
     label: 'Category',
     description: 'Visual grouping',
     isGroupable: true,
     icon: 'folder',
     values: [],
   },
-  phase: {
-    id: 'phase',
+  [TAG_TYPE_ID.PHASE]: {
+    id: TAG_TYPE_ID.PHASE,
     label: 'Implementation Phase',
     description: 'Implementation schedule',
     isGroupable: true,
     icon: 'milestone',
     values: [],
   },
-  status: {
-    id: 'status',
+  [TAG_TYPE_ID.STATUS]: {
+    id: TAG_TYPE_ID.STATUS,
     label: 'Status',
     description: 'Agent lifecycle status',
     isGroupable: true,
     icon: 'activity',
-    values: [
-      { id: 'active', label: 'Active', color: '#10B981', icon: 'check-circle' },
-      { id: 'draft', label: 'Draft', color: '#6B7280', icon: 'edit-3' },
-      { id: 'review', label: 'In Review', color: '#F59E0B', icon: 'eye' },
-      { id: 'deprecated', label: 'Deprecated', color: '#EF4444', icon: 'archive' },
-    ],
+    values: Object.entries(AGENT_STATUS_CONFIG).map(([id, config]) => ({
+      id: id as AgentStatus,
+      label: config.label,
+      color: config.color,
+      icon: config.icon,
+    })),
   },
 };
 
-export const DEFAULT_GROUPING_TAG = 'category';
+export const DEFAULT_GROUPING_TAG = TAG_TYPE_ID.CATEGORY;
+
+/**
+ * Check if a string is a valid TagTypeId
+ */
+export function isValidTagTypeId(tagType: string): tagType is TagTypeId {
+  return Object.values(TAG_TYPE_ID).includes(tagType as TagTypeId);
+}
 
 // Default values for grouping fields
 export const DEFAULT_CATEGORY = 'Uncategorized';
@@ -112,16 +130,17 @@ export function getSectionColor(groupIndex: number): string {
  * Get tag value definition
  */
 export function getTagValue(tagType: string, valueId: string): TagValue | null {
+  if (!isValidTagTypeId(tagType)) return null;
   const tagDef = TAG_TYPES[tagType];
-  if (!tagDef) return null;
-  return tagDef.values.find((v) => v.id === valueId) || null;
+  return tagDef.values.find((v: TagValue) => v.id === valueId) || null;
 }
 
 /**
  * Get tag definition
  */
 export function getTagDefinition(tagType: string): TagType | null {
-  return TAG_TYPES[tagType] || null;
+  if (!isValidTagTypeId(tagType)) return null;
+  return TAG_TYPES[tagType];
 }
 
 /**
@@ -132,31 +151,19 @@ export function getAvailableTools(): string[] {
 }
 
 /**
- * Status color definitions
- */
-export const STATUS_COLORS: Record<string, { color: string; bgColor: string; label: string }> = {
-  active: { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', label: 'Active' },
-  draft: { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', label: 'Draft' },
-  deprecated: { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', label: 'Deprecated' },
-  default: { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: 'Unknown' },
-};
-
-/**
  * Get status color by status name
+ * @deprecated Use getAgentStatusConfig from validationConstants instead
  */
 export function getStatusColor(status?: string): string {
-  return STATUS_COLORS[status || 'default']?.color || STATUS_COLORS.default.color;
+  return getAgentStatusConfig(status).color;
 }
 
 /**
  * Get full status configuration (color, bgColor, label)
+ * @deprecated Use getAgentStatusConfig from validationConstants instead
  */
 export function getStatusConfig(status?: string): { color: string; bgColor: string; label: string } {
-  const config = STATUS_COLORS[status || 'default'];
-  if (config) {
-    return { ...config, label: config.label === 'Unknown' && status ? status : config.label };
-  }
-  return { ...STATUS_COLORS.default, label: status || 'Unknown' };
+  return getAgentStatusConfig(status);
 }
 
 /**

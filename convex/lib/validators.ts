@@ -6,12 +6,25 @@
 import { v } from "convex/values";
 
 /**
+ * Status union type validator
+ */
+export const statusValidator = v.optional(
+  v.union(
+    v.literal("in_concept"),
+    v.literal("approved"),
+    v.literal("in_development"),
+    v.literal("in_testing"),
+    v.literal("deployed"),
+    v.literal("abandoned")
+  )
+);
+
+/**
  * Shared validator components for agent fields
  */
 export const agentFieldValidators = {
   // Required fields
   phase: v.string(),
-  phaseOrder: v.number(),
   agentOrder: v.number(),
   name: v.string(),
 
@@ -33,7 +46,7 @@ export const agentFieldValidators = {
     })
   ),
   category: v.optional(v.string()),
-  status: v.optional(v.string()),
+  status: statusValidator,
 } as const;
 
 /**
@@ -42,7 +55,6 @@ export const agentFieldValidators = {
  */
 export const agentInputValidator = v.object({
   phase: v.string(),
-  phaseOrder: v.number(),
   agentOrder: v.number(),
   name: v.string(),
   objective: v.optional(v.string()),
@@ -60,7 +72,7 @@ export const agentInputValidator = v.object({
     })
   ),
   category: v.optional(v.string()),
-  status: v.optional(v.string()),
+  status: statusValidator,
 });
 
 /**
@@ -68,7 +80,6 @@ export const agentInputValidator = v.object({
  */
 export const agentUpdateValidator = {
   phase: v.optional(agentFieldValidators.phase),
-  phaseOrder: v.optional(agentFieldValidators.phaseOrder),
   agentOrder: v.optional(agentFieldValidators.agentOrder),
   name: v.optional(agentFieldValidators.name),
   objective: agentFieldValidators.objective,

@@ -15,6 +15,8 @@ import { CanvasRenameModal } from '../forms/CanvasRenameModal';
 import { CopyCanvasModal } from '../forms/CopyCanvasModal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { MembersModal } from '../org/MembersModal';
+import { Tooltip } from '../ui/Tooltip';
+import { THEMES, SYSTEM_THEME_OPTION, THEME_VALUES } from '@/constants/themes';
 
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
@@ -33,7 +35,7 @@ const VIEWPORT_PADDING = 8;
 export function Sidebar() {
   const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId, createCanvas, deleteCanvas } = useCanvas();
-  const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth } = useAppState();
+  const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth, themePreference, setThemePreference } = useAppState();
 
   const { isDragging, resizeHandleProps } = useResizable({
     minWidth: SIDEBAR_MIN_WIDTH,
@@ -208,15 +210,16 @@ export function Sidebar() {
           <div className="sidebar__org-switcher" ref={orgDropdownRef}>
             {userOrgs.length > 1 ? (
               <>
-                <button
-                  className="sidebar__org-trigger"
-                  onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-                  aria-expanded={orgDropdownOpen}
-                  title="Switch organization"
-                >
-                  <span className="sidebar__org-name">{currentOrg?.name || 'Loading...'}</span>
-                  <Icon name="chevron-down" className="sidebar__org-chevron" />
-                </button>
+                <Tooltip content="Switch organization" placement="bottom">
+                  <button
+                    className="sidebar__org-trigger"
+                    onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
+                    aria-expanded={orgDropdownOpen}
+                  >
+                    <span className="sidebar__org-name">{currentOrg?.name || 'Loading...'}</span>
+                    <Icon name="chevron-down" className="sidebar__org-chevron" />
+                  </button>
+                </Tooltip>
                 <div className={`sidebar__dropdown ${orgDropdownOpen ? 'open' : ''}`}>
                   {userOrgs.map((org) => (
                     <button
@@ -236,28 +239,30 @@ export function Sidebar() {
               <span className="sidebar__org-name">{currentOrg?.name || 'Loading...'}</span>
             )}
           </div>
-          <button
-            className="sidebar__collapse-btn"
-            onClick={toggleSidebar}
-            title="Collapse sidebar"
-          >
-            <Icon name="panel-left-close" />
-          </button>
+          <Tooltip content="Collapse sidebar" placement="bottom">
+            <button
+              className="sidebar__collapse-btn"
+              onClick={toggleSidebar}
+            >
+              <Icon name="panel-left-close" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="sidebar__section sidebar__section--grow">
           <div className="sidebar__section-header">
             <h3 className="sidebar__section-title">Canvases</h3>
             <div className="sidebar__section-actions" ref={canvasActionsRef}>
-              <button
-                type="button"
-                className="sidebar__action-btn"
-                onClick={() => setCanvasActionsOpen(!canvasActionsOpen)}
-                aria-expanded={canvasActionsOpen}
-                title="Canvas actions"
-              >
-                <Icon name="more-vertical" />
-              </button>
+              <Tooltip content="Canvas actions" placement="bottom">
+                <button
+                  type="button"
+                  className="sidebar__action-btn"
+                  onClick={() => setCanvasActionsOpen(!canvasActionsOpen)}
+                  aria-expanded={canvasActionsOpen}
+                >
+                  <Icon name="more-vertical" />
+                </button>
+              </Tooltip>
               <div className={`sidebar__dropdown ${canvasActionsOpen ? 'open' : ''}`}>
                 <button
                   className="sidebar__dropdown-item"
@@ -299,14 +304,15 @@ export function Sidebar() {
                 }}
               >
                 <Icon name="file-text" />
-                <span title={canvas.title}>{canvas.title}</span>
+                <Tooltip content={canvas.title} placement="right" showOnlyWhenTruncated>
+                  <span className="sidebar__canvas-title">{canvas.title}</span>
+                </Tooltip>
                 <button
                   className="sidebar__canvas-menu-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCanvasContextMenu(e, canvas._id);
                   }}
-                  title="Canvas options"
                 >
                   <Icon name="more-vertical" />
                 </button>
@@ -325,15 +331,42 @@ export function Sidebar() {
             </span>
             <span className="sidebar__user-email">{user?.email}</span>
           </div>
-          <button
-            className="sidebar__user-menu-btn"
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            aria-expanded={userMenuOpen}
-            title="User menu"
-          >
-            <Icon name="more-vertical" />
-          </button>
+          <Tooltip content="User menu" placement="top">
+            <button
+              className="sidebar__user-menu-btn"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              aria-expanded={userMenuOpen}
+            >
+              <Icon name="more-vertical" />
+            </button>
+          </Tooltip>
           <div className={`sidebar__dropdown sidebar__dropdown--up ${userMenuOpen ? 'open' : ''}`}>
+            {/* Theme Selection */}
+            <div className="sidebar__dropdown-header">Theme</div>
+            <button
+              className={`sidebar__dropdown-item ${themePreference === 'system' ? 'is-active' : ''}`}
+              onClick={() => { setThemePreference('system'); setUserMenuOpen(false); }}
+              role="menuitemradio"
+              aria-checked={themePreference === 'system'}
+            >
+              <Icon name={SYSTEM_THEME_OPTION.icon} />
+              <span>{SYSTEM_THEME_OPTION.label}</span>
+              {themePreference === 'system' && <Icon name="check" className="sidebar__dropdown-check" />}
+            </button>
+            {THEME_VALUES.map((theme) => (
+              <button
+                key={theme}
+                className={`sidebar__dropdown-item ${themePreference === theme ? 'is-active' : ''}`}
+                onClick={() => { setThemePreference(theme); setUserMenuOpen(false); }}
+                role="menuitemradio"
+                aria-checked={themePreference === theme}
+              >
+                <Icon name={THEMES[theme].icon} />
+                <span>{THEMES[theme].label}</span>
+                {themePreference === theme && <Icon name="check" className="sidebar__dropdown-check" />}
+              </button>
+            ))}
+            <div className="sidebar__dropdown-divider" />
             {isOrgAdmin && (
               <button
                 className="sidebar__dropdown-item"
@@ -398,15 +431,20 @@ export function Sidebar() {
             <Icon name="share-2" />
             <span>Copy link</span>
           </button>
-          <button
-            className="context-menu__item"
-            onClick={() => handleMenuAction('copy')}
-            disabled={userOrgs.length <= 1}
-            title={userOrgs.length <= 1 ? 'You need access to other organizations to copy' : undefined}
+          <Tooltip
+            content="You need access to other organizations to copy"
+            placement="left"
+            disabled={userOrgs.length > 1}
           >
-            <Icon name="copy" />
-            <span>Copy to...</span>
-          </button>
+            <button
+              className="context-menu__item"
+              onClick={() => handleMenuAction('copy')}
+              disabled={userOrgs.length <= 1}
+            >
+              <Icon name="copy" />
+              <span>Copy to...</span>
+            </button>
+          </Tooltip>
           <button
             className="context-menu__item"
             onClick={() => handleMenuAction('rename')}

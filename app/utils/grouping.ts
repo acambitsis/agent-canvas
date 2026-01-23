@@ -3,7 +3,13 @@
  */
 
 import { Agent, AgentGroup } from '@/types/agent';
-import { TAG_TYPES, DEFAULT_GROUPING_TAG, DEFAULT_CATEGORY, DEFAULT_PHASE, SECTION_COLOR_PALETTE, getTagValue } from './config';
+import { TAG_TYPES, TAG_TYPE_ID, DEFAULT_GROUPING_TAG, DEFAULT_CATEGORY, DEFAULT_PHASE, SECTION_COLOR_PALETTE, getTagValue, isValidTagTypeId } from './config';
+
+/**
+ * Sort index for items not found in the ordering array.
+ * Places unknown items at the end of the sorted list.
+ */
+const UNKNOWN_ORDER_INDEX = Number.MAX_SAFE_INTEGER;
 
 /**
  * Get tag value from agent for the specified tag type
@@ -11,9 +17,9 @@ import { TAG_TYPES, DEFAULT_GROUPING_TAG, DEFAULT_CATEGORY, DEFAULT_PHASE, SECTI
  */
 export function getAgentTagValue(agent: Agent, tagType: string): string | undefined {
   const tagValueMap: Record<string, string | undefined> = {
-    category: agent.category,
-    phase: agent.phase,
-    status: agent.status,
+    [TAG_TYPE_ID.CATEGORY]: agent.category,
+    [TAG_TYPE_ID.PHASE]: agent.phase,
+    [TAG_TYPE_ID.STATUS]: agent.status,
   };
   return tagValueMap[tagType];
 }
@@ -30,11 +36,32 @@ export function getAgentTagValueWithDefault(
 }
 
 /**
- * Group agents by the specified tag type
+ * Options for grouping agents
  */
-export function groupAgentsByTag(agents: Agent[], tagType: string = DEFAULT_GROUPING_TAG): AgentGroup[] {
+export interface GroupAgentsOptions {
+  tagType?: string;
+  phaseOrder?: string[];  // Canvas-level phase ordering
+  categoryOrder?: string[];  // Canvas-level category ordering
+}
+
+/**
+ * Group agents by the specified tag type
+ * Uses canvas-level phase/category ordering when provided
+ */
+export function groupAgentsByTag(
+  agents: Agent[],
+  tagTypeOrOptions: string | GroupAgentsOptions = DEFAULT_GROUPING_TAG
+): AgentGroup[] {
+  // Normalize arguments
+  const options: GroupAgentsOptions = typeof tagTypeOrOptions === 'string'
+    ? { tagType: tagTypeOrOptions }
+    : tagTypeOrOptions;
+  const tagType = options.tagType ?? DEFAULT_GROUPING_TAG;
+  const phaseOrder = options.phaseOrder;
+  const categoryOrder = options.categoryOrder;
+
   const groups = new Map<string, AgentGroup>();
-  const tagDef = TAG_TYPES[tagType];
+  const tagDef = isValidTagTypeId(tagType) ? TAG_TYPES[tagType] : undefined;
 
   // Process each agent
   for (const agent of agents) {
@@ -42,15 +69,15 @@ export function groupAgentsByTag(agents: Agent[], tagType: string = DEFAULT_GROU
     if (agent.deletedAt) continue;
 
     // Get tag value from agent
-    const defaultValue = tagType === 'category' ? DEFAULT_CATEGORY :
-                         tagType === 'phase' ? DEFAULT_PHASE : 'unassigned';
+    const defaultValue = tagType === TAG_TYPE_ID.CATEGORY ? DEFAULT_CATEGORY :
+                         tagType === TAG_TYPE_ID.PHASE ? DEFAULT_PHASE : 'unassigned';
     const tagValue = getAgentTagValueWithDefault(agent, tagType, defaultValue);
 
     // Initialize group if needed
     if (!groups.has(tagValue)) {
       let groupMeta: Omit<AgentGroup, 'agents'>;
 
-      if (tagType === 'category') {
+      if (tagType === TAG_TYPE_ID.CATEGORY) {
         // Category colors are assigned dynamically from palette
         const groupIndex = groups.size;
         groupMeta = {
@@ -59,7 +86,7 @@ export function groupAgentsByTag(agents: Agent[], tagType: string = DEFAULT_GROU
           color: SECTION_COLOR_PALETTE[groupIndex % SECTION_COLOR_PALETTE.length],
           icon: 'folder',
         };
-      } else if (tagType === 'phase') {
+      } else if (tagType === TAG_TYPE_ID.PHASE) {
         // Phase colors are assigned dynamically from palette
         const groupIndex = groups.size;
         groupMeta = {
@@ -96,12 +123,20 @@ export function groupAgentsByTag(agents: Agent[], tagType: string = DEFAULT_GROU
     group.agents.sort((a, b) => (a.agentOrder || 0) - (b.agentOrder || 0));
   }
 
-  // Sort groups by phase order if grouping by phase
-  if (tagType === 'phase') {
+  // Sort groups using canvas-level ordering
+  if (tagType === TAG_TYPE_ID.PHASE && phaseOrder) {
     sortedGroups.sort((a, b) => {
-      const aOrder = a.agents[0]?.phaseOrder ?? 999;
-      const bOrder = b.agents[0]?.phaseOrder ?? 999;
-      return aOrder - bOrder;
+      const aIndex = phaseOrder.indexOf(a.id);
+      const bIndex = phaseOrder.indexOf(b.id);
+      // Unknown phases go to the end
+      return (aIndex === -1 ? UNKNOWN_ORDER_INDEX : aIndex) - (bIndex === -1 ? UNKNOWN_ORDER_INDEX : bIndex);
+    });
+  } else if (tagType === TAG_TYPE_ID.CATEGORY && categoryOrder) {
+    sortedGroups.sort((a, b) => {
+      const aIndex = categoryOrder.indexOf(a.id);
+      const bIndex = categoryOrder.indexOf(b.id);
+      // Unknown categories go to the end
+      return (aIndex === -1 ? UNKNOWN_ORDER_INDEX : aIndex) - (bIndex === -1 ? UNKNOWN_ORDER_INDEX : bIndex);
     });
   }
 
@@ -123,7 +158,7 @@ export function filterAgents(agents: Agent[], filters: Record<string, string[]>)
       const agentValue = getAgentTagValue(agent, tagType);
 
       // If unknown tag type, skip this filter
-      if (agentValue === undefined && !['category', 'phase', 'status'].includes(tagType)) {
+      if (agentValue === undefined && !isValidTagTypeId(tagType)) {
         continue;
       }
 

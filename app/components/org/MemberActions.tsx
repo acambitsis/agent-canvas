@@ -7,6 +7,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import type { Member } from './MemberList';
+import { API_ENDPOINTS } from '@/constants/api';
+import { ORG_ROLES } from '@/types/validationConstants';
 
 interface MemberActionsProps {
   orgId: string;
@@ -47,7 +49,7 @@ export function MemberActions({ orgId, member, onUpdated }: MemberActionsProps) 
     setError(null);
 
     try {
-      const response = await fetch(`/api/org/${orgId}/members/${member.id}`, {
+      const response = await fetch(API_ENDPOINTS.orgMember(orgId, member.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole }),
@@ -77,7 +79,7 @@ export function MemberActions({ orgId, member, onUpdated }: MemberActionsProps) 
     setError(null);
 
     try {
-      const response = await fetch(`/api/org/${orgId}/members/${member.id}`, {
+      const response = await fetch(API_ENDPOINTS.orgMember(orgId, member.id), {
         method: 'DELETE',
       });
 
@@ -123,22 +125,22 @@ export function MemberActions({ orgId, member, onUpdated }: MemberActionsProps) 
           <div className="dropdown-section">
             <div className="dropdown-label">Change role</div>
             <button
-              className={`dropdown-item ${member.role === 'admin' ? 'active' : ''}`}
-              onClick={() => handleRoleChange('admin')}
+              className={`dropdown-item ${member.role === ORG_ROLES.ADMIN ? 'active' : ''}`}
+              onClick={() => handleRoleChange(ORG_ROLES.ADMIN)}
               disabled={loading}
             >
               <Icon name="shield" size={14} />
               Admin
-              {member.role === 'admin' && <Icon name="check" size={14} />}
+              {member.role === ORG_ROLES.ADMIN && <Icon name="check" size={14} />}
             </button>
             <button
-              className={`dropdown-item ${member.role === 'member' ? 'active' : ''}`}
-              onClick={() => handleRoleChange('member')}
+              className={`dropdown-item ${member.role === ORG_ROLES.MEMBER ? 'active' : ''}`}
+              onClick={() => handleRoleChange(ORG_ROLES.MEMBER)}
               disabled={loading}
             >
               <Icon name="user" size={14} />
               Member
-              {member.role === 'member' && <Icon name="check" size={14} />}
+              {member.role === ORG_ROLES.MEMBER && <Icon name="check" size={14} />}
             </button>
           </div>
 

@@ -39,7 +39,7 @@
   border-radius: 8px;
   cursor: pointer;
   background: var(--brand-primary);
-  color: white;
+  color: var(--text-inverse);
   transition: background 0.2s ease, transform 0.1s ease;
 }
 
@@ -57,9 +57,9 @@
 }
 
 .error-message {
-  background: rgba(220, 53, 69, 0.1);
-  border: 1px solid rgba(220, 53, 69, 0.3);
-  color: #dc3545;
+  background: var(--error-bg);
+  border: 1px solid var(--error-muted);
+  color: var(--error);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
@@ -75,8 +75,8 @@
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 2px solid color-mix(in srgb, var(--text-inverse) 30%, transparent);
+  border-top-color: var(--text-inverse);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-right: 0.5rem;
@@ -92,7 +92,7 @@
 .features {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .features ul {

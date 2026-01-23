@@ -10,9 +10,8 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { groupAgentsByTag, filterAgents } from '@/utils/grouping';
 import { DEFAULT_GROUPING_TAG } from '@/utils/config';
 import { useAgents } from './AgentContext';
-
-const GROUPING_PREFERENCE_KEY = 'agentcanvas-grouping-pref';
-const COLLAPSED_SECTIONS_KEY = 'agentcanvas-collapsed-sections';
+import { useCanvas } from './CanvasContext';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 export type ViewMode = 'grid' | 'detail';
 
@@ -40,9 +39,10 @@ const GroupingContext = createContext<GroupingContextValue | undefined>(undefine
 
 export function GroupingProvider({ children }: { children: React.ReactNode }) {
   const { agents } = useAgents();
+  const { currentCanvas } = useCanvas();
 
   const [preferences, setPreferences] = useLocalStorage<GroupingPreferences>(
-    GROUPING_PREFERENCE_KEY,
+    STORAGE_KEYS.GROUPING_PREFERENCE,
     {
       activeTagType: DEFAULT_GROUPING_TAG,
       sortOrder: 'asc',
@@ -63,7 +63,7 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
   }, [preferences.viewMode, setPreferences]);
 
   const [collapsedSections, setCollapsedSections] = useLocalStorage<Record<string, boolean>>(
-    COLLAPSED_SECTIONS_KEY,
+    STORAGE_KEYS.COLLAPSED_SECTIONS,
     {}
   );
 
@@ -76,9 +76,13 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
       filteredAgents = filterAgents(filteredAgents, preferences.filters);
     }
 
-    // Group by active tag type
-    return groupAgentsByTag(filteredAgents, preferences.activeTagType);
-  }, [agents, preferences.filters, preferences.activeTagType]);
+    // Group by active tag type with canvas-level ordering
+    return groupAgentsByTag(filteredAgents, {
+      tagType: preferences.activeTagType,
+      phaseOrder: currentCanvas?.phases,
+      categoryOrder: currentCanvas?.categories,
+    });
+  }, [agents, preferences.filters, preferences.activeTagType, currentCanvas?.phases, currentCanvas?.categories]);
 
   const setActiveTagType = useCallback((tagType: string) => {
     setPreferences((prev) => ({ ...prev, activeTagType: tagType }));

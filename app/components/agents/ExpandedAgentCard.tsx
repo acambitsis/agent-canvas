@@ -10,6 +10,8 @@ import { Agent } from '@/types/agent';
 import { getToolDisplay } from '@/utils/config';
 import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { getAgentStatusConfig } from '@/types/validationConstants';
 
 interface ExpandedAgentCardProps {
   agent: Agent;
@@ -35,25 +37,11 @@ function getToolColorClass(color: string): string {
   return colorMap[color] || 'default';
 }
 
-// Get status configuration
-function getStatusConfig(status?: string): { color: string; bgColor: string; label: string } {
-  switch (status) {
-    case 'active':
-      return { color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.1)', label: 'Active' };
-    case 'draft':
-      return { color: '#A8A29E', bgColor: 'rgba(168, 162, 158, 0.1)', label: 'Draft' };
-    case 'deprecated':
-      return { color: '#EF4444', bgColor: 'rgba(239, 68, 68, 0.1)', label: 'Deprecated' };
-    default:
-      return { color: '#6366F1', bgColor: 'rgba(99, 102, 241, 0.1)', label: status || 'Unknown' };
-  }
-}
-
 export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: ExpandedAgentCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const metrics = agent.metrics || {};
-  const statusConfig = getStatusConfig(agent.status);
+  const statusConfig = getAgentStatusConfig(agent.status);
 
   return (
     <article
@@ -102,22 +90,24 @@ export function ExpandedAgentCard({ agent, index = 0, onEdit, onDelete }: Expand
             {statusConfig.label}
           </span>
           <div className="expanded-card__actions">
-            <button
-              className="expanded-card__action"
-              onClick={onEdit}
-              title="Edit agent"
-              aria-label="Edit agent"
-            >
-              <Icon name="edit-3" />
-            </button>
-            <button
-              className="expanded-card__action expanded-card__action--danger"
-              onClick={onDelete}
-              title="Delete agent"
-              aria-label="Delete agent"
-            >
-              <Icon name="trash-2" />
-            </button>
+            <Tooltip content="Edit agent" placement="top">
+              <button
+                className="expanded-card__action"
+                onClick={onEdit}
+                aria-label="Edit agent"
+              >
+                <Icon name="edit-3" />
+              </button>
+            </Tooltip>
+            <Tooltip content="Delete agent" placement="top">
+              <button
+                className="expanded-card__action expanded-card__action--danger"
+                onClick={onDelete}
+                aria-label="Delete agent"
+              >
+                <Icon name="trash-2" />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </header>

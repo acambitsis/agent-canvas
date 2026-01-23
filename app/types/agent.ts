@@ -1,38 +1,25 @@
 /**
  * Agent type definitions
+ *
+ * Agent type is derived from Convex schema to ensure frontend/backend alignment.
+ * Changes to agent fields should be made in convex/schema.ts.
  */
 
-export interface AgentMetrics {
-  numberOfUsers?: number;
-  timesUsed?: number;
-  timeSaved?: number; // hours
-  roi?: number; // integer currency
-}
+import { Doc } from '../../convex/_generated/dataModel';
 
-export interface Agent {
-  _id: string;
-  _creationTime: number;
-  canvasId: string;
-  phase: string;
-  phaseOrder: number;
-  agentOrder: number;
-  name: string;
-  objective?: string;
-  description?: string;
-  tools: string[];
-  journeySteps: string[];
-  demoLink?: string;
-  videoLink?: string;
-  metrics?: AgentMetrics;
-  category?: string;
-  status?: string;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: number;
-  updatedAt: number;
-  deletedAt?: number;
-}
+/**
+ * Agent document type - derived from Convex schema
+ */
+export type Agent = Doc<"agents">;
 
+/**
+ * Agent metrics - extracted from Agent type
+ */
+export type AgentMetrics = NonNullable<Agent['metrics']>;
+
+/**
+ * UI grouping structure (not stored in database)
+ */
 export interface AgentGroup {
   id: string;
   label: string;
@@ -41,18 +28,12 @@ export interface AgentGroup {
   icon?: string;
 }
 
-export interface AgentFormData {
-  name: string;
-  objective?: string;
-  description?: string;
-  tools: string[];
-  journeySteps: string[];
-  demoLink?: string;
-  videoLink?: string;
-  metrics?: AgentMetrics;
-  category?: string;
-  status?: string;
-  phase: string;
-  phaseOrder: number;
-  agentOrder: number;
-}
+/**
+ * Form data for creating/editing agents (subset of Agent fields)
+ */
+export type AgentFormData = Pick<
+  Agent,
+  'name' | 'objective' | 'description' | 'tools' | 'journeySteps' |
+  'demoLink' | 'videoLink' | 'metrics' | 'category' | 'status' |
+  'phase' | 'agentOrder'
+>;

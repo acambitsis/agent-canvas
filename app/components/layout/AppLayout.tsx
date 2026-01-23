@@ -17,6 +17,7 @@ import { useAppState } from '@/contexts/AppStateContext';
 import { useAgents } from '@/contexts/AgentContext';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { Icon } from '@/components/ui/Icon';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 export function AppLayout() {
   const { isSidebarCollapsed, toggleSidebar, sidebarWidth, quickLookAgent, setQuickLookAgent } = useAppState();
@@ -82,13 +83,14 @@ export function AppLayout() {
         style={!isSidebarCollapsed ? { '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties : undefined}
       >
         {isSidebarCollapsed && (
-          <button
-            className="sidebar-expand-btn"
-            onClick={toggleSidebar}
-            title="Expand sidebar"
-          >
-            <Icon name="panel-left-open" />
-          </button>
+          <Tooltip content="Expand sidebar" placement="right" triggerClassName="sidebar-expand-tooltip">
+            <button
+              className="sidebar-expand-btn"
+              onClick={toggleSidebar}
+            >
+              <Icon name="panel-left-open" />
+            </button>
+          </Tooltip>
         )}
         <MainToolbar onAddAgent={() => handleOpenAgentModal()} />
         <main className="main-content">

@@ -7,6 +7,8 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Icon } from '@/components/ui/Icon';
+import { ORG_ROLES, OrgRole } from '@/types/validationConstants';
+import { API_ENDPOINTS } from '@/constants/api';
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -17,7 +19,7 @@ interface InviteMemberModalProps {
 
 export function InviteMemberModal({ isOpen, onClose, orgId, onInvited }: InviteMemberModalProps) {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'member'>('member');
+  const [role, setRole] = useState<OrgRole>(ORG_ROLES.MEMBER);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -29,7 +31,7 @@ export function InviteMemberModal({ isOpen, onClose, orgId, onInvited }: InviteM
     setSuccess(false);
 
     try {
-      const response = await fetch(`/api/org/${orgId}/invite`, {
+      const response = await fetch(API_ENDPOINTS.orgInvite(orgId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),
@@ -43,7 +45,7 @@ export function InviteMemberModal({ isOpen, onClose, orgId, onInvited }: InviteM
 
       setSuccess(true);
       setEmail('');
-      setRole('member');
+      setRole(ORG_ROLES.MEMBER);
       onInvited?.();
 
       // Close after showing success briefly
@@ -60,7 +62,7 @@ export function InviteMemberModal({ isOpen, onClose, orgId, onInvited }: InviteM
 
   const handleClose = () => {
     setEmail('');
-    setRole('member');
+    setRole(ORG_ROLES.MEMBER);
     setError(null);
     setSuccess(false);
     onClose();
@@ -102,14 +104,14 @@ export function InviteMemberModal({ isOpen, onClose, orgId, onInvited }: InviteM
           <select
             id="invite-role"
             value={role}
-            onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
+            onChange={(e) => setRole(e.target.value as OrgRole)}
             disabled={loading || success}
           >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
+            <option value={ORG_ROLES.MEMBER}>Member</option>
+            <option value={ORG_ROLES.ADMIN}>Admin</option>
           </select>
           <span className="form-hint">
-            {role === 'admin'
+            {role === ORG_ROLES.ADMIN
               ? 'Admins can manage members and organization settings.'
               : 'Members can view and edit canvases and agents.'}
           </span>

@@ -1,12 +1,14 @@
 /**
- * AppStateContext - Manages global UI state (loading, toasts, modals, sidebar)
+ * AppStateContext - Manages global UI state (loading, toasts, modals, sidebar, theme)
  */
 
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Agent } from '@/types/agent';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
+import { ThemePreference, ThemeValue } from '@/constants/themes';
 
 interface Toast {
   id: string;
@@ -21,6 +23,8 @@ interface AppStateContextValue {
   isSidebarCollapsed: boolean;
   sidebarWidth: number;
   quickLookAgent: Agent | null;
+  themePreference: ThemePreference;
+  resolvedTheme: ThemeValue;
   showLoading: (message: string) => void;
   hideLoading: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -29,20 +33,47 @@ interface AppStateContextValue {
   setSidebarCollapsed: (collapsed: boolean) => void;
   setSidebarWidth: (width: number) => void;
   setQuickLookAgent: (agent: Agent | null) => void;
+  setThemePreference: (theme: ThemePreference) => void;
 }
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
 
-const SIDEBAR_COLLAPSED_KEY = 'agentcanvas-sidebar-collapsed';
-const SIDEBAR_WIDTH_KEY = 'agentcanvas-sidebar-width';
+function getSystemTheme(): ThemeValue {
+  if (typeof window === 'undefined') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(SIDEBAR_COLLAPSED_KEY, false);
-  const [sidebarWidth, setSidebarWidth] = useLocalStorage(SIDEBAR_WIDTH_KEY, 280);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
+  const [sidebarWidth, setSidebarWidth] = useLocalStorage(STORAGE_KEYS.SIDEBAR_WIDTH, 280);
   const [quickLookAgent, setQuickLookAgent] = useState<Agent | null>(null);
+  const [themePreference, setThemePreference] = useLocalStorage<ThemePreference>(STORAGE_KEYS.THEME, 'system');
+  const [resolvedTheme, setResolvedTheme] = useState<ThemeValue>('light');
+
+  // Resolve theme preference to actual theme value
+  useEffect(() => {
+    const resolved = themePreference === 'system' ? getSystemTheme() : themePreference;
+    setResolvedTheme(resolved);
+    document.documentElement.setAttribute('data-theme', resolved);
+  }, [themePreference]);
+
+  // Listen for system theme changes when preference is 'system'
+  useEffect(() => {
+    if (themePreference !== 'system') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      const newTheme = e.matches ? 'dark' : 'light';
+      setResolvedTheme(newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [themePreference]);
 
   const showLoading = useCallback((message: string) => {
     setIsLoading(true);
@@ -83,6 +114,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     isSidebarCollapsed,
     sidebarWidth,
     quickLookAgent,
+    themePreference,
+    resolvedTheme,
     showLoading,
     hideLoading,
     showToast,
@@ -91,6 +124,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setSidebarCollapsed,
     setSidebarWidth,
     setQuickLookAgent,
+    setThemePreference,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

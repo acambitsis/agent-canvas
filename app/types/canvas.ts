@@ -1,16 +1,7 @@
 /**
- * Canvas type definitions
+ * Canvas type definitions - derived from Convex schema
  */
 
-export interface Canvas {
-  _id: string;
-  _creationTime: number;
-  workosOrgId: string;
-  title: string;
-  slug: string;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: number;
-  updatedAt: number;
-  deletedAt?: number;
-}
+import { Doc } from '../../convex/_generated/dataModel';
+
+export type Canvas = Doc<"canvases">;

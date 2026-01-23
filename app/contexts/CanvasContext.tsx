@@ -11,19 +11,22 @@ import { useQuery, useMutation } from '@/hooks/useConvex';
 import { useAuth } from './AuthContext';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-
-const CURRENT_CANVAS_KEY = 'agentcanvas-current-canvas';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 interface CanvasContextValue {
   canvases: Canvas[];
   currentCanvasId: string | null;
   currentCanvas: Canvas | null;
+  phases: string[];  // Canvas-level phase ordering (with defaults)
+  categories: string[];  // Canvas-level category ordering (with defaults)
   isLoading: boolean;
   initialCanvasError: 'not_found' | 'no_access' | null;
   setCurrentCanvasId: (canvasId: string | null) => void;
   createCanvas: (title: string, slug: string) => Promise<string>;
   updateCanvas: (canvasId: string, data: Partial<Canvas>) => Promise<void>;
   deleteCanvas: (canvasId: string) => Promise<void>;
+  reorderPhases: (phases: string[]) => Promise<void>;
+  reorderCategories: (categories: string[]) => Promise<void>;
 }
 
 const CanvasContext = createContext<CanvasContextValue | undefined>(undefined);
@@ -35,7 +38,7 @@ interface CanvasProviderProps {
 
 export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProps) {
   const { currentOrgId, isInitialized, isAuthenticated, userOrgs, setCurrentOrgId } = useAuth();
-  const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(CURRENT_CANVAS_KEY, null);
+  const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(STORAGE_KEYS.CURRENT_CANVAS, null);
   const [initialCanvasError, setInitialCanvasError] = useState<'not_found' | 'no_access' | null>(null);
   // Use state instead of ref so that setting it to true triggers a re-render
   // and causes the query to switch to 'skip' (fixes race condition)
@@ -60,6 +63,8 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
   const createCanvasMutation = useMutation(api.canvases.create);
   const updateCanvasMutation = useMutation(api.canvases.update);
   const deleteCanvasMutation = useMutation(api.canvases.remove);
+  const reorderPhasesMutation = useMutation(api.canvases.reorderPhases);
+  const reorderCategoriesMutation = useMutation(api.canvases.reorderCategories);
 
   // Find current canvas
   const currentCanvas = currentCanvasId
@@ -144,16 +149,34 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
     await deleteCanvasMutation({ canvasId: canvasId as any, confirmDelete: true });
   }, [deleteCanvasMutation]);
 
+  const reorderPhases = useCallback(async (phases: string[]) => {
+    if (!currentCanvasId) throw new Error('No canvas selected');
+    await reorderPhasesMutation({ canvasId: currentCanvasId as Id<"canvases">, phases });
+  }, [currentCanvasId, reorderPhasesMutation]);
+
+  const reorderCategories = useCallback(async (categories: string[]) => {
+    if (!currentCanvasId) throw new Error('No canvas selected');
+    await reorderCategoriesMutation({ canvasId: currentCanvasId as Id<"canvases">, categories });
+  }, [currentCanvasId, reorderCategoriesMutation]);
+
+  // Derive phases/categories from current canvas with defaults
+  const phases = currentCanvas?.phases ?? ['Backlog'];
+  const categories = currentCanvas?.categories ?? ['Uncategorized'];
+
   const value: CanvasContextValue = {
     canvases,
     currentCanvasId,
     currentCanvas,
+    phases,
+    categories,
     isLoading: !isInitialized,
     initialCanvasError,
     setCurrentCanvasId,
     createCanvas,
     updateCanvas,
     deleteCanvas,
+    reorderPhases,
+    reorderCategories,
   };
 
   return <CanvasContext.Provider value={value}>{children}</CanvasContext.Provider>;
