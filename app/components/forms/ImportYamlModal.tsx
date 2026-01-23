@@ -4,7 +4,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Modal } from '../ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
@@ -86,17 +86,19 @@ export function ImportYamlModal({ isOpen, onClose, onSuccess }: ImportYamlModalP
         const existingSlugs = new Set(canvases.map(c => c.slug));
 
         // Prepare import data
-        const { title, slug, agents } = prepareYamlImport({
+        const { title, slug, agents, phases, categories } = prepareYamlImport({
           yamlText,
           overrideTitle: customTitle,
           existingSlugs,
         });
 
-        // Create canvas
+        // Create canvas with phases/categories from YAML
         const canvasId = await createCanvasMutation({
           workosOrgId: currentOrgId,
           title,
           slug,
+          phases,
+          categories,
         });
 
         // Bulk create agents if any exist

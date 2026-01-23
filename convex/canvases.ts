@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 import { requireAuth, requireOrgAccess, hasOrgAccess } from "./lib/auth";
-import { getAgentSnapshot } from "./lib/helpers";
+import { getAgentSnapshot, getCanvasWithAccess } from "./lib/helpers";
 import { validateSlug, validateTitle } from "./lib/validation";
 
 /**
@@ -101,8 +101,10 @@ export const create = mutation({
     workosOrgId: v.string(),
     title: v.string(),
     slug: v.string(),
+    phases: v.optional(v.array(v.string())),
+    categories: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { workosOrgId, title, slug }) => {
+  handler: async (ctx, { workosOrgId, title, slug, phases, categories }) => {
     const auth = await requireAuth(ctx);
     requireOrgAccess(auth, workosOrgId);
 
@@ -129,6 +131,8 @@ export const create = mutation({
       workosOrgId,
       title,
       slug,
+      phases: phases ?? ["Backlog"],
+      categories: categories ?? ["Uncategorized"],
       createdBy: auth.workosUserId,
       updatedBy: auth.workosUserId,
       createdAt: now,
@@ -145,8 +149,10 @@ export const update = mutation({
     canvasId: v.id("canvases"),
     title: v.optional(v.string()),
     slug: v.optional(v.string()),
+    phases: v.optional(v.array(v.string())),
+    categories: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { canvasId, title, slug }) => {
+  handler: async (ctx, { canvasId, title, slug, phases, categories }) => {
     const auth = await requireAuth(ctx);
 
     const canvas = await ctx.db.get(canvasId);
@@ -181,8 +187,50 @@ export const update = mutation({
     };
     if (title !== undefined) updates.title = title;
     if (slug !== undefined) updates.slug = slug;
+    if (phases !== undefined) updates.phases = phases;
+    if (categories !== undefined) updates.categories = categories;
 
     await ctx.db.patch(canvasId, updates);
+  },
+});
+
+/**
+ * Reorder phases - set the complete ordered list
+ */
+export const reorderPhases = mutation({
+  args: {
+    canvasId: v.id("canvases"),
+    phases: v.array(v.string()),
+  },
+  handler: async (ctx, { canvasId, phases }) => {
+    const auth = await requireAuth(ctx);
+    await getCanvasWithAccess(ctx, auth, canvasId);
+
+    await ctx.db.patch(canvasId, {
+      phases,
+      updatedBy: auth.workosUserId,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Reorder categories - set the complete ordered list
+ */
+export const reorderCategories = mutation({
+  args: {
+    canvasId: v.id("canvases"),
+    categories: v.array(v.string()),
+  },
+  handler: async (ctx, { canvasId, categories }) => {
+    const auth = await requireAuth(ctx);
+    await getCanvasWithAccess(ctx, auth, canvasId);
+
+    await ctx.db.patch(canvasId, {
+      categories,
+      updatedBy: auth.workosUserId,
+      updatedAt: Date.now(),
+    });
   },
 });
 
@@ -315,7 +363,6 @@ export const copyToOrgs = mutation({
       category: agent.category,
       status: agent.status,
       phase: agent.phase,
-      phaseOrder: agent.phaseOrder,
       agentOrder: agent.agentOrder,
     }));
 
@@ -332,11 +379,13 @@ export const copyToOrgs = mutation({
       const uniqueSlug = generateUniqueSlug(baseSlug, existingCanvases);
       validateSlug(uniqueSlug);
 
-      // Create canvas copy
+      // Create canvas copy (copy phases/categories from source, with fallback defaults)
       const newCanvasId = await ctx.db.insert("canvases", {
         workosOrgId: targetOrgId,
         title: newTitle,
         slug: uniqueSlug,
+        phases: sourceCanvas.phases ?? ["Backlog"],
+        categories: sourceCanvas.categories ?? ["Uncategorized"],
         createdBy: auth.workosUserId,
         updatedBy: auth.workosUserId,
         createdAt: now,

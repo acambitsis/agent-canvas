@@ -56,16 +56,16 @@ describe('Config Utilities', () => {
   });
 
   describe('getStatusColor', () => {
-    it('returns correct color for active status', () => {
-      expect(getStatusColor('active')).toBe(AGENT_STATUS_CONFIG.active.color);
+    it('returns correct color for deployed status', () => {
+      expect(getStatusColor('deployed')).toBe(AGENT_STATUS_CONFIG.deployed.color);
     });
 
-    it('returns correct color for draft status', () => {
-      expect(getStatusColor('draft')).toBe(AGENT_STATUS_CONFIG.draft.color);
+    it('returns correct color for in_concept status', () => {
+      expect(getStatusColor('in_concept')).toBe(AGENT_STATUS_CONFIG.in_concept.color);
     });
 
-    it('returns correct color for deprecated status', () => {
-      expect(getStatusColor('deprecated')).toBe(AGENT_STATUS_CONFIG.deprecated.color);
+    it('returns correct color for abandoned status', () => {
+      expect(getStatusColor('abandoned')).toBe(AGENT_STATUS_CONFIG.abandoned.color);
     });
 
     it('returns default color for unknown status', () => {
@@ -78,23 +78,23 @@ describe('Config Utilities', () => {
   });
 
   describe('getStatusConfig', () => {
-    it('returns full config for active status', () => {
-      const config = getStatusConfig('active');
-      expect(config.color).toBe(AGENT_STATUS_CONFIG.active.color);
-      expect(config.bgColor).toBe(AGENT_STATUS_CONFIG.active.bgColor);
-      expect(config.label).toBe('Active');
+    it('returns full config for deployed status', () => {
+      const config = getStatusConfig('deployed');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.deployed.color);
+      expect(config.bgColor).toBe(AGENT_STATUS_CONFIG.deployed.bgColor);
+      expect(config.label).toBe('Deployed');
     });
 
-    it('returns full config for draft status', () => {
-      const config = getStatusConfig('draft');
-      expect(config.color).toBe(AGENT_STATUS_CONFIG.draft.color);
-      expect(config.label).toBe('Draft');
+    it('returns full config for in_concept status', () => {
+      const config = getStatusConfig('in_concept');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.in_concept.color);
+      expect(config.label).toBe('In Concept');
     });
 
-    it('returns full config for deprecated status', () => {
-      const config = getStatusConfig('deprecated');
-      expect(config.color).toBe(AGENT_STATUS_CONFIG.deprecated.color);
-      expect(config.label).toBe('Deprecated');
+    it('returns full config for abandoned status', () => {
+      const config = getStatusConfig('abandoned');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.abandoned.color);
+      expect(config.label).toBe('Abandoned');
     });
 
     it('returns default config with custom label for unknown status', () => {

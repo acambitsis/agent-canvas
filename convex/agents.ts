@@ -1,14 +1,12 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
-import { MutationCtx, QueryCtx } from "./_generated/server";
-import { AuthContext, requireAuth, requireOrgAccess } from "./lib/auth";
+import { Id } from "./_generated/dataModel";
+import { MutationCtx } from "./_generated/server";
+import { requireAuth, requireOrgAccess } from "./lib/auth";
 import {
   getAgentSnapshot,
   getCanvasWithAccess,
   getAgentWithAccess,
-  withCanvasAccess,
-  withAgentAccess,
 } from "./lib/helpers";
 import {
   validateAgentName,
@@ -66,12 +64,8 @@ export const list = query({
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
-    // Sort by phaseOrder, then agentOrder
-    return agents.sort((a, b) =>
-      a.phaseOrder !== b.phaseOrder
-        ? a.phaseOrder - b.phaseOrder
-        : a.agentOrder - b.agentOrder
-    );
+    // Sort by agentOrder (phase ordering is determined by canvas.phases)
+    return agents.sort((a, b) => a.agentOrder - b.agentOrder);
   },
 });
 
@@ -94,7 +88,6 @@ export const create = mutation({
   args: {
     canvasId: v.id("canvases"),
     phase: v.string(),
-    phaseOrder: v.number(),
     agentOrder: v.number(),
     name: v.string(),
     objective: v.optional(v.string()),
@@ -105,7 +98,7 @@ export const create = mutation({
     videoLink: v.optional(v.string()),
     metrics: agentFieldValidators.metrics,
     category: v.optional(v.string()),
-    status: v.optional(v.string()),
+    status: agentFieldValidators.status,
   },
   handler: async (ctx, args) => {
     const auth = await requireAuth(ctx);
@@ -114,6 +107,7 @@ export const create = mutation({
     validateAgentData(args);
 
     const now = Date.now();
+
     const agentId = await ctx.db.insert("agents", {
       ...args,
       createdBy: auth.workosUserId,
@@ -194,25 +188,26 @@ export const reorder = mutation({
   args: {
     agentId: v.id("agents"),
     phase: v.string(),
-    phaseOrder: v.number(),
     agentOrder: v.number(),
   },
-  handler: async (ctx, { agentId, phase, phaseOrder, agentOrder }) => {
+  handler: async (ctx, { agentId, phase, agentOrder }) => {
     const auth = await requireAuth(ctx);
     await getAgentWithAccess(ctx, auth, agentId);
 
+    const now = Date.now();
+
     await ctx.db.patch(agentId, {
       phase,
-      phaseOrder,
       agentOrder,
       updatedBy: auth.workosUserId,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
   },
 });
 
 /**
  * Rename a phase by updating all agents with that phase name
+ * Also updates the canvas.phases array
  */
 export const renamePhase = mutation({
   args: {
@@ -222,7 +217,7 @@ export const renamePhase = mutation({
   },
   handler: async (ctx, { canvasId, fromPhase, toPhase }) => {
     const auth = await requireAuth(ctx);
-    await getCanvasWithAccess(ctx, auth, canvasId);
+    const canvas = await getCanvasWithAccess(ctx, auth, canvasId);
 
     validatePhase(fromPhase);
     validatePhase(toPhase);
@@ -232,6 +227,19 @@ export const renamePhase = mutation({
     }
 
     const now = Date.now();
+
+    // Update canvas.phases - replace fromPhase with toPhase
+    const canvasPhases = canvas.phases ?? ["Backlog"];
+    const phaseIndex = canvasPhases.indexOf(fromPhase);
+    if (phaseIndex !== -1) {
+      const newPhases = [...canvasPhases];
+      newPhases[phaseIndex] = toPhase;
+      await ctx.db.patch(canvasId, {
+        phases: newPhases,
+        updatedBy: auth.workosUserId,
+        updatedAt: now,
+      });
+    }
 
     const agents = await ctx.db
       .query("agents")
@@ -269,13 +277,37 @@ export const bulkCreate = mutation({
   },
   handler: async (ctx, { canvasId, agents }) => {
     const auth = await requireAuth(ctx);
-    await getCanvasWithAccess(ctx, auth, canvasId);
+    const canvas = await getCanvasWithAccess(ctx, auth, canvasId);
 
     // Validate all agents before inserting any
     agents.forEach(validateAgentData);
 
     const now = Date.now();
     const createdIds: Id<"agents">[] = [];
+
+    // Extract unique phases and categories from agents
+    const newPhases = new Set<string>();
+    const newCategories = new Set<string>();
+    for (const agent of agents) {
+      newPhases.add(agent.phase);
+      if (agent.category) newCategories.add(agent.category);
+    }
+
+    // Append only NEW phases/categories not already in canvas
+    // (ImportYamlModal passes phases/categories at canvas creation, so we only add extras here)
+    const canvasPhases = canvas.phases ?? ["Backlog"];
+    const canvasCategories = canvas.categories ?? ["Uncategorized"];
+    const phasesToAdd = [...newPhases].filter(p => !canvasPhases.includes(p));
+    const categoriesToAdd = [...newCategories].filter(c => !canvasCategories.includes(c));
+
+    if (phasesToAdd.length > 0 || categoriesToAdd.length > 0) {
+      await ctx.db.patch(canvasId, {
+        phases: [...canvasPhases, ...phasesToAdd],
+        categories: [...canvasCategories, ...categoriesToAdd],
+        updatedBy: auth.workosUserId,
+        updatedAt: now,
+      });
+    }
 
     for (const agentData of agents) {
       const agentId = await ctx.db.insert("agents", {
@@ -299,6 +331,7 @@ export const bulkCreate = mutation({
 /**
  * Atomically replace all agents for a canvas
  * Soft-deletes existing agents and creates new ones in a single transaction
+ * Also updates canvas phases/categories based on imported agents
  */
 export const bulkReplace = mutation({
   args: {
@@ -313,6 +346,30 @@ export const bulkReplace = mutation({
     agents.forEach(validateAgentData);
 
     const now = Date.now();
+
+    // Extract unique phases and categories from new agents (preserve order)
+    const newPhases: string[] = [];
+    const newCategories: string[] = [];
+    const seenPhases = new Set<string>();
+    const seenCategories = new Set<string>();
+    for (const agent of agents) {
+      if (!seenPhases.has(agent.phase)) {
+        seenPhases.add(agent.phase);
+        newPhases.push(agent.phase);
+      }
+      if (agent.category && !seenCategories.has(agent.category)) {
+        seenCategories.add(agent.category);
+        newCategories.push(agent.category);
+      }
+    }
+
+    // Update canvas with new phases/categories from import
+    await ctx.db.patch(canvasId, {
+      phases: newPhases.length > 0 ? newPhases : ["Backlog"],
+      categories: newCategories.length > 0 ? newCategories : ["Uncategorized"],
+      updatedBy: auth.workosUserId,
+      updatedAt: now,
+    });
 
     // Get existing non-deleted agents
     const existingAgents = await ctx.db

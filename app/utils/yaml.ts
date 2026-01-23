@@ -4,7 +4,21 @@
 
 import * as yaml from 'js-yaml';
 import { Agent, AgentFormData } from '@/types/agent';
-import { VALIDATION_CONSTANTS } from '@/types/validationConstants';
+import { VALIDATION_CONSTANTS, AGENT_STATUS, AgentStatus } from '@/types/validationConstants';
+
+/**
+ * Valid status values for validation
+ */
+const VALID_STATUSES = new Set<string>(Object.values(AGENT_STATUS));
+
+/**
+ * Parse and validate status value from YAML
+ * Returns undefined for invalid/missing values
+ */
+function parseStatus(value: string | undefined): AgentStatus | undefined {
+  if (!value) return undefined;
+  return VALID_STATUSES.has(value) ? (value as AgentStatus) : undefined;
+}
 
 /**
  * YAML document structure (legacy format)
@@ -94,18 +108,31 @@ function validateTitle(title: string): void {
 }
 
 /**
- * Convert YAML document to Convex agent format
+ * Result of converting YAML document
  */
-function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
+interface YamlConversionResult {
+  agents: AgentFormData[];
+  phases: string[];
+  categories: string[];
+}
+
+/**
+ * Convert YAML document to Convex agent format
+ * Also extracts phases and categories for canvas-level storage
+ */
+function yamlToConvexAgents(yamlDoc: YamlDocument): YamlConversionResult {
   if (!yamlDoc || !yamlDoc.agentGroups || !Array.isArray(yamlDoc.agentGroups)) {
-    return [];
+    return { agents: [], phases: [], categories: [] };
   }
 
   const agents: AgentFormData[] = [];
-  let phaseOrder = 0;
+  const phases: string[] = [];
+  const categoriesSet = new Set<string>();
+  let phaseIndex = 0;
 
   for (const group of yamlDoc.agentGroups) {
-    const phase = group.groupName || `Phase ${phaseOrder + 1}`;
+    const phase = group.groupName || `Phase ${phaseIndex + 1}`;
+    phases.push(phase);
     let agentOrder = 0;
 
     if (group.agents && Array.isArray(group.agents)) {
@@ -133,9 +160,12 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
         if (timeSaved !== undefined) metrics.timeSaved = timeSaved;
         if (roi !== undefined) metrics.roi = roi;
 
+        // Track category for canvas-level storage
+        const category = agent.tags?.department || undefined;
+        if (category) categoriesSet.add(category);
+
         agents.push({
           phase,
-          phaseOrder,
           agentOrder: agentOrder++,
           name: agent.name.trim(),
           objective: agent.objective?.trim() || undefined,
@@ -145,16 +175,20 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
           demoLink: agent.demoLink?.trim() || undefined,
           videoLink: agent.videoLink?.trim() || undefined,
           metrics: Object.keys(metrics).length > 0 ? metrics : undefined,
-          category: agent.tags?.department || undefined, // YAML uses 'department', schema uses 'category'
-          status: agent.tags?.status || undefined,
+          category, // YAML uses 'department', schema uses 'category'
+          status: parseStatus(agent.tags?.status),
         });
       }
     }
 
-    phaseOrder++;
+    phaseIndex++;
   }
 
-  return agents;
+  return {
+    agents,
+    phases: phases.length > 0 ? phases : ['Backlog'],
+    categories: categoriesSet.size > 0 ? Array.from(categoriesSet) : ['Uncategorized'],
+  };
 }
 
 /**
@@ -163,6 +197,8 @@ function yamlToConvexAgents(yamlDoc: YamlDocument): AgentFormData[] {
 export function parseYaml(yamlText: string): {
   title: string;
   agents: AgentFormData[];
+  phases: string[];
+  categories: string[];
 } {
   if (!yamlText || typeof yamlText !== 'string') {
     throw new Error('YAML text is required');
@@ -182,9 +218,9 @@ export function parseYaml(yamlText: string): {
   const title = parsed.documentTitle?.trim() || 'Imported Canvas';
   validateTitle(title);
 
-  const agents = yamlToConvexAgents(parsed);
+  const { agents, phases, categories } = yamlToConvexAgents(parsed);
 
-  return { title, agents };
+  return { title, agents, phases, categories };
 }
 
 /**
@@ -203,6 +239,8 @@ export interface ImportYamlResult {
   title: string;
   slug: string;
   agents: AgentFormData[];
+  phases: string[];
+  categories: string[];
 }
 
 /**
@@ -214,36 +252,50 @@ export function prepareYamlImport({
   overrideTitle,
   existingSlugs,
 }: ImportYamlParams): ImportYamlResult {
-  const { title: parsedTitle, agents } = parseYaml(yamlText);
+  const { title: parsedTitle, agents, phases, categories } = parseYaml(yamlText);
   const title = overrideTitle?.trim() || parsedTitle;
   validateTitle(title);
 
   const slug = generateUniqueSlug(title, existingSlugs);
 
-  return { title, slug, agents };
+  return { title, slug, agents, phases, categories };
 }
 
 /**
  * Convert agents to YAML document structure
+ * Uses canvas-level phaseOrder array for phase ordering
  */
-function agentsToYamlDoc(title: string, agents: Agent[]): YamlDocument {
-  // Group agents by phase, maintaining order
-  const phaseMap = new Map<string, { order: number; agents: Agent[] }>();
+function agentsToYamlDoc(title: string, agents: Agent[], phaseOrder?: string[]): YamlDocument {
+  // Group agents by phase
+  const phaseMap = new Map<string, Agent[]>();
 
   for (const agent of agents) {
     const existing = phaseMap.get(agent.phase);
     if (existing) {
-      existing.agents.push(agent);
+      existing.push(agent);
     } else {
-      phaseMap.set(agent.phase, { order: agent.phaseOrder, agents: [agent] });
+      phaseMap.set(agent.phase, [agent]);
     }
   }
 
-  // Sort phases by phaseOrder
-  const sortedPhases = Array.from(phaseMap.entries())
-    .sort((a, b) => a[1].order - b[1].order);
+  // Sort phases using canvas-level phaseOrder, or alphabetically if not provided
+  let sortedPhaseNames: string[];
+  if (phaseOrder && phaseOrder.length > 0) {
+    sortedPhaseNames = [...phaseMap.keys()].sort((a, b) => {
+      const aIndex = phaseOrder.indexOf(a);
+      const bIndex = phaseOrder.indexOf(b);
+      // Unknown phases go to the end alphabetically
+      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+  } else {
+    sortedPhaseNames = [...phaseMap.keys()].sort();
+  }
 
-  const agentGroups: YamlAgentGroup[] = sortedPhases.map(([phaseName, { agents: phaseAgents }]) => {
+  const agentGroups: YamlAgentGroup[] = sortedPhaseNames.map((phaseName) => {
+    const phaseAgents = phaseMap.get(phaseName) || [];
     // Sort agents within phase by agentOrder
     const sortedAgents = [...phaseAgents].sort((a, b) => a.agentOrder - b.agentOrder);
 
@@ -289,11 +341,14 @@ function agentsToYamlDoc(title: string, agents: Agent[]): YamlDocument {
 
 /**
  * Export canvas and agents to YAML string
+ * @param title - Canvas title
+ * @param agents - List of agents to export
+ * @param phaseOrder - Optional canvas-level phase ordering array
  * @throws Error if title is invalid
  */
-export function exportToYaml(title: string, agents: Agent[]): string {
+export function exportToYaml(title: string, agents: Agent[], phaseOrder?: string[]): string {
   validateTitle(title);
-  const doc = agentsToYamlDoc(title, agents);
+  const doc = agentsToYamlDoc(title, agents, phaseOrder);
   return yaml.dump(doc, {
     indent: 2,
     lineWidth: -1, // Don't wrap lines

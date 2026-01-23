@@ -23,7 +23,7 @@ agentGroups:                    # optional, defaults to []
           roi: number           # >= 0, currency value
         tags:
           department: string    # maps to "category" in database
-          status: string        # e.g., "active", "draft", "deprecated"
+          status: string        # valid: "in_concept", "approved", "in_development", "in_testing", "deployed", "abandoned"
 ```
 
 ## Rules
@@ -35,6 +35,7 @@ agentGroups:                    # optional, defaults to []
 - `tools`: Valid names: `forms`, `code`, `rag`, `web-search`, `deep-research`, `context`, `email`, `calendar`, `slack`, `api`. Case-insensitive. Unknown names accepted with generic styling
 - `metrics`: All values must be numbers ≥ 0. Can also be numeric strings (e.g., `"42"`)
 - `tags.department`: Maps to `category` field in database
+- `tags.status`: Valid values: `in_concept`, `approved`, `in_development`, `in_testing`, `deployed`, `abandoned`. Invalid values are ignored
 - All other fields: Optional—omit if empty/unused
 
 ## Example
@@ -68,7 +69,7 @@ agentGroups:
           roi: 25000
         tags:
           department: Sales
-          status: active
+          status: deployed
 
   - groupName: Account Setup
     agents:

@@ -18,6 +18,8 @@ export default defineSchema({
     workosOrgId: v.string(),
     title: v.string(),
     slug: v.string(), // Document name/identifier
+    phases: v.array(v.string()), // Ordered phase names
+    categories: v.array(v.string()), // Ordered category names
     deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(), // WorkOS user ID
     updatedBy: v.string(),
@@ -32,7 +34,6 @@ export default defineSchema({
   agents: defineTable({
     canvasId: v.id("canvases"),
     phase: v.string(), // Implementation phase: "Phase 1", "Backlog", etc.
-    phaseOrder: v.number(), // Sort order for phases
     agentOrder: v.number(), // Sort order within phase
     name: v.string(),
     objective: v.optional(v.string()),
@@ -51,8 +52,16 @@ export default defineSchema({
     ),
     // Fixed tag fields for grouping and filtering (same across all orgs)
     category: v.optional(v.string()), // Visual grouping: "Recruitment", "Onboarding", etc.
-    department: v.optional(v.string()), // Legacy field - use category instead
-    status: v.optional(v.string()), // e.g., "active", "draft", "deprecated"
+    status: v.optional(
+      v.union(
+        v.literal("in_concept"),
+        v.literal("approved"),
+        v.literal("in_development"),
+        v.literal("in_testing"),
+        v.literal("deployed"),
+        v.literal("abandoned")
+      )
+    ),
     // payload removed - we're Convex-native, no need for round-trip fidelity
     deletedAt: v.optional(v.number()), // Soft delete timestamp
     createdBy: v.string(),
