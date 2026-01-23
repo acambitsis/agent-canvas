@@ -26,7 +26,7 @@ agentGroups:
           timeSaved: "5"
         tags:
           department: Sales
-          status: active
+          status: deployed
   - groupName: Support
     agents:
       - name: Triage Bot
@@ -49,7 +49,7 @@ agentGroups:
       journeySteps: ['Step 1'],
       metrics: { numberOfUsers: 10, timeSaved: 5 },
       category: 'Sales',
-      status: 'active',
+      status: 'deployed',
     });
     expect(result.agents[1]).toMatchObject({
       phase: 'Support',
@@ -148,17 +148,17 @@ agentGroups:
     agents:
       - name: Active Agent
         tags:
-          status: active
+          status: deployed
       - name: Draft Agent
         tags:
-          status: draft
+          status: in_concept
     `.trim();
 
     const result = parseYaml(yamlText);
 
     expect(result.agents).toHaveLength(2);
-    expect(result.agents[0].status).toBe('active');
-    expect(result.agents[1].status).toBe('draft');
+    expect(result.agents[0].status).toBe('deployed');
+    expect(result.agents[1].status).toBe('in_concept');
   });
 });
 
@@ -203,7 +203,7 @@ describe('YAML export', () => {
         tools: ['Tool A', 'Tool B'],
         journeySteps: ['Step 1', 'Step 2'],
         category: 'Sales',
-        status: 'active',
+        status: 'deployed',
       }),
       mockAgent({
         name: 'Agent 2',
@@ -220,7 +220,7 @@ describe('YAML export', () => {
     expect(yaml).toContain('objective: First objective');
     expect(yaml).toContain('- Tool A');
     expect(yaml).toContain('department: Sales');
-    expect(yaml).toContain('status: active');
+    expect(yaml).toContain('status: deployed');
     expect(yaml).toContain('name: Agent 2');
   });
 
@@ -329,7 +329,7 @@ agentGroups:
           roi: 1000
         tags:
           department: Engineering
-          status: active
+          status: deployed
   - groupName: Phase Two
     agents:
       - name: Agent Beta

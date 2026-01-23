@@ -54,10 +54,12 @@ export default defineSchema({
     category: v.optional(v.string()), // Visual grouping: "Recruitment", "Onboarding", etc.
     status: v.optional(
       v.union(
-        v.literal("draft"),
-        v.literal("active"),
-        v.literal("review"),
-        v.literal("deprecated")
+        v.literal("in_concept"),
+        v.literal("approved"),
+        v.literal("in_development"),
+        v.literal("in_testing"),
+        v.literal("deployed"),
+        v.literal("abandoned")
       )
     ),
     // payload removed - we're Convex-native, no need for round-trip fidelity

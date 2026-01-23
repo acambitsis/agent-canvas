@@ -25,10 +25,12 @@ export const VALIDATION_CONSTANTS = {
  * Single source of truth for all status-related logic
  */
 export const AGENT_STATUS = {
-  DRAFT: 'draft',
-  ACTIVE: 'active',
-  REVIEW: 'review',
-  DEPRECATED: 'deprecated',
+  IN_CONCEPT: 'in_concept',
+  APPROVED: 'approved',
+  IN_DEVELOPMENT: 'in_development',
+  IN_TESTING: 'in_testing',
+  DEPLOYED: 'deployed',
+  ABANDONED: 'abandoned',
 } as const;
 
 export type AgentStatus = (typeof AGENT_STATUS)[keyof typeof AGENT_STATUS];
@@ -44,29 +46,43 @@ export const AGENT_STATUS_CONFIG: Record<AgentStatus, {
   icon: string;
   badgeVariant: 'success' | 'warning' | 'error' | 'default';
 }> = {
-  [AGENT_STATUS.ACTIVE]: {
-    label: 'Active',
-    color: '#10B981',
-    bgColor: 'rgba(16, 185, 129, 0.1)',
-    icon: 'check-circle',
-    badgeVariant: 'success',
-  },
-  [AGENT_STATUS.DRAFT]: {
-    label: 'Draft',
+  [AGENT_STATUS.IN_CONCEPT]: {
+    label: 'In Concept',
     color: '#6B7280',
     bgColor: 'rgba(107, 114, 128, 0.1)',
-    icon: 'edit-3',
+    icon: 'lightbulb',
     badgeVariant: 'default',
   },
-  [AGENT_STATUS.REVIEW]: {
-    label: 'In Review',
+  [AGENT_STATUS.APPROVED]: {
+    label: 'Approved',
+    color: '#3B82F6',
+    bgColor: 'rgba(59, 130, 246, 0.1)',
+    icon: 'check',
+    badgeVariant: 'default',
+  },
+  [AGENT_STATUS.IN_DEVELOPMENT]: {
+    label: 'In Development',
     color: '#F59E0B',
     bgColor: 'rgba(245, 158, 11, 0.1)',
-    icon: 'eye',
+    icon: 'code',
     badgeVariant: 'warning',
   },
-  [AGENT_STATUS.DEPRECATED]: {
-    label: 'Deprecated',
+  [AGENT_STATUS.IN_TESTING]: {
+    label: 'In Testing',
+    color: '#8B5CF6',
+    bgColor: 'rgba(139, 92, 246, 0.1)',
+    icon: 'flask-conical',
+    badgeVariant: 'warning',
+  },
+  [AGENT_STATUS.DEPLOYED]: {
+    label: 'Deployed',
+    color: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.1)',
+    icon: 'rocket',
+    badgeVariant: 'success',
+  },
+  [AGENT_STATUS.ABANDONED]: {
+    label: 'Abandoned',
     color: '#EF4444',
     bgColor: 'rgba(239, 68, 68, 0.1)',
     icon: 'archive',

@@ -90,7 +90,7 @@ export const CompactAgentRow = memo(function CompactAgentRow({
       </Tooltip>
 
       {/* Status badge */}
-      <span className={`compact-row__status status-dot--${agent.status || AGENT_STATUS.DRAFT}`}>
+      <span className={`compact-row__status status-dot--${agent.status || AGENT_STATUS.IN_CONCEPT}`}>
         <span className="status-dot" style={{ backgroundColor: statusColor }} />
         <span className="compact-row__status-label">{getAgentStatusConfig(agent.status).label}</span>
       </span>
