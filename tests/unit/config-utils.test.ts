@@ -107,6 +107,36 @@ describe('Config Utilities', () => {
       const config = getStatusConfig(undefined);
       expect(config.label).toBe('Unknown');
     });
+
+    it('maps legacy "deployed" status to "Live" config', () => {
+      const config = getStatusConfig('deployed');
+      expect(config.label).toBe('Live');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.live.color);
+    });
+
+    it('maps legacy "in_concept" status to "Idea" config', () => {
+      const config = getStatusConfig('in_concept');
+      expect(config.label).toBe('Idea');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.idea.color);
+    });
+
+    it('maps legacy "in_development" status to "WIP" config', () => {
+      const config = getStatusConfig('in_development');
+      expect(config.label).toBe('WIP');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.wip.color);
+    });
+
+    it('maps legacy "in_testing" status to "Testing" config', () => {
+      const config = getStatusConfig('in_testing');
+      expect(config.label).toBe('Testing');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.testing.color);
+    });
+
+    it('maps legacy "abandoned" status to "Shelved" config', () => {
+      const config = getStatusConfig('abandoned');
+      expect(config.label).toBe('Shelved');
+      expect(config.color).toBe(AGENT_STATUS_CONFIG.shelved.color);
+    });
   });
 
   describe('getToolColorClass', () => {

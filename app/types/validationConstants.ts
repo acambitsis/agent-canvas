@@ -91,11 +91,28 @@ export const AGENT_STATUS_CONFIG: Record<AgentStatus, {
 };
 
 /**
+ * Legacy status value mapping
+ * Maps old status values to their new equivalents for display purposes
+ */
+const LEGACY_STATUS_MAP: Record<string, AgentStatus> = {
+  'in_concept': 'idea',
+  'in_development': 'wip',
+  'in_testing': 'testing',
+  'deployed': 'live',
+  'abandoned': 'shelved',
+};
+
+/**
  * Helper to get status config with fallback for unknown statuses
+ * Handles legacy status values by mapping them to their new equivalents
  */
 export function getAgentStatusConfig(status?: string) {
   if (status && status in AGENT_STATUS_CONFIG) {
     return AGENT_STATUS_CONFIG[status as AgentStatus];
+  }
+  // Check for legacy status values
+  if (status && status in LEGACY_STATUS_MAP) {
+    return AGENT_STATUS_CONFIG[LEGACY_STATUS_MAP[status]];
   }
   return {
     label: status || 'Unknown',
