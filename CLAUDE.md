@@ -190,21 +190,26 @@ Key patterns:
 
 ## Auth Flow
 
-Uses `@workos-inc/authkit-nextjs` SDK:
+Uses `@workos-inc/authkit-nextjs` SDK + `@workos-inc/widgets` for member management.
 
 ```
-Login → getSignInUrl() → WorkOS AuthKit
-    → OAuth callback → /api/auth/[...authkit] (SDK handles)
-    → Encrypted session cookie (SDK handles)
-    → Automatic token refresh (SDK handles)
+Login → getSignInUrl() → WorkOS AuthKit → /api/auth/[...authkit] → Session cookie
 ```
 
-**Org Membership Sync** (three-layer approach):
-1. **Webhooks** (real-time): `/workos/webhook` HTTP route handles membership events
-2. **Daily Cron** (safety net): Runs at 3am UTC to catch missed events
-3. **Manual Sync** (debugging): "Sync memberships" button in sidebar
+### Org Membership Sync
 
-**Note**: Authentication is handled by AuthKit SDK middleware. The main page (`app/page.tsx`) is protected by the middleware which redirects to `/login` if not authenticated.
+**Source of truth**: `userOrgMemberships` table in Convex (not JWT claims)
+
+Three sync layers: webhooks (`convex/http.ts`), daily cron (`convex/crons.ts`), manual button (`convex/orgMemberships.ts`) — all use `convex/lib/membershipSync.ts`.
+
+### WorkOS Widgets
+
+Member management uses pre-built WorkOS widgets. Token endpoint `/api/widgets/token` requires org admin. Widgets require origin in WorkOS Dashboard → Allowed Origins.
+
+### Key Auth Files
+- `middleware.ts` - Route protection
+- `convex/lib/auth.ts` - `requireAuth()`, `requireOrgAccess()` (queries DB, not JWT)
+- `server/org-utils.ts` - `isSuperAdmin()`, `isUserOrgAdmin()`
 
 ## Key Patterns
 
