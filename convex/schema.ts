@@ -54,21 +54,14 @@ export default defineSchema({
     // Fixed tag fields for grouping and filtering (same across all orgs)
     category: v.optional(v.string()), // Visual grouping: "Recruitment", "Onboarding", etc.
     department: v.optional(v.string()), // DEPRECATED: Legacy field, use category instead
-    // Status includes legacy values for backward compatibility with existing data
     status: v.optional(
       v.union(
-        // New status values (preferred)
-        v.literal("in_concept"),
+        v.literal("idea"),
         v.literal("approved"),
-        v.literal("in_development"),
-        v.literal("in_testing"),
-        v.literal("deployed"),
-        v.literal("abandoned"),
-        // Legacy values (for existing data)
-        v.literal("draft"),
-        v.literal("active"),
-        v.literal("review"),
-        v.literal("deprecated")
+        v.literal("wip"),
+        v.literal("testing"),
+        v.literal("live"),
+        v.literal("shelved")
       )
     ),
     // payload removed - we're Convex-native, no need for round-trip fidelity
@@ -94,6 +87,25 @@ export default defineSchema({
     .index("by_agent", ["agentId"])
     .index("by_agent_time", ["agentId", "changedAt"]),
 
-  // Note: User org memberships are now stored in JWT claims
-  // The userOrgMemberships table has been removed - org access is verified via JWT
+  // User organization memberships - synced from WorkOS via webhooks, cron, and manual sync
+  // This table is the source of truth for org access (not JWT claims, which can be stale)
+  userOrgMemberships: defineTable({
+    workosUserId: v.string(),
+    workosOrgId: v.string(),
+    role: v.string(), // e.g., "admin", "member"
+    updatedAt: v.optional(v.number()), // Timestamp for stale data protection
+    syncedAt: v.optional(v.number()), // Legacy field name, kept for backward compatibility
+  })
+    .index("by_user", ["workosUserId"])
+    .index("by_org", ["workosOrgId"])
+    .index("by_user_org", ["workosUserId", "workosOrgId"]),
+
+  // Sync log for debugging and monitoring membership synchronization
+  syncLog: defineTable({
+    type: v.union(v.literal("webhook"), v.literal("cron"), v.literal("manual")),
+    workosUserId: v.optional(v.string()), // null for full sync (cron)
+    status: v.string(), // "success", "error", etc.
+    details: v.optional(v.string()), // Additional context (e.g., counts, error message)
+    timestamp: v.number(),
+  }).index("by_timestamp", ["timestamp"]),
 });

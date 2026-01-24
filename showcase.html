@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentCanvas - Development Showcase | Built with Claude Code</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a25;
+            --bg-hover: #242432;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-cyan: #06b6d4;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #2d2d3a;
+            --gradient-1: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --gradient-2: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .hero {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            padding: 80px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-1);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--accent-blue);
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        /* Timeline */
+        .timeline-section {
+            background: var(--bg-secondary);
+            padding: 60px 20px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .timeline {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .timeline-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .timeline-date {
+            font-size: 13px;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .timeline-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .timeline-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Category sections */
+        .category-section {
+            margin-bottom: 48px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .category-icon.features { background: rgba(59, 130, 246, 0.15); }
+        .category-icon.security { background: rgba(239, 68, 68, 0.15); }
+        .category-icon.fixes { background: rgba(245, 158, 11, 0.15); }
+        .category-icon.refactor { background: rgba(139, 92, 246, 0.15); }
+        .category-icon.docs { background: rgba(16, 185, 129, 0.15); }
+        .category-icon.infra { background: rgba(6, 182, 212, 0.15); }
+
+        .category-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .category-count {
+            background: var(--bg-hover);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .commit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 12px;
+        }
+
+        .commit-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+
+        .commit-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .commit-hash {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            height: fit-content;
+        }
+
+        .commit-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .commit-msg {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .commit-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Tech stack */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .tech-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .tech-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Migration highlights */
+        .highlight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .highlight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .highlight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .highlight-card.blue::before { background: var(--gradient-1); }
+        .highlight-card.green::before { background: var(--gradient-2); }
+        .highlight-card.purple::before { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); }
+        .highlight-card.orange::before { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+
+        .highlight-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .highlight-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .highlight-list {
+            list-style: none;
+        }
+
+        .highlight-list li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .highlight-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent-green);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .claude-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .claude-badge span {
+            font-weight: 600;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .hero p { font-size: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .commit-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-badge">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Built with Claude Code
+        </div>
+        <h1>AgentCanvas</h1>
+        <p>A complete showcase of rapid, AI-assisted development. From initial commit to production-ready application in record time.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">197</div>
+                <div class="stat-label">Total Commits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">52</div>
+                <div class="stat-label">Pull Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">22,602</div>
+                <div class="stat-label">Lines of Code</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">130</div>
+                <div class="stat-label">Source Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">83K+</div>
+                <div class="stat-label">Lines Added</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="timeline-section">
+        <div class="section-header">
+            <h2>Development Timeline</h2>
+            <p>Major milestones from inception to production</p>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">Nov 6, 2025</div>
+                <div class="timeline-title">Initial Commit</div>
+                <div class="timeline-desc">Project created as "TPS Agent Ecosystem" with data-driven architecture, interactive features, and Lucide icons.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Nov 9, 2025</div>
+                <div class="timeline-title">Security & Auth</div>
+                <div class="timeline-desc">Added basic authentication middleware with Edge Runtime support and environment variable security.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Nov 19-21, 2025</div>
+                <div class="timeline-title">Core Features</div>
+                <div class="timeline-desc">Inline editing, YAML editor, loading overlays, modal system, and comprehensive API helpers.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Nov 25-26, 2025</div>
+                <div class="timeline-title">Rebrand & Security</div>
+                <div class="timeline-desc">Rebranded to "AgentCanvas". Fixed critical security issues, added allowlist management, test suite.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Dec 13, 2025</div>
+                <div class="timeline-title">Major Migration</div>
+                <div class="timeline-desc">Migrated from Clerk/Neon to WorkOS + Convex. Complete auth overhaul with encrypted sessions.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Jan 13, 2026</div>
+                <div class="timeline-title">Convex Native</div>
+                <div class="timeline-desc">Completed migration to Convex backend. Removed YAML persistence, JWT-based org access.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Jan 15-16, 2026</div>
+                <div class="timeline-title">Next.js 15 Migration</div>
+                <div class="timeline-desc">Full migration to Next.js App Router with React 19. Command Center UI aesthetic.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Jan 17-23, 2026</div>
+                <div class="timeline-title">Polish & Features</div>
+                <div class="timeline-desc">Premium design, Grid/Detail views, JWT auth, sidebar redesign, theme selector, tooltips.</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="section-header">
+            <h2>Architecture Highlights</h2>
+            <p>Key technical achievements and migrations</p>
+        </div>
+
+        <div class="highlight-grid">
+            <div class="highlight-card blue">
+                <div class="highlight-title">Full-Stack Migration</div>
+                <div class="highlight-desc">Complete platform migration executed seamlessly</div>
+                <ul class="highlight-list">
+                    <li>Clerk → WorkOS AuthKit authentication</li>
+                    <li>Neon Postgres → Convex real-time backend</li>
+                    <li>Next.js Pages → App Router migration</li>
+                    <li>React 18 → React 19 upgrade</li>
+                    <li>Vercel Blob → Convex native storage</li>
+                </ul>
+            </div>
+            <div class="highlight-card green">
+                <div class="highlight-title">Security Hardening</div>
+                <div class="highlight-desc">Enterprise-grade security implementation</div>
+                <ul class="highlight-list">
+                    <li>AES-256-GCM encrypted session cookies</li>
+                    <li>OAuth state parameter CSRF protection</li>
+                    <li>JWT-based organization membership</li>
+                    <li>XSS vulnerability remediation</li>
+                    <li>Secure key derivation with token refresh</li>
+                </ul>
+            </div>
+            <div class="highlight-card purple">
+                <div class="highlight-title">Real-time Collaboration</div>
+                <div class="highlight-desc">Live updates across all connected clients</div>
+                <ul class="highlight-list">
+                    <li>Convex reactive subscriptions</li>
+                    <li>Multi-organization support</li>
+                    <li>In-app member management</li>
+                    <li>Shareable canvas links</li>
+                    <li>Auto-refresh expired auth tokens</li>
+                </ul>
+            </div>
+            <div class="highlight-card orange">
+                <div class="highlight-title">Premium UX</div>
+                <div class="highlight-desc">Polished user experience throughout</div>
+                <ul class="highlight-list">
+                    <li>Multiple theme support (dark/light/system)</li>
+                    <li>Resizable sidebar with persistence</li>
+                    <li>Grid/Detail/Compact view modes</li>
+                    <li>Custom styled tooltips</li>
+                    <li>Drag-and-drop phase ordering</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <section class="container" style="background: var(--bg-secondary); margin: 0; max-width: 100%; padding: 60px 20px;">
+        <div style="max-width: 1400px; margin: 0 auto;">
+            <div class="section-header">
+                <h2>Technology Stack</h2>
+                <p>Modern, production-ready technologies</p>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-name">Next.js 15</div>
+                    <div class="tech-desc">App Router, Server Components</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">React 19</div>
+                    <div class="tech-desc">Latest React with hooks</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">TypeScript</div>
+                    <div class="tech-desc">End-to-end type safety</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">Convex</div>
+                    <div class="tech-desc">Real-time backend</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">WorkOS</div>
+                    <div class="tech-desc">Enterprise SSO & auth</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">Vercel</div>
+                    <div class="tech-desc">Edge deployment</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">Vitest</div>
+                    <div class="tech-desc">Modern test framework</div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-name">Lucide React</div>
+                    <div class="tech-desc">Beautiful icons</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="section-header">
+            <h2>Complete Commit History</h2>
+            <p>Every feature, fix, and improvement tracked</p>
+        </div>
+
+        <!-- Features Section -->
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon features">✨</div>
+                <h3 class="category-title">Features</h3>
+                <span class="category-count">45+ features</span>
+            </div>
+            <div class="commit-grid">
+                <div class="commit-item">
+                    <span class="commit-hash">ba4c8e3</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add custom styled tooltip component</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">46ad250</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add theme selector and polish agent card design</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">4eba114</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Align Agent types with Convex schema and centralize status constants</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">e87076a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">UI improvements for agent detail view and toolbar</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ba29cfd</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add collapse/expand toggle to toolbar</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">21c9d65</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add agent card density views and information design improvements</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">c5d208b</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add copy canvas to organizations feature</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ce42f71</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Improve auth flow with org names and WorkOS logout</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">df2a91f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Redesign sidebar with integrated org switcher and user menu</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">8d4cbad</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add resizable sidebar with persistent width</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">e563f61</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add shareable canvas links</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">dbf3627</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add description tooltip and reduce font size</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">5420579</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">YAML import/export alignment and spec documentation</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">9850444</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add department autocomplete with org-wide suggestions</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">4fc3f73</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add debug-production skill for diagnosing issues</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">eefb3f4</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Sidebar improvements and member list user details</div>
+                        <div class="commit-date">Jan 19, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">bfaa896</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Agent card footer improvements with stats tooltip and red delete styling</div>
+                        <div class="commit-date">Jan 19, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">b864321</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">JWT-based org membership with in-app member management</div>
+                        <div class="commit-date">Jan 19, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">915e820</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Compact agent card layout with overflow menu and journey tooltip</div>
+                        <div class="commit-date">Jan 19, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">4c94afe</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Agent form overhaul with new metrics schema and sidebar improvements</div>
+                        <div class="commit-date">Jan 19, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">f154d21</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Premium design overhaul with Grid/Detail view modes</div>
+                        <div class="commit-date">Jan 17, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ed8ba6a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">UI overhaul with Command Center aesthetic and dynamic tagging</div>
+                        <div class="commit-date">Jan 15, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">544e103</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Migrate backend to Convex and auth to WorkOS</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">17bfeff</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Implement group-based access control</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">f3c39e2</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Implement Clerk publishable key fetching from API</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">cc2187a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Migrate to Clerk authentication and Neon Postgres multi-user system</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">36da3bb</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add admin allowlist management UI and API</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">6e741be</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add ultra high-value test suite with Vitest</div>
+                        <div class="commit-date">Nov 25, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">01bf545</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add full dashboard YAML editor with comprehensive validation</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">689876f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add prominent full-page loading overlay for all operations</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">5cbb069</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add collapse/expand functionality for agent groups</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">e739a84</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Implement unified contextual menu system and compact header</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">656e8fd</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Refactor document header and implement title editing functionality</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">8525058</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Implement workflow phases management and UI enhancements</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">05ada15</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Implement automatic Section ID generation and UI updates</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">0c64b08</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add inline editing functionality with Vercel Blob Storage backend</div>
+                        <div class="commit-date">Nov 19, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">f3fa622</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add basic authentication middleware</div>
+                        <div class="commit-date">Nov 9, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">eb48fee</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add hover image overlays to group header icons</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">103b3c1</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add visual progress bars to metrics tooltip</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">7ba137b</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add focus mode toggle for agent cards</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">66f25fe</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Enhance TPS Operating System with interactive features</div>
+                        <div class="commit-date">Nov 6, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">f5d0a2a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add data-driven architecture for TPS Operating System</div>
+                        <div class="commit-date">Nov 6, 2025</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon security">🔒</div>
+                <h3 class="category-title">Security</h3>
+                <span class="category-count">10+ security fixes</span>
+            </div>
+            <div class="commit-grid">
+                <div class="commit-item">
+                    <span class="commit-hash">4418631</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix key derivation and add token refresh</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">a4bb06b</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add OAuth state parameter for CSRF protection</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">2edcdf8</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Encrypt session cookies and fix code review issues</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">5946328</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix WorkOS→Convex auth token and harden org access control</div>
+                        <div class="commit-date">Jan 15, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">840bf7d</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix XSS vulnerability in admin.html onclick handler</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3cc1594</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix security issues and update email/base URL configuration</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">e3cfcb4</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix critical security issues in magic link authentication</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">d2fb805</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">SECURITY FIX: Move password to environment variable</div>
+                        <div class="commit-date">Nov 9, 2025</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bug Fixes Section -->
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon fixes">🐛</div>
+                <h3 class="category-title">Bug Fixes</h3>
+                <span class="category-count">40+ bug fixes</span>
+            </div>
+            <div class="commit-grid">
+                <div class="commit-item">
+                    <span class="commit-hash">788f1ac</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Make phase optional, default to "Backlog"</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">1246545</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add backward compatibility for legacy production data</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">dfaface</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Improve tooltip UX with truncation detection and arrow positioning</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">bd88555</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Preserve phase/category ordering in YAML import and grouping</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">081f3e8</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Use correct CSS variable for border color</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ecb95b0</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Close user menu after theme selection</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">0ce0125</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Address code review feedback</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">03c9063</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Address final review feedback</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">12e6edd</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add isAuthenticated check to AgentModal query</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">b473a79</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add legacy department field to schema for backward compat</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">cb75f7d</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove misleading fallback title when no canvas exists</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">81fff69</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Auto-refresh expired auth tokens for Convex reconnection</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">67df344</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Improve invite member form styling</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">0ac7981</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add custom domain issuer to Convex auth config</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">355a26a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Address code review findings for group permissions</div>
+                        <div class="commit-date">Dec 14, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">afe83b7</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Resolve database integration issues after Blob migration</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">bbc7488</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Resolve Clerk SDK v5 initialization and OAuth callback handling</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">83c2186</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix magic link auth for MS365 email scanners</div>
+                        <div class="commit-date">Nov 27, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">f90212a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix session cookie issues and clean up debug logs</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">97b37b8</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix magic link URLs to use production domain from request headers</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">c583a6f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix login form visibility and error handling</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">c85591d</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix bug: preserve 'both' source designation in allowlist API</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">f949a68</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix login input text visibility</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3a8a571</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Resolve 5 critical bugs in API and document handling</div>
+                        <div class="commit-date">Nov 25, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">7729d55</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix authentication: trim whitespace from passwords</div>
+                        <div class="commit-date">Nov 25, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">eca3eca</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add loading feedback for all save and document switch operations</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">4c085a9</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Prevent collapse when opening section menus</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">62cc813</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix middleware for Vercel Edge Runtime</div>
+                        <div class="commit-date">Nov 9, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">1624687</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix excessive padding between header subtitle and flow diagram</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">86dcca6</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix CORS error by embedding JSON data directly in HTML</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3c50262</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Fix z-index and overflow issues for image hover overlays</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Refactoring Section -->
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon refactor">🔨</div>
+                <h3 class="category-title">Refactoring & Architecture</h3>
+                <span class="category-count">30+ refactors</span>
+            </div>
+            <div class="commit-grid">
+                <div class="commit-item">
+                    <span class="commit-hash">b27c83f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Align YAML schema with database agent structure</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3d5445a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove auto-append logic from agent mutations</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">103399d</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Use getCanvasWithAccess helper in reorder mutations</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">cdf11de</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Update frontend and schema for phase ordering changes</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">a15e6c8</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Move theme selector from toolbar to user menu</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">a774a33</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Centralize remaining constants (localStorage, API endpoints, tag types)</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">aa82cae</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Centralize org roles and derive Canvas type from Convex</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">552c8f1</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Code quality improvements from review</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">03cee40</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Merge collapsed view with compact card display</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">4c62368</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Move canvas actions to overflow menu</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">d8e1973</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Rename department to category, repurpose phase field</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">31ee2c8</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove YAML persistence, make Convex-native storage canonical</div>
+                        <div class="commit-date">Jan 15, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">c6d6fd6</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Migrate to Next.js App Router</div>
+                        <div class="commit-date">Jan 16, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">b4a958b</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove duplicate and dead code</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">8c9413f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Delete deprecated Clerk/Neon/KV code entirely</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">c0518dc</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove dead group/sharing code, use WorkOS for org management</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">788d20b</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Clean up legacy Clerk/Neon/KV code</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">5ec7058</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Simplify migration code</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">01a2626</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove OrganizationSwitcher component</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">b49a8f3</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Consolidate modal system and remove dynamic CSS generation</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">a330a1e</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Delegate context and collapse interactions</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">0f98955</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove inline handlers and bind events in JS</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">cd92753</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Slim duplicated UI code</div>
+                        <div class="commit-date">Nov 21, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">5ff97a1</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Convert styling to tokenized theming</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">a9d2552</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Consolidate configuration management and enhance styling</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">2e0312c</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Enhance agent card editing and metrics display</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">444518f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Refactor HTML to data-driven architecture for better maintainability</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ac0eacb</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Refactor agent cards UI and fix tooltip positioning</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">456c258</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Refactor code structure for improved readability and maintainability</div>
+                        <div class="commit-date">Nov 6, 2025</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon docs">📚</div>
+                <h3 class="category-title">Documentation</h3>
+                <span class="category-count">15+ docs updates</span>
+            </div>
+            <div class="commit-grid">
+                <div class="commit-item">
+                    <span class="commit-hash">2d45691</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Align canvas creation prompt with new flat YAML schema</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">0303674</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add canvas creation prompt for AI agent portfolio generation</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3e203e0</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Update documentation for schema changes</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ba84912</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Clarify PR merge requires explicit instruction</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">8f1617f</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Update CLAUDE.md to reflect JWT-based org auth</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">db0fd13</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Clarify feature branch workflow in CLAUDE.md</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3d32f6a</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add DRY & type safety guidelines to CLAUDE.md</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">b00a072</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add Convex deployment architecture to CLAUDE.md</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">0e2ef0c</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add valid tool names to YAML spec</div>
+                        <div class="commit-date">Jan 21, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">48df67d</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add git workflow to CLAUDE.md</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">1dafbdf</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Update CLAUDE.md for Convex + WorkOS architecture</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">3046143</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add group-based access control implementation plan</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">8a9a186</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add YAML specification documents for agents and documents</div>
+                        <div class="commit-date">Nov 25, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">db7b191</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add CLAUDE.md for project documentation and guidance</div>
+                        <div class="commit-date">Nov 20, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">75d40c8</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add comprehensive style guide for TPS Agent Ecosystem</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infrastructure Section -->
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon infra">⚙️</div>
+                <h3 class="category-title">Infrastructure & DevOps</h3>
+                <span class="category-count">15+ infra changes</span>
+            </div>
+            <div class="commit-grid">
+                <div class="commit-item">
+                    <span class="commit-hash">e9a8cd5</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add import structure test, clarify bulkCreate comment</div>
+                        <div class="commit-date">Jan 23, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">daed470</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove dead code and add a11y to theme selector</div>
+                        <div class="commit-date">Jan 22, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">e7cbe65</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Update to WorkOS production client ID</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">14b87d9</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add auth logging for debugging invite flow</div>
+                        <div class="commit-date">Jan 20, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">8fc4a30</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Silence ESLint circular reference warning during builds</div>
+                        <div class="commit-date">Jan 19, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">dd2f6eb</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add .env.vercel to .gitignore</div>
+                        <div class="commit-date">Jan 17, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">fa1ad91</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Disable automatic Claude PR reviews</div>
+                        <div class="commit-date">Jan 13, 2026</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">d633977</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Claude Code Review workflow</div>
+                        <div class="commit-date">Dec 14, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">46b79ec</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Claude PR Assistant workflow</div>
+                        <div class="commit-date">Dec 14, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">ef3266c</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Freeze original Vercel project and set up v2 project</div>
+                        <div class="commit-date">Dec 13, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">bfe7830</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Update email sender domain from login to send subdomain</div>
+                        <div class="commit-date">Nov 27, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">531d6b9</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add Vercel rewrite rule for /login to serve login.html</div>
+                        <div class="commit-date">Nov 26, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">c93f8de</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Configure middleware to use Edge Runtime</div>
+                        <div class="commit-date">Nov 9, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">1d3e46c</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Remove vercel.json to fix middleware deployment</div>
+                        <div class="commit-date">Nov 9, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">336f280</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add .vercel to .gitignore and uncomment pnpm-lock.yaml</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+                <div class="commit-item">
+                    <span class="commit-hash">11c47ea</span>
+                    <div class="commit-info">
+                        <div class="commit-msg">Add comprehensive .gitignore for Node.js project</div>
+                        <div class="commit-date">Nov 7, 2025</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>
+            <strong>AgentCanvas</strong> - A multi-phase agent workflow visualization system
+        </p>
+        <div class="claude-badge">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>Developed at lightning speed with Claude Code</span>
+        </div>
+        <p style="margin-top: 16px;">
+            197 commits &bull; 52 PRs &bull; 22,602 lines of code &bull; Nov 2025 - Jan 2026
+        </p>
+        <p style="margin-top: 8px; color: var(--text-muted);">
+            Technologies: Next.js 15, React 19, TypeScript, Convex, WorkOS, Vercel
+        </p>
+    </footer>
+</body>
+</html>

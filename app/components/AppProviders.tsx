@@ -1,16 +1,21 @@
 /**
  * AppProviders - Shared provider hierarchy for all app pages
+ *
+ * Uses WorkOS AuthKit SDK for authentication.
  */
 
 'use client';
 
 import React from 'react';
+import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ConvexClientProvider } from '@/contexts/ConvexClientProvider';
+import { MembershipSync } from '@/components/MembershipSync';
 import { CanvasProvider } from '@/contexts/CanvasContext';
 import { AgentProvider } from '@/contexts/AgentContext';
 import { GroupingProvider } from '@/contexts/GroupingContext';
 import { AppStateProvider } from '@/contexts/AppStateContext';
+import { WorkOSWidgetsProvider } from '@/components/WorkOSWidgetsProvider';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -19,18 +24,24 @@ interface AppProvidersProps {
 
 export function AppProviders({ children, initialCanvasId }: AppProvidersProps) {
   return (
-    <AuthProvider>
-      <ConvexClientProvider>
-        <CanvasProvider initialCanvasId={initialCanvasId}>
-          <AgentProvider>
-            <GroupingProvider>
-              <AppStateProvider>
-                {children}
-              </AppStateProvider>
-            </GroupingProvider>
-          </AgentProvider>
-        </CanvasProvider>
-      </ConvexClientProvider>
-    </AuthProvider>
+    <AuthKitProvider>
+      <WorkOSWidgetsProvider>
+        <AuthProvider>
+          <ConvexClientProvider>
+            <MembershipSync>
+              <CanvasProvider initialCanvasId={initialCanvasId}>
+                <AgentProvider>
+                  <GroupingProvider>
+                    <AppStateProvider>
+                      {children}
+                    </AppStateProvider>
+                  </GroupingProvider>
+                </AgentProvider>
+              </CanvasProvider>
+            </MembershipSync>
+          </ConvexClientProvider>
+        </AuthProvider>
+      </WorkOSWidgetsProvider>
+    </AuthKitProvider>
   );
 }
