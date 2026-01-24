@@ -15,6 +15,19 @@
  * 3. Manual sync action (debugging/support)
  */
 import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
+
+/**
+ * Check if an email is in the SUPER_ADMIN_EMAILS environment variable
+ */
+function checkSuperAdmin(email: string): boolean {
+  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS || "";
+  const emailList = superAdminEmails
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return emailList.includes(email.toLowerCase());
+}
 
 /**
  * Organization membership from database
@@ -48,15 +61,17 @@ export async function getAuth(
     return null;
   }
 
-  // Super admin status still comes from JWT claims (configured in auth callback)
-  const isSuperAdmin = (identity.isSuperAdmin as boolean) || false;
+  const email = (identity.email as string) || "";
+
+  // Check super admin status against SUPER_ADMIN_EMAILS env var
+  // (WorkOS access tokens don't include custom claims like isSuperAdmin)
+  const isSuperAdmin = checkSuperAdmin(email);
 
   // Query org memberships from database for real-time accuracy
-  // Note: For ActionCtx, we can't query directly, so we fall back to JWT claims
   let orgs: OrgMembership[] = [];
 
   if ("db" in ctx) {
-    // QueryCtx or MutationCtx - can query database
+    // QueryCtx or MutationCtx - can query database directly
     const dbCtx = ctx as QueryCtx | MutationCtx;
     const memberships = await dbCtx.db
       .query("userOrgMemberships")
@@ -68,14 +83,18 @@ export async function getAuth(
       role: m.role,
     }));
   } else {
-    // ActionCtx - fall back to JWT claims (may be stale)
-    const orgsFromToken = identity.orgs as Array<{ id: string; role: string }> | undefined;
-    orgs = orgsFromToken || [];
+    // ActionCtx - use runQuery to get memberships from database
+    const actionCtx = ctx as ActionCtx;
+    const memberships = await actionCtx.runQuery(
+      internal.orgMemberships.getMembershipsInternal,
+      { workosUserId: identity.subject }
+    );
+    orgs = memberships;
   }
 
   return {
     workosUserId: identity.subject,
-    email: (identity.email as string) || "",
+    email,
     isSuperAdmin,
     orgs,
   };

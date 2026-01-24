@@ -6,13 +6,31 @@
  */
 
 import { v } from "convex/values";
-import { query, action, internalMutation } from "./_generated/server";
+import { query, action, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import {
   syncUserMembershipsFromData,
   logSync,
 } from "./lib/membershipSync";
 import { requireSuperAdmin } from "./lib/auth";
+
+/**
+ * Internal query to get memberships for a user (used by auth.ts for ActionCtx)
+ */
+export const getMembershipsInternal = internalQuery({
+  args: { workosUserId: v.string() },
+  handler: async (ctx, args) => {
+    const memberships = await ctx.db
+      .query("userOrgMemberships")
+      .withIndex("by_user", (q) => q.eq("workosUserId", args.workosUserId))
+      .collect();
+
+    return memberships.map((m) => ({
+      id: m.workosOrgId,
+      role: m.role,
+    }));
+  },
+});
 
 /**
  * Get all organization memberships for the current user

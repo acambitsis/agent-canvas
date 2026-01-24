@@ -87,7 +87,7 @@ export const reconcileMemberships = internalAction({
         });
       }
 
-      // Sync each user
+      // Sync each user from WorkOS
       let totalAdded = 0;
       let totalUpdated = 0;
       let totalRemoved = 0;
@@ -112,6 +112,15 @@ export const reconcileMemberships = internalAction({
         }
       }
 
+      // Clean up orphaned records for users completely removed from all orgs
+      // These users won't appear in WorkOS API response, so we need to remove them
+      const workosUserIds = new Set(membershipsByUser.keys());
+      const orphanedRemoved = await ctx.runMutation(
+        internal.crons.cleanupOrphanedMemberships,
+        { activeUserIds: Array.from(workosUserIds) }
+      );
+      totalRemoved += orphanedRemoved;
+
       // Log the cron result
       await ctx.runMutation(internal.crons.logCronSuccess, {
         usersProcessed: membershipsByUser.size,
@@ -123,8 +132,8 @@ export const reconcileMemberships = internalAction({
 
       console.log(
         `Membership reconciliation complete: ${membershipsByUser.size} users, ` +
-          `${totalAdded} added, ${totalUpdated} updated, ${totalRemoved} removed, ` +
-          `${errors.length} errors`
+          `${totalAdded} added, ${totalUpdated} updated, ${totalRemoved} removed ` +
+          `(including ${orphanedRemoved} orphaned), ${errors.length} errors`
       );
     } catch (error) {
       console.error("Membership reconciliation failed:", error);
@@ -166,6 +175,51 @@ export const logCronError = internalMutation({
   },
   handler: async (ctx, args) => {
     await logSync(ctx, "cron", "error", undefined, args.error);
+  },
+});
+
+/**
+ * Clean up orphaned memberships for users no longer in WorkOS
+ * Called by the cron job after processing active users
+ */
+export const cleanupOrphanedMemberships = internalMutation({
+  args: {
+    activeUserIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const activeUserSet = new Set(args.activeUserIds);
+
+    // Get all unique user IDs in our database
+    const allMemberships = await ctx.db.query("userOrgMemberships").collect();
+
+    // Find users in our DB that aren't in the active set from WorkOS
+    const orphanedUserIds = new Set<string>();
+    for (const membership of allMemberships) {
+      if (!activeUserSet.has(membership.workosUserId)) {
+        orphanedUserIds.add(membership.workosUserId);
+      }
+    }
+
+    // Delete all memberships for orphaned users
+    let removedCount = 0;
+    for (const membership of allMemberships) {
+      if (orphanedUserIds.has(membership.workosUserId)) {
+        await ctx.db.delete(membership._id);
+        removedCount++;
+      }
+    }
+
+    if (removedCount > 0) {
+      await logSync(
+        ctx,
+        "cron",
+        "cleanup",
+        undefined,
+        `Removed ${removedCount} orphaned memberships for ${orphanedUserIds.size} users`
+      );
+    }
+
+    return removedCount;
   },
 });
 
