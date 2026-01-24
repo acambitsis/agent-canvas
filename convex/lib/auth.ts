@@ -1,32 +1,37 @@
 /**
- * JWT-Based Organization Membership Authentication
+ * Database-Backed Organization Membership Authentication
  *
- * This module provides authentication helpers that read org memberships from JWT claims
- * rather than database lookups. This approach offers better performance but has a trade-off:
+ * This module provides authentication helpers that read org memberships from the
+ * Convex database (userOrgMemberships table) rather than JWT claims.
  *
- * IMPORTANT: JWT Expiry and Org Membership Changes
- * ------------------------------------------------
- * When a user's org membership is changed (role update, removal, or addition),
- * their current JWT still contains the OLD claims until the token expires and
- * is refreshed. The JWT expires after 1 hour (with proactive refresh at ~50 minutes).
+ * Benefits over JWT-based approach:
+ * - Real-time updates: Membership changes take effect immediately (via webhooks)
+ * - No stale data: JWT claims can be stale for up to 1 hour
+ * - Consistent: Single source of truth in database
  *
- * This means:
- * - A user removed from an org may still have access for up to 1 hour
- * - A user's role change won't take effect until their next token refresh
- * - New org memberships won't be accessible until next login/refresh
- *
- * For immediate effect of membership changes, users should:
- * - Log out and log back in, OR
- * - Wait for the automatic token refresh (~50 minutes)
- *
- * In the future, consider implementing a forced token refresh mechanism when
- * membership changes occur, or use a hybrid approach with database checks for
- * sensitive operations.
+ * Memberships are synced to the database via:
+ * 1. WorkOS webhooks (real-time)
+ * 2. Daily cron job (safety net)
+ * 3. Manual sync action (debugging/support)
  */
 import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
 
 /**
- * Organization membership from JWT claims
+ * Check if an email is in the SUPER_ADMIN_EMAILS environment variable
+ * Exported for use in queries/actions that need super admin checks
+ */
+export function checkSuperAdmin(email: string): boolean {
+  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS || "";
+  const emailList = superAdminEmails
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return emailList.includes(email.toLowerCase());
+}
+
+/**
+ * Organization membership from database
  */
 export interface OrgMembership {
   id: string;
@@ -46,7 +51,7 @@ export interface AuthContext {
 
 /**
  * Get the authenticated user from the context
- * Extracts user info and org memberships from JWT claims
+ * Extracts user info from JWT and org memberships from database
  * Returns null if not authenticated
  */
 export async function getAuth(
@@ -57,14 +62,41 @@ export async function getAuth(
     return null;
   }
 
-  // Extract orgs from JWT claims (defaults to empty array if not present)
-  const orgsFromToken = identity.orgs as Array<{ id: string; role: string }> | undefined;
-  const orgs: OrgMembership[] = orgsFromToken || [];
+  const email = (identity.email as string) || "";
+
+  // Check super admin status against SUPER_ADMIN_EMAILS env var
+  // (WorkOS access tokens don't include custom claims like isSuperAdmin)
+  const isSuperAdmin = checkSuperAdmin(email);
+
+  // Query org memberships from database for real-time accuracy
+  let orgs: OrgMembership[] = [];
+
+  if ("db" in ctx) {
+    // QueryCtx or MutationCtx - can query database directly
+    const dbCtx = ctx as QueryCtx | MutationCtx;
+    const memberships = await dbCtx.db
+      .query("userOrgMemberships")
+      .withIndex("by_user", (q) => q.eq("workosUserId", identity.subject))
+      .collect();
+
+    orgs = memberships.map((m) => ({
+      id: m.workosOrgId,
+      role: m.role,
+    }));
+  } else {
+    // ActionCtx - use runQuery to get memberships from database
+    const actionCtx = ctx as ActionCtx;
+    const memberships = await actionCtx.runQuery(
+      internal.orgMemberships.getMembershipsInternal,
+      { workosUserId: identity.subject }
+    );
+    orgs = memberships;
+  }
 
   return {
     workosUserId: identity.subject,
-    email: (identity.email as string) || "",
-    isSuperAdmin: (identity.isSuperAdmin as boolean) || false,
+    email,
+    isSuperAdmin,
     orgs,
   };
 }
@@ -120,7 +152,7 @@ export function isOrgAdmin(auth: AuthContext, workosOrgId: string): boolean {
 
 /**
  * Check if user has access to an organization
- * Reads from JWT claims - no database lookup needed
+ * Now reads from database via AuthContext
  */
 export function hasOrgAccess(
   auth: AuthContext,

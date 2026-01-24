@@ -1,38 +1,48 @@
 /**
  * GET /api/auth/orgs
- * Get user's organizations from session
+ * Get user's organizations with details
+ *
+ * Uses WorkOS AuthKit SDK for authentication and fetches org details from WorkOS API.
  */
 
-import { parseSession, json } from '@/server/session-utils';
-import { fetchOrgDetails } from '@/server/workos';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@workos-inc/authkit-nextjs';
+import { fetchUserOrgs, fetchOrgDetails } from '@/server/workos';
 
-export const runtime = 'edge';
+export async function GET() {
+  // Get the current user from the SDK session
+  const { user } = await withAuth();
 
-export async function GET(request: Request) {
-  const session = await parseSession(request);
-  if (!session) {
-    return json({ organizations: [] });
+  if (!user) {
+    return NextResponse.json({ orgs: [] });
   }
 
-  const orgs = session.orgs || [];
-
-  // If orgs already have names, return as-is
-  if (orgs.length === 0 || orgs[0].name) {
-    return json({ organizations: orgs });
-  }
-
-  // Enrich orgs with names from WorkOS API
   const workosApiKey = process.env.WORKOS_API_KEY;
   if (!workosApiKey) {
-    return json({ organizations: orgs });
+    return NextResponse.json({ orgs: [] });
   }
 
-  const enrichedOrgs = await Promise.all(
-    orgs.map(async (org) => {
-      const details = await fetchOrgDetails(org.id, workosApiKey).catch(() => null);
-      return details ? { id: org.id, name: details.name, role: org.role } : org;
-    })
-  );
+  try {
+    // Fetch user's org memberships from WorkOS
+    const memberships = await fetchUserOrgs(user.id, workosApiKey);
 
-  return json({ organizations: enrichedOrgs });
+    // Enrich with org details (names)
+    const orgs = await Promise.all(
+      memberships.map(async (membership) => {
+        const orgId = membership.organization_id;
+        const role = membership.role?.slug || 'member';
+        const details = await fetchOrgDetails(orgId, workosApiKey).catch(() => null);
+        return {
+          id: orgId,
+          name: details?.name || orgId,
+          role,
+        };
+      })
+    );
+
+    return NextResponse.json({ orgs });
+  } catch (error) {
+    console.error('Failed to fetch organizations:', error);
+    return NextResponse.json({ orgs: [] });
+  }
 }

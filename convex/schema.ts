@@ -57,6 +57,7 @@ export default defineSchema({
     status: v.optional(
       v.union(
         v.literal("idea"),
+        v.literal("in_concept"), // Legacy value, kept for backward compatibility
         v.literal("approved"),
         v.literal("wip"),
         v.literal("testing"),
@@ -87,6 +88,25 @@ export default defineSchema({
     .index("by_agent", ["agentId"])
     .index("by_agent_time", ["agentId", "changedAt"]),
 
-  // Note: User org memberships are now stored in JWT claims
-  // The userOrgMemberships table has been removed - org access is verified via JWT
+  // User organization memberships - synced from WorkOS via webhooks, cron, and manual sync
+  // This table is the source of truth for org access (not JWT claims, which can be stale)
+  userOrgMemberships: defineTable({
+    workosUserId: v.string(),
+    workosOrgId: v.string(),
+    role: v.string(), // e.g., "admin", "member"
+    updatedAt: v.optional(v.number()), // Timestamp for stale data protection
+    syncedAt: v.optional(v.number()), // Legacy field name, kept for backward compatibility
+  })
+    .index("by_user", ["workosUserId"])
+    .index("by_org", ["workosOrgId"])
+    .index("by_user_org", ["workosUserId", "workosOrgId"]),
+
+  // Sync log for debugging and monitoring membership synchronization
+  syncLog: defineTable({
+    type: v.union(v.literal("webhook"), v.literal("cron"), v.literal("manual")),
+    workosUserId: v.optional(v.string()), // null for full sync (cron)
+    status: v.string(), // "success", "error", etc.
+    details: v.optional(v.string()), // Additional context (e.g., counts, error message)
+    timestamp: v.number(),
+  }).index("by_timestamp", ["timestamp"]),
 });

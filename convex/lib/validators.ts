@@ -11,6 +11,7 @@ import { v } from "convex/values";
 export const statusValidator = v.optional(
   v.union(
     v.literal("idea"),
+    v.literal("in_concept"), // Legacy status, kept for backward compatibility
     v.literal("approved"),
     v.literal("wip"),
     v.literal("testing"),
