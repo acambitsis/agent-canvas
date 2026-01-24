@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getSignInUrl } from '@workos-inc/authkit-nextjs';
 import '../globals.css';
 
 export default function LoginPage() {
@@ -35,18 +36,6 @@ export default function LoginPage() {
 
       setError(message);
     }
-
-    // Check if already authenticated
-    fetch('/api/auth/session')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.authenticated) {
-          window.location.href = '/';
-        }
-      })
-      .catch(() => {
-        // Ignore errors
-      });
   }, []);
 
   const handleSignIn = async () => {
@@ -54,20 +43,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          redirectUri: window.location.origin + '/api/auth/callback',
-        }),
-      });
-
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Failed to get auth URL');
-      }
+      // Get the sign-in URL from the SDK (server action)
+      const signInUrl = await getSignInUrl();
+      window.location.href = signInUrl;
     } catch (err) {
       console.error('Sign in error:', err);
       setError('Failed to initiate sign in. Please try again.');

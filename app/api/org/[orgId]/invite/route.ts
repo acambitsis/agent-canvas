@@ -3,31 +3,31 @@
  * Invite a user to an organization (admin only)
  */
 
-import { parseSession, json } from '@/server/session-utils';
-import { isSessionOrgAdmin } from '@/server/org-utils';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@workos-inc/authkit-nextjs';
+import { isSuperAdmin, isUserOrgAdmin } from '@/server/org-utils';
 import { inviteToOrg } from '@/server/workos';
-
-export const runtime = 'edge';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   const { orgId } = await params;
-  const session = await parseSession(request);
+  const { user } = await withAuth();
 
-  if (!session) {
-    return json({ error: 'Unauthorized' }, 401);
-  }
-
-  // Check if caller is admin of this org (or super admin)
-  if (!isSessionOrgAdmin(session, orgId)) {
-    return json({ error: 'Admin access required' }, 403);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const workosApiKey = process.env.WORKOS_API_KEY;
   if (!workosApiKey) {
-    return json({ error: 'WorkOS not configured' }, 500);
+    return NextResponse.json({ error: 'WorkOS not configured' }, { status: 500 });
+  }
+
+  // Check if caller is admin of this org (or super admin)
+  const isAdmin = isSuperAdmin(user.email) || await isUserOrgAdmin(user.id, orgId, workosApiKey);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
   try {
@@ -35,34 +35,34 @@ export async function POST(
     const { email, role } = body as { email?: string; role?: string };
 
     if (!email || typeof email !== 'string') {
-      return json({ error: 'Email is required' }, 400);
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return json({ error: 'Invalid email format' }, 400);
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
     // Default role to 'member' if not specified
     const memberRole = role || 'member';
     if (memberRole !== 'admin' && memberRole !== 'member') {
-      return json({ error: 'Invalid role. Must be "admin" or "member"' }, 400);
+      return NextResponse.json({ error: 'Invalid role. Must be "admin" or "member"' }, { status: 400 });
     }
 
     const result = await inviteToOrg(orgId, email, memberRole, workosApiKey);
 
     if (!result.success) {
-      return json({ error: result.error }, 500);
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return json({
+    return NextResponse.json({
       success: true,
       invitationId: result.data.id,
       message: `Invitation sent to ${email}`
     });
   } catch (error) {
     console.error('Error sending invitation:', error);
-    return json({ error: 'Failed to send invitation' }, 500);
+    return NextResponse.json({ error: 'Failed to send invitation' }, { status: 500 });
   }
 }

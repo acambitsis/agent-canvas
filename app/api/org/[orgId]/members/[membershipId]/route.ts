@@ -3,11 +3,10 @@
  * Update member role or remove member (admin only)
  */
 
-import { parseSession, json } from '@/server/session-utils';
-import { isSessionOrgAdmin } from '@/server/org-utils';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@workos-inc/authkit-nextjs';
+import { isSuperAdmin, isUserOrgAdmin } from '@/server/org-utils';
 import { updateMemberRole, removeMember, getMembership } from '@/server/workos';
-
-export const runtime = 'edge';
 
 /**
  * PATCH - Update member's role
@@ -17,59 +16,58 @@ export async function PATCH(
   { params }: { params: Promise<{ orgId: string; membershipId: string }> }
 ) {
   const { orgId, membershipId } = await params;
-  const session = await parseSession(request);
+  const { user } = await withAuth();
 
-  if (!session) {
-    return json({ error: 'Unauthorized' }, 401);
-  }
-
-  // Check if caller is admin of this org (or super admin)
-  if (!isSessionOrgAdmin(session, orgId)) {
-    return json({ error: 'Admin access required' }, 403);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const workosApiKey = process.env.WORKOS_API_KEY;
   if (!workosApiKey) {
-    return json({ error: 'WorkOS not configured' }, 500);
+    return NextResponse.json({ error: 'WorkOS not configured' }, { status: 500 });
+  }
+
+  // Check if caller is admin of this org (or super admin)
+  const isAdmin = isSuperAdmin(user.email) || await isUserOrgAdmin(user.id, orgId, workosApiKey);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
   try {
     // Verify the membership belongs to this org
     const membership = await getMembership(membershipId, workosApiKey);
     if (!membership || membership.organization_id !== orgId) {
-      return json({ error: 'Membership not found' }, 404);
+      return NextResponse.json({ error: 'Membership not found' }, { status: 404 });
     }
 
     const body = await request.json();
     const { role } = body as { role?: string };
 
     if (!role || typeof role !== 'string') {
-      return json({ error: 'Role is required' }, 400);
+      return NextResponse.json({ error: 'Role is required' }, { status: 400 });
     }
 
     if (role !== 'admin' && role !== 'member') {
-      return json({ error: 'Invalid role. Must be "admin" or "member"' }, 400);
+      return NextResponse.json({ error: 'Invalid role. Must be "admin" or "member"' }, { status: 400 });
     }
 
     // Prevent demoting yourself if you're the only admin
-    if (membership.user_id === session.user.id && role !== 'admin') {
-      // Note: This is a simple check - in production you might want to
-      // verify there's at least one other admin before allowing this
-      return json({
+    if (membership.user_id === user.id && role !== 'admin') {
+      return NextResponse.json({
         error: 'Cannot change your own role. Ask another admin to do this.'
-      }, 400);
+      }, { status: 400 });
     }
 
     const result = await updateMemberRole(membershipId, role, workosApiKey);
 
     if (!result.success) {
-      return json({ error: result.error }, 500);
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return json({ success: true, role });
+    return NextResponse.json({ success: true, role });
   } catch (error) {
     console.error('Error updating member role:', error);
-    return json({ error: 'Failed to update role' }, 500);
+    return NextResponse.json({ error: 'Failed to update role' }, { status: 500 });
   }
 }
 
@@ -77,47 +75,48 @@ export async function PATCH(
  * DELETE - Remove member from organization
  */
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ orgId: string; membershipId: string }> }
 ) {
   const { orgId, membershipId } = await params;
-  const session = await parseSession(request);
+  const { user } = await withAuth();
 
-  if (!session) {
-    return json({ error: 'Unauthorized' }, 401);
-  }
-
-  // Check if caller is admin of this org (or super admin)
-  if (!isSessionOrgAdmin(session, orgId)) {
-    return json({ error: 'Admin access required' }, 403);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const workosApiKey = process.env.WORKOS_API_KEY;
   if (!workosApiKey) {
-    return json({ error: 'WorkOS not configured' }, 500);
+    return NextResponse.json({ error: 'WorkOS not configured' }, { status: 500 });
+  }
+
+  // Check if caller is admin of this org (or super admin)
+  const isAdmin = isSuperAdmin(user.email) || await isUserOrgAdmin(user.id, orgId, workosApiKey);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
   try {
     // Verify the membership belongs to this org
     const membership = await getMembership(membershipId, workosApiKey);
     if (!membership || membership.organization_id !== orgId) {
-      return json({ error: 'Membership not found' }, 404);
+      return NextResponse.json({ error: 'Membership not found' }, { status: 404 });
     }
 
     // Prevent removing yourself
-    if (membership.user_id === session.user.id) {
-      return json({ error: 'Cannot remove yourself from the organization' }, 400);
+    if (membership.user_id === user.id) {
+      return NextResponse.json({ error: 'Cannot remove yourself from the organization' }, { status: 400 });
     }
 
     const result = await removeMember(membershipId, workosApiKey);
 
     if (!result.success) {
-      return json({ error: result.error }, 500);
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error removing member:', error);
-    return json({ error: 'Failed to remove member' }, 500);
+    return NextResponse.json({ error: 'Failed to remove member' }, { status: 500 });
   }
 }

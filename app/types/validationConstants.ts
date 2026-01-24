@@ -26,6 +26,7 @@ export const VALIDATION_CONSTANTS = {
  */
 export const AGENT_STATUS = {
   IDEA: 'idea',
+  IN_CONCEPT: 'in_concept', // Legacy status, kept for backward compatibility
   APPROVED: 'approved',
   WIP: 'wip',
   TESTING: 'testing',
@@ -48,6 +49,13 @@ export const AGENT_STATUS_CONFIG: Record<AgentStatus, {
 }> = {
   [AGENT_STATUS.IDEA]: {
     label: 'Idea',
+    color: '#6B7280',
+    bgColor: 'rgba(107, 114, 128, 0.1)',
+    icon: 'lightbulb',
+    badgeVariant: 'default',
+  },
+  [AGENT_STATUS.IN_CONCEPT]: {
+    label: 'In Concept',
     color: '#6B7280',
     bgColor: 'rgba(107, 114, 128, 0.1)',
     icon: 'lightbulb',

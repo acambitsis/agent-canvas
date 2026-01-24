@@ -8,6 +8,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth, useIsOrgAdmin, useCurrentOrg } from '@/contexts/AuthContext';
 import { useCanvas } from '@/contexts/CanvasContext';
 import { useAppState } from '@/contexts/AppStateContext';
+import { useAction } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { useResizable } from '@/hooks/useResizable';
 import { Icon } from '@/components/ui/Icon';
 import { ImportYamlModal } from '../forms/ImportYamlModal';
@@ -33,7 +35,7 @@ const MENU_HEIGHT = 152; // 4 items
 const VIEWPORT_PADDING = 8;
 
 export function Sidebar() {
-  const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut } = useAuth();
+  const { user, userOrgs, currentOrgId, setCurrentOrgId, signOut, syncMemberships } = useAuth();
   const { canvases, currentCanvasId, setCurrentCanvasId, createCanvas, deleteCanvas } = useCanvas();
   const { isSidebarCollapsed, toggleSidebar, showToast, sidebarWidth, setSidebarWidth, themePreference, setThemePreference } = useAppState();
 
@@ -45,6 +47,11 @@ export function Sidebar() {
   });
   const isOrgAdmin = useIsOrgAdmin();
   const currentOrg = useCurrentOrg();
+
+  // Convex action for syncing memberships from WorkOS
+  const syncMyMemberships = useAction(api.orgMemberships.syncMyMemberships);
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState | null>(null);
@@ -58,6 +65,28 @@ export function Sidebar() {
   const orgDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const canvasActionsRef = useRef<HTMLDivElement>(null);
+
+  // Handle manual membership sync
+  const handleSyncMemberships = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      // First sync from WorkOS to Convex
+      const result = await syncMyMemberships();
+      // Then refresh AuthContext state
+      await syncMemberships();
+      showToast(
+        `Memberships synced: ${result.added} added, ${result.updated} updated, ${result.removed} removed`,
+        'success'
+      );
+    } catch (error) {
+      console.error('Failed to sync memberships:', error);
+      showToast('Failed to sync memberships', 'error');
+    } finally {
+      setIsSyncing(false);
+      setUserMenuOpen(false);
+    }
+  };
 
   // Get user initials for avatar
   const getUserInitials = useCallback((): string => {
@@ -379,6 +408,14 @@ export function Sidebar() {
                 <span>Members</span>
               </button>
             )}
+            <button
+              className="sidebar__dropdown-item"
+              onClick={handleSyncMemberships}
+              disabled={isSyncing}
+            >
+              <Icon name="refresh-cw" className={isSyncing ? 'animate-spin' : ''} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync memberships'}</span>
+            </button>
             <button
               className="sidebar__dropdown-item"
               onClick={() => {
