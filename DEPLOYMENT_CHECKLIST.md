@@ -78,6 +78,11 @@
 **Cause**: Vercel requires redeployment for env changes
 **Fix**: Trigger new deployment after env changes
 
+### Trailing Newline in Env Vars (CLI)
+**Symptom**: "This is not a valid redirect URI" with `%0A` in URL
+**Cause**: Using `echo "value" | vercel env add` adds a newline character
+**Fix**: Use `printf '%s' 'value' | vercel env add VAR_NAME environment` instead
+
 ---
 
 ## Post-Deployment Verification
