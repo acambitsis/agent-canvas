@@ -383,7 +383,7 @@ export const syncAllMemberships = action({
           {
             workosUserId: userId,
             memberships,
-            syncType: "cron",
+            syncType: "manual",
           }
         );
         totalAdded += result.added;

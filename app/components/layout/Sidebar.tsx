@@ -72,7 +72,7 @@ export function Sidebar() {
     setIsSyncing(true);
     try {
       // First sync from WorkOS to Convex
-      const result = await syncMyMemberships();
+      const result = await syncMyMemberships({});
       // Then refresh AuthContext state
       await syncMemberships();
       showToast(
