@@ -19,8 +19,9 @@ import { internal } from "../_generated/api";
 
 /**
  * Check if an email is in the SUPER_ADMIN_EMAILS environment variable
+ * Exported for use in queries/actions that need super admin checks
  */
-function checkSuperAdmin(email: string): boolean {
+export function checkSuperAdmin(email: string): boolean {
   const superAdminEmails = process.env.SUPER_ADMIN_EMAILS || "";
   const emailList = superAdminEmails
     .split(",")

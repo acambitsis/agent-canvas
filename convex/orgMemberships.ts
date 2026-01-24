@@ -12,7 +12,7 @@ import {
   syncUserMembershipsFromData,
   logSync,
 } from "./lib/membershipSync";
-import { requireSuperAdmin } from "./lib/auth";
+import { requireSuperAdmin, checkSuperAdmin } from "./lib/auth";
 
 /**
  * Internal query to get memberships for a user (used by auth.ts for ActionCtx)
@@ -86,9 +86,9 @@ export const hasOrgAccess = query({
       return false;
     }
 
-    // Check for super admin (from JWT claims)
-    const isSuperAdmin = identity.isSuperAdmin as boolean | undefined;
-    if (isSuperAdmin) {
+    // Check for super admin using SUPER_ADMIN_EMAILS env var
+    const email = (identity.email as string) || "";
+    if (checkSuperAdmin(email)) {
       return true;
     }
 
@@ -114,9 +114,9 @@ export const getOrgRole = query({
       return null;
     }
 
-    // Super admins have admin access
-    const isSuperAdmin = identity.isSuperAdmin as boolean | undefined;
-    if (isSuperAdmin) {
+    // Super admins have admin access (check via SUPER_ADMIN_EMAILS env var)
+    const email = (identity.email as string) || "";
+    if (checkSuperAdmin(email)) {
       return "admin";
     }
 
@@ -312,9 +312,9 @@ export const syncAllMemberships = action({
       throw new Error("Authentication required");
     }
 
-    // Check super admin from JWT claims
-    const isSuperAdmin = identity.isSuperAdmin as boolean | undefined;
-    if (!isSuperAdmin) {
+    // Check super admin using SUPER_ADMIN_EMAILS env var
+    const email = (identity.email as string) || "";
+    if (!checkSuperAdmin(email)) {
       throw new Error("Super admin access required");
     }
 

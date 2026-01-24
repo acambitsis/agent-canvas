@@ -14,7 +14,7 @@ This file provides guidance to Claude Code when working with this repository.
 - **Backend**: Convex (real-time backend-as-a-service)
 - **Auth**: WorkOS AuthKit (magic link, social login, SSO)
 - **Hosting**: Vercel (Next.js deployment)
-- **Libraries**: `next`, `react`, `react-dom`, `lucide-react` (icons), `jose` (session encryption), `convex`, `js-yaml` (legacy YAML import)
+- **Libraries**: `next`, `react`, `react-dom`, `lucide-react` (icons), `@workos-inc/authkit-nextjs` (auth SDK), `convex`, `js-yaml` (legacy YAML import)
 
 ## Development Commands
 
@@ -74,14 +74,15 @@ CONVEX_DEPLOYMENT=your-deployment-name
 NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud  # Preferred for Next.js
 # Fallback: VITE_CONVEX_URL or CONVEX_URL
 
-# WorkOS
+# WorkOS AuthKit SDK
 WORKOS_API_KEY=sk_live_xxxxx
 WORKOS_CLIENT_ID=client_xxxxx
 WORKOS_COOKIE_PASSWORD=your-32-char-secret  # openssl rand -hex 32
-WORKOS_AUTHKIT_DOMAIN=your-authkit-subdomain  # e.g., "smart-chefs" for smart-chefs.authkit.app
+WORKOS_REDIRECT_URI=http://localhost:3000/api/auth/callback  # Must match WorkOS dashboard setting
+WORKOS_WEBHOOK_SECRET=whsec_xxxxx  # For webhook signature verification
 
-# JWT (if using custom JWT generation for Convex)
-JWT_PRIVATE_KEY={"kty":"RSA",...}  # JWK JSON string
+# Super Admin (comma-separated email addresses)
+SUPER_ADMIN_EMAILS=admin@example.com
 
 # App
 BASE_URL=http://localhost:3000
@@ -107,10 +108,12 @@ BASE_URL=http://localhost:3000
 │   │   │   ├── AppLayout.tsx
 │   │   │   ├── MainToolbar.tsx
 │   │   │   └── Sidebar.tsx
-│   │   └── ui/             # Reusable UI components
-│   │       ├── LoadingOverlay.tsx
-│   │       ├── Modal.tsx
-│   │       └── Toast.tsx
+│   │   ├── ui/             # Reusable UI components
+│   │   │   ├── LoadingOverlay.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   └── Toast.tsx
+│   │   ├── MembershipSync.tsx  # Syncs org memberships on app load
+│   │   └── AppProviders.tsx    # Provider hierarchy wrapper
 │   ├── contexts/           # React Context providers
 │   │   ├── AgentContext.tsx
 │   │   ├── AppStateContext.tsx
@@ -132,29 +135,29 @@ BASE_URL=http://localhost:3000
 │   │   ├── config.ts
 │   │   ├── grouping.ts
 │   │   └── validation.ts
-│   └── api/                # Next.js Route Handlers (Edge runtime)
+│   └── api/                # Next.js Route Handlers
 │       ├── config/route.ts         # App configuration endpoint
-│       └── auth/                   # Auth endpoints
-│           ├── url/route.ts        # Generate WorkOS auth URL
-│           ├── callback/route.ts   # OAuth callback handler
-│           ├── session/route.ts    # Get current session
-│           ├── refresh/route.ts    # Refresh access token
-│           ├── orgs/route.ts       # Get user organizations
-│           └── logout/route.ts     # Clear session
+│       └── auth/
+│           └── [...authkit]/route.ts  # WorkOS AuthKit SDK catch-all (handles callback, session, logout)
+├── middleware.ts            # WorkOS AuthKit middleware
 ├── server/                  # Shared server utilities (TypeScript)
-│   ├── session-utils.ts    # Session encryption/decryption, cookie management
-│   └── workos.ts           # WorkOS API helpers
+│   ├── org-utils.ts        # Organization access helpers
+│   └── workos.ts           # WorkOS member management API helpers
 ├── public/                  # Static assets served by Next.js
 │   └── styles.css          # Main CSS stylesheet
 ├── convex/                  # Convex backend (TypeScript)
-│   ├── schema.ts           # Database schema
+│   ├── schema.ts           # Database schema (includes userOrgMemberships, syncLog)
 │   ├── agents.ts           # Agent CRUD + history
 │   ├── canvases.ts         # Canvas CRUD
 │   ├── orgSettings.ts      # Org configuration
+│   ├── orgMemberships.ts   # Org membership queries + manual sync
 │   ├── agentHistory.ts     # Audit trail queries
-│   ├── users.ts            # (minimal - org membership moved to JWT)
-│   ├── auth.config.ts      # Convex auth provider config
-│   └── lib/auth.ts         # Auth helpers (requireAuth, requireOrgAccess)
+│   ├── http.ts             # HTTP routes for WorkOS webhooks
+│   ├── crons.ts            # Daily membership reconciliation
+│   ├── auth.config.ts      # Convex auth provider config (WorkOS JWKS)
+│   └── lib/
+│       ├── auth.ts         # Auth helpers (reads from DB, not JWT claims)
+│       └── membershipSync.ts # Shared sync logic for webhooks/cron/manual
 ├── next.config.js          # Next.js configuration
 ├── tsconfig.json           # TypeScript configuration
 └── tests/                   # Vitest tests (unit/, integration/)
@@ -168,26 +171,34 @@ orgSettings          // Org-level config (tools, colors, defaults)
 canvases             // Canvas containers per org (includes phases[], categories[] for ordering)
 agents               // Individual agents (phase, agentOrder, name, tools, metrics, category, status)
 agentHistory         // Audit trail for all agent changes
+userOrgMemberships   // Org memberships synced from WorkOS (real-time source of truth)
+syncLog              // Audit trail for membership sync operations
 ```
 
 Key patterns:
 - All mutations use `requireAuth()` and `requireOrgAccess()` from `convex/lib/auth.ts`
-- Org access checked via JWT claims (no database lookup)
+- Org access checked via database (userOrgMemberships table), not JWT claims
 - Agent changes automatically record history
 - Real-time subscriptions via Convex enable collaborative editing
+- Org memberships sync via three layers: webhooks (instant), daily cron (safety net), manual sync (debugging)
 
 ## Auth Flow
 
+Uses `@workos-inc/authkit-nextjs` SDK:
+
 ```
-Login → POST /api/auth/url → WorkOS AuthKit
-    → OAuth callback → GET /api/auth/callback
-    → Encrypted session cookie (jose AES-256-GCM)
-    → Automatic token refresh via POST /api/auth/refresh
+Login → getSignInUrl() → WorkOS AuthKit
+    → OAuth callback → /api/auth/[...authkit] (SDK handles)
+    → Encrypted session cookie (SDK handles)
+    → Automatic token refresh (SDK handles)
 ```
 
-Session contains: `accessToken`, `refreshToken`, `idToken` (for Convex), `user`, `orgs`, `idTokenExpiresAt`
+**Org Membership Sync** (three-layer approach):
+1. **Webhooks** (real-time): `/workos/webhook` HTTP route handles membership events
+2. **Daily Cron** (safety net): Runs at 3am UTC to catch missed events
+3. **Manual Sync** (debugging): "Sync memberships" button in sidebar
 
-**Note**: All auth endpoints are now Next.js Route Handlers in `app/api/auth/*` using Edge runtime. The main page (`app/page.tsx`) checks authentication and redirects to `/login` if not authenticated.
+**Note**: Authentication is handled by AuthKit SDK middleware. The main page (`app/page.tsx`) is protected by the middleware which redirects to `/login` if not authenticated.
 
 ## Key Patterns
 
@@ -206,7 +217,7 @@ Session contains: `accessToken`, `refreshToken`, `idToken` (for Convex), `user`,
 ```typescript
 // In Convex functions (convex/lib/auth.ts)
 const auth = await requireAuth(ctx);  // Returns {workosUserId, email, isSuperAdmin, orgs}
-requireOrgAccess(auth, workosOrgId);  // Checks JWT claims (no await, no ctx)
+requireOrgAccess(auth, workosOrgId);  // Checks database memberships (no await, no ctx)
 ```
 
 ### Real-time Updates
