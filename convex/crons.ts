@@ -181,6 +181,10 @@ export const logCronError = internalMutation({
 /**
  * Clean up orphaned memberships for users no longer in WorkOS
  * Called by the cron job after processing active users
+ *
+ * Note: This collects all memberships into memory before processing.
+ * For very large deployments (>10k memberships), consider implementing
+ * batched pagination or streaming. For typical usage, this is fine.
  */
 export const cleanupOrphanedMemberships = internalMutation({
   args: {
@@ -189,7 +193,7 @@ export const cleanupOrphanedMemberships = internalMutation({
   handler: async (ctx, args) => {
     const activeUserSet = new Set(args.activeUserIds);
 
-    // Get all unique user IDs in our database
+    // Get all memberships - acceptable for daily cron with typical data sizes
     const allMemberships = await ctx.db.query("userOrgMemberships").collect();
 
     // Find users in our DB that aren't in the active set from WorkOS

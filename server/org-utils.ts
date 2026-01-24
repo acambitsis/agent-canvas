@@ -2,6 +2,7 @@
  * Organization-related utility functions for API routes
  *
  * Works with WorkOS AuthKit SDK session data.
+ * Includes caching to reduce WorkOS API calls for membership checks.
  */
 
 import type { User } from '@workos-inc/node';
@@ -13,7 +14,6 @@ export interface AuthSession {
   user: User | null;
   organizationId?: string;
   role?: string;
-  // We need to check super admin from environment or separate logic
 }
 
 /**
@@ -26,27 +26,71 @@ export function isSuperAdmin(email: string | undefined): boolean {
 }
 
 /**
- * Check if the user is an admin of the specified organization
- * Note: This requires fetching org memberships from WorkOS API
+ * Membership cache to reduce WorkOS API calls
+ * TTL: 60 seconds - balances freshness with performance
  */
-export async function isUserOrgAdmin(
+interface CachedMembership {
+  memberships: Array<{ organization_id: string; role?: { slug: string } }>;
+  expiresAt: number;
+}
+
+const membershipCache = new Map<string, CachedMembership>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+/**
+ * Get user memberships with caching
+ */
+async function getCachedMemberships(
   userId: string,
-  orgId: string,
   apiKey: string
-): Promise<boolean> {
+): Promise<Array<{ organization_id: string; role?: { slug: string } }>> {
+  const cacheKey = userId;
+  const cached = membershipCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.memberships;
+  }
+
   const response = await fetch(
     `https://api.workos.com/user_management/organization_memberships?user_id=${userId}&limit=100`,
     { headers: { Authorization: `Bearer ${apiKey}` } }
   );
 
   if (!response.ok) {
-    return false;
+    return [];
   }
 
   const data = await response.json();
   const memberships = data.data || [];
+
+  // Cache the result
+  membershipCache.set(cacheKey, {
+    memberships,
+    expiresAt: Date.now() + CACHE_TTL_MS,
+  });
+
+  return memberships;
+}
+
+/**
+ * Clear membership cache for a user (call after membership changes)
+ */
+export function invalidateMembershipCache(userId: string): void {
+  membershipCache.delete(userId);
+}
+
+/**
+ * Check if the user is an admin of the specified organization
+ * Uses cached membership data to reduce API calls
+ */
+export async function isUserOrgAdmin(
+  userId: string,
+  orgId: string,
+  apiKey: string
+): Promise<boolean> {
+  const memberships = await getCachedMemberships(userId, apiKey);
   const membership = memberships.find(
-    (m: { organization_id: string; role?: { slug: string } }) => m.organization_id === orgId
+    (m) => m.organization_id === orgId
   );
 
   return membership?.role?.slug === 'admin';
@@ -54,24 +98,15 @@ export async function isUserOrgAdmin(
 
 /**
  * Check if the user has any access to the specified organization
+ * Uses cached membership data to reduce API calls
  */
 export async function hasUserOrgAccess(
   userId: string,
   orgId: string,
   apiKey: string
 ): Promise<boolean> {
-  const response = await fetch(
-    `https://api.workos.com/user_management/organization_memberships?user_id=${userId}&limit=100`,
-    { headers: { Authorization: `Bearer ${apiKey}` } }
-  );
-
-  if (!response.ok) {
-    return false;
-  }
-
-  const data = await response.json();
-  const memberships = data.data || [];
+  const memberships = await getCachedMemberships(userId, apiKey);
   return memberships.some(
-    (m: { organization_id: string }) => m.organization_id === orgId
+    (m) => m.organization_id === orgId
   );
 }

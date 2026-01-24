@@ -69,18 +69,33 @@ http.route({
       encoder.encode(webhookSecret),
       { name: "HMAC", hash: "SHA-256" },
       false,
-      ["sign"]
+      ["sign", "verify"]
     );
     const signatureBuffer = await crypto.subtle.sign(
       "HMAC",
       key,
       encoder.encode(signedPayload)
     );
-    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
 
-    if (expectedSignature !== signatureHash) {
+    // Use constant-time comparison to prevent timing attacks
+    // Convert the received signature from hex to bytes for comparison
+    const receivedBytes = new Uint8Array(
+      signatureHash.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) || []
+    );
+    const expectedBytes = new Uint8Array(signatureBuffer);
+
+    // Constant-time comparison: always compare all bytes
+    if (receivedBytes.length !== expectedBytes.length) {
+      console.error("Webhook signature verification failed: length mismatch");
+      return new Response("Invalid signature", { status: 401 });
+    }
+
+    let mismatch = 0;
+    for (let i = 0; i < expectedBytes.length; i++) {
+      mismatch |= receivedBytes[i] ^ expectedBytes[i];
+    }
+
+    if (mismatch !== 0) {
       console.error("Webhook signature verification failed");
       return new Response("Invalid signature", { status: 401 });
     }
