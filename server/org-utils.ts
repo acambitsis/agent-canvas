@@ -5,17 +5,6 @@
  * Includes caching to reduce WorkOS API calls for membership checks.
  */
 
-import type { User } from '@workos-inc/node';
-
-/**
- * Session data that includes user and org info
- */
-export interface AuthSession {
-  user: User | null;
-  organizationId?: string;
-  role?: string;
-}
-
 /**
  * Check if a user is a super admin based on their email
  */
@@ -38,7 +27,7 @@ const membershipCache = new Map<string, CachedMembership>();
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
 /**
- * Get user memberships with caching
+ * Get user memberships with caching (internal)
  */
 async function getCachedMemberships(
   userId: string,
@@ -73,13 +62,6 @@ async function getCachedMemberships(
 }
 
 /**
- * Clear membership cache for a user (call after membership changes)
- */
-export function invalidateMembershipCache(userId: string): void {
-  membershipCache.delete(userId);
-}
-
-/**
  * Check if the user is an admin of the specified organization
  * Uses cached membership data to reduce API calls
  */
@@ -94,19 +76,4 @@ export async function isUserOrgAdmin(
   );
 
   return membership?.role?.slug === 'admin';
-}
-
-/**
- * Check if the user has any access to the specified organization
- * Uses cached membership data to reduce API calls
- */
-export async function hasUserOrgAccess(
-  userId: string,
-  orgId: string,
-  apiKey: string
-): Promise<boolean> {
-  const memberships = await getCachedMemberships(userId, apiKey);
-  return memberships.some(
-    (m) => m.organization_id === orgId
-  );
 }
