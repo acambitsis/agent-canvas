@@ -6,7 +6,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAuth } from "./lib/auth";
-import { getAgentWithAccess } from "./lib/helpers";
+import { getAgentWithAccess, getCanvasWithAccess } from "./lib/helpers";
 
 /**
  * Get vote counts for a single agent
@@ -56,18 +56,7 @@ export const getVoteCountsForCanvas = query({
   args: { canvasId: v.id("canvases") },
   handler: async (ctx, { canvasId }) => {
     const auth = await requireAuth(ctx);
-
-    // Get canvas and verify access
-    const canvas = await ctx.db.get(canvasId);
-    if (!canvas || canvas.deletedAt) {
-      throw new Error("NotFound: Canvas not found");
-    }
-
-    // Check org access
-    const hasAccess = auth.isSuperAdmin || auth.orgs.some((org) => org.id === canvas.workosOrgId);
-    if (!hasAccess) {
-      throw new Error("Auth: Organization access denied");
-    }
+    await getCanvasWithAccess(ctx, auth, canvasId);
 
     // Get all non-deleted agents for this canvas
     const agents = await ctx.db
@@ -115,18 +104,7 @@ export const getUserVotesForCanvas = query({
   args: { canvasId: v.id("canvases") },
   handler: async (ctx, { canvasId }) => {
     const auth = await requireAuth(ctx);
-
-    // Get canvas and verify access
-    const canvas = await ctx.db.get(canvasId);
-    if (!canvas || canvas.deletedAt) {
-      throw new Error("NotFound: Canvas not found");
-    }
-
-    // Check org access
-    const hasAccess = auth.isSuperAdmin || auth.orgs.some((org) => org.id === canvas.workosOrgId);
-    if (!hasAccess) {
-      throw new Error("Auth: Organization access denied");
-    }
+    await getCanvasWithAccess(ctx, auth, canvasId);
 
     // Get all non-deleted agents for this canvas
     const agents = await ctx.db

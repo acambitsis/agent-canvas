@@ -10,30 +10,10 @@ import { Icon } from '@/components/ui/Icon';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Id } from '../../../convex/_generated/dataModel';
 import { useAgentFeedback } from '@/hooks/useAgentFeedback';
+import { formatRelativeTime, getInitialsFromEmail, getColorFromString } from '@/utils/formatting';
 
 interface CommentListProps {
   agentId: Id<"agents">;
-}
-
-function formatRelativeTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp;
-
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) {
-    return days === 1 ? '1 day ago' : `${days} days ago`;
-  }
-  if (hours > 0) {
-    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
-  }
-  if (minutes > 0) {
-    return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
-  }
-  return 'Just now';
 }
 
 interface CommentItemProps {
@@ -47,36 +27,6 @@ interface CommentItemProps {
   };
   onEdit: (commentId: Id<"agentComments">, content: string) => Promise<void>;
   onRequestDelete: (commentId: Id<"agentComments">) => void;
-}
-
-// Get initials from email for avatar
-function getInitials(email: string): string {
-  if (!email) return '??';
-  const name = email.split('@')[0];
-  const parts = name.split(/[._-]/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
-
-// Generate consistent color from email or fallback
-function getAvatarColor(email: string): string {
-  const colors = [
-    '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E',
-    '#F59E0B', '#10B981', '#06B6D4', '#3B82F6'
-  ];
-  const str = email || 'unknown';
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-}
-
-// Check if email is unknown/empty
-function isUnknownUser(email: string): boolean {
-  return !email;
 }
 
 function CommentItem({ comment, onEdit, onRequestDelete }: CommentItemProps) {
@@ -105,8 +55,8 @@ function CommentItem({ comment, onEdit, onRequestDelete }: CommentItemProps) {
   };
 
   const wasEdited = comment.updatedAt > comment.createdAt;
-  const initials = getInitials(comment.userEmail);
-  const avatarColor = getAvatarColor(comment.userEmail);
+  const initials = getInitialsFromEmail(comment.userEmail);
+  const avatarColor = getColorFromString(comment.userEmail);
 
   if (isEditing) {
     return (
@@ -154,7 +104,7 @@ function CommentItem({ comment, onEdit, onRequestDelete }: CommentItemProps) {
       </div>
       <div className="comment__body">
         <div className="comment__header">
-          <span className={`comment__author ${isUnknownUser(comment.userEmail) ? 'comment__author--unknown' : ''}`}>
+          <span className={`comment__author ${!comment.userEmail ? 'comment__author--unknown' : ''}`}>
             {comment.userEmail || 'Unknown user'}
           </span>
           <span className="comment__separator">·</span>
