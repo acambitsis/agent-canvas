@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as agentComments from "../agentComments.js";
 import type * as agentHistory from "../agentHistory.js";
+import type * as agentVotes from "../agentVotes.js";
 import type * as agents from "../agents.js";
 import type * as canvases from "../canvases.js";
 import type * as crons from "../crons.js";
@@ -28,7 +30,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentComments: typeof agentComments;
   agentHistory: typeof agentHistory;
+  agentVotes: typeof agentVotes;
   agents: typeof agents;
   canvases: typeof canvases;
   crons: typeof crons;

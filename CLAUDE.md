@@ -187,6 +187,7 @@ Key patterns:
 - Agent changes automatically record history
 - Real-time subscriptions via Convex enable collaborative editing
 - Org memberships sync via three layers: webhooks (instant), daily cron (safety net), manual sync (debugging)
+- **Batch queries**: Use `Promise.all` (not sequential loops) since Convex lacks JOINs/WHERE IN
 
 ## Auth Flow
 

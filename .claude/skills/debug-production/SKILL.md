@@ -82,8 +82,7 @@ npx convex env get VAR_NAME  # Get specific env var
 
 **Key issuers in auth.config.ts:**
 - `http://localhost:3000` (local dev)
-- `https://agent-canvas.vercel.app` (Vercel default)
-- `https://canvas.amplify360.ai` (custom domain)
+- `https://canvas.amplify360.ai` (production)
 
 ### Auth: "no_organization" Error on Login
 

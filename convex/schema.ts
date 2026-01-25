@@ -108,4 +108,28 @@ export default defineSchema({
     details: v.optional(v.string()), // Additional context (e.g., counts, error message)
     timestamp: v.number(),
   }).index("by_timestamp", ["timestamp"]),
+
+  // Agent votes - one vote per user per agent (upvote or downvote)
+  agentVotes: defineTable({
+    agentId: v.id("agents"),
+    workosUserId: v.string(),
+    vote: v.union(v.literal("up"), v.literal("down")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_agent", ["agentId"])
+    .index("by_user_agent", ["workosUserId", "agentId"]),
+
+  // Agent comments - flat comments (not threaded)
+  agentComments: defineTable({
+    agentId: v.id("agents"),
+    workosUserId: v.string(),
+    userEmail: v.string(), // Denormalized for display without extra lookups
+    content: v.string(),
+    deletedAt: v.optional(v.number()), // Soft delete timestamp
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_agent", ["agentId"])
+    .index("by_agent_time", ["agentId", "createdAt"]),
 });
