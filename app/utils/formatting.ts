@@ -45,11 +45,14 @@ export function formatRelativeTime(timestamp: number): string {
 export function getInitialsFromEmail(email: string): string {
   if (!email) return '??';
   const name = email.split('@')[0];
-  const parts = name.split(/[._-]/);
+  const parts = name.split(/[._-]/).filter(p => p.length > 0);
   if (parts.length >= 2) {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase();
+  if (parts.length === 1 && parts[0].length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase() || '??';
 }
 
 /**
