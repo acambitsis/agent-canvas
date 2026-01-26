@@ -22,6 +22,9 @@ export const VALIDATION_CONSTANTS = {
   // Feedback constraints
   FEEDBACK_DESCRIPTION_MIN_LENGTH: 10,
   FEEDBACK_DESCRIPTION_MAX_LENGTH: 5000,
+
+  // Screenshot constraints
+  SCREENSHOT_MAX_SIZE_BYTES: 5 * 1024 * 1024, // 5MB
 } as const;
 
 /**

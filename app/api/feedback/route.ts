@@ -105,9 +105,16 @@ export async function POST(request: Request) {
     }
     issueBody += `\n## Description\n\n${sanitizedDescription}`;
 
-    // Add screenshot if provided
+    // Add screenshot if provided (validate it's from our Convex storage)
     if (screenshotUrl) {
-      issueBody += `\n\n## Screenshot\n\n![Screenshot](${screenshotUrl})`;
+      const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+      const isValidConvexUrl = convexUrl && screenshotUrl.startsWith(`${convexUrl}/api/storage/`);
+
+      if (isValidConvexUrl) {
+        issueBody += `\n\n## Screenshot\n\n![Screenshot](${screenshotUrl})`;
+      } else {
+        console.warn('Invalid screenshot URL rejected:', screenshotUrl);
+      }
     }
 
     // Create GitHub issue

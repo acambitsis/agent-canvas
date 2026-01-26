@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Modal } from '../ui/Modal';
@@ -25,6 +25,7 @@ import {
 const {
   FEEDBACK_DESCRIPTION_MIN_LENGTH,
   FEEDBACK_DESCRIPTION_MAX_LENGTH,
+  SCREENSHOT_MAX_SIZE_BYTES,
 } = VALIDATION_CONSTANTS;
 
 interface FeedbackModalProps {
@@ -58,6 +59,15 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   const isDescriptionValid = description.trim().length >= FEEDBACK_DESCRIPTION_MIN_LENGTH;
 
+  // Cleanup object URL on unmount or when preview changes
+  useEffect(() => {
+    return () => {
+      if (screenshotPreview) {
+        URL.revokeObjectURL(screenshotPreview);
+      }
+    };
+  }, [screenshotPreview]);
+
   // Handle file selection (from input or drop)
   const handleFileSelect = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -65,21 +75,20 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       return;
     }
 
-    // Max 5MB
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > SCREENSHOT_MAX_SIZE_BYTES) {
       showToast('Image must be less than 5MB', 'error');
       return;
     }
 
-    setScreenshot(file);
+    // Revoke previous object URL if exists
+    if (screenshotPreview) {
+      URL.revokeObjectURL(screenshotPreview);
+    }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setScreenshotPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, [showToast]);
+    setScreenshot(file);
+    // Use object URL for better memory management
+    setScreenshotPreview(URL.createObjectURL(file));
+  }, [showToast, screenshotPreview]);
 
   // Handle paste event for clipboard images
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
@@ -121,12 +130,15 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   // Remove screenshot
   const handleRemoveScreenshot = useCallback(() => {
+    if (screenshotPreview) {
+      URL.revokeObjectURL(screenshotPreview);
+    }
     setScreenshot(null);
     setScreenshotPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, []);
+  }, [screenshotPreview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,7 +218,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     }
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
+    if (screenshotPreview) {
+      URL.revokeObjectURL(screenshotPreview);
+    }
     setFeedbackType(FEEDBACK_TYPE.GENERAL);
     setDescription('');
     setIncludeUrl(true);
@@ -216,7 +231,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  };
+  }, [screenshotPreview]);
 
   const handleClose = () => {
     // Don't allow closing while submitting
