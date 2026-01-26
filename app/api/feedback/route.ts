@@ -7,7 +7,7 @@
  * Prerequisites:
  * - GITHUB_PAT: Personal access token with 'repo' scope
  * - GITHUB_REPO: Target repository (e.g., 'owner/repo')
- * - Labels must exist in target repo: 'user-feedback', 'bug', 'enhancement', 'question'
+ * - Labels must exist in target repo: 'user-feedback', 'bug', 'enhancement', 'question', 'env:production', 'env:development'
  */
 
 import { NextResponse } from 'next/server';
@@ -39,6 +39,9 @@ export async function POST(request: Request) {
 
   const githubPat = process.env.GITHUB_PAT;
   const githubRepo = process.env.GITHUB_REPO;
+  // VERCEL_ENV is 'production', 'preview', or 'development' (automatically set by Vercel)
+  const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
+  const envLabel = environment === 'production' ? 'env:production' : 'env:development';
 
   if (!githubPat || !githubRepo) {
     console.error('GitHub feedback integration not configured');
@@ -94,6 +97,7 @@ export async function POST(request: Request) {
 
     let issueBody = `## Feedback Details\n\n`;
     issueBody += `**Submitted by:** ${userName} (${user.email})\n`;
+    issueBody += `**Environment:** ${environment}\n`;
     issueBody += `**Timestamp:** ${timestamp}\n`;
     if (pageUrl) {
       issueBody += `**Page URL:** ${pageUrl}\n`;
@@ -114,7 +118,7 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           title,
           body: issueBody,
-          labels: ['user-feedback', typeConfig.githubLabel],
+          labels: ['user-feedback', typeConfig.githubLabel, envLabel],
         }),
       }
     );
