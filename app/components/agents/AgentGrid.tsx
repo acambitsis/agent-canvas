@@ -16,9 +16,10 @@ interface AgentGridProps {
   onEditAgent: (agent: Agent) => void;
   onAddAgent: (phase: string) => void;
   onQuickLook?: (agent: Agent) => void;
+  onOpenComments?: (agent: Agent) => void;
 }
 
-export function AgentGrid({ onEditAgent, onAddAgent, onQuickLook }: AgentGridProps) {
+export function AgentGrid({ onEditAgent, onAddAgent, onQuickLook, onOpenComments }: AgentGridProps) {
   const { computedGroups } = useGrouping();
   const { deleteAgent, isLoading } = useAgents();
   const executeOperation = useAsyncOperation();
@@ -82,6 +83,7 @@ export function AgentGrid({ onEditAgent, onAddAgent, onQuickLook }: AgentGridPro
           onDeleteAgent={handleDeleteAgent}
           onAddAgent={onAddAgent}
           onQuickLook={onQuickLook}
+          onOpenComments={onOpenComments}
         />
       ))}
     </div>

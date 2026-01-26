@@ -20,6 +20,7 @@ interface AgentGroupSectionProps {
   onDeleteAgent: (agent: Agent) => void;
   onAddAgent: (phase: string) => void;
   onQuickLook?: (agent: Agent) => void;
+  onOpenComments?: (agent: Agent) => void;
 }
 
 export function AgentGroupSection({
@@ -28,7 +29,8 @@ export function AgentGroupSection({
   onEditAgent,
   onDeleteAgent,
   onAddAgent,
-  onQuickLook
+  onQuickLook,
+  onOpenComments
 }: AgentGroupSectionProps) {
   const { collapsedSections, toggleSectionCollapse, viewMode } = useGrouping();
   const isCollapsed = collapsedSections[group.id] || false;
@@ -148,6 +150,7 @@ export function AgentGroupSection({
                   onEdit={() => onEditAgent(agent)}
                   onDelete={() => onDeleteAgent(agent)}
                   onQuickLook={() => onQuickLook?.(agent)}
+                  onOpenComments={() => onOpenComments?.(agent)}
                 />
               ))}
             </div>

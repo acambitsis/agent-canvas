@@ -13,6 +13,7 @@ import { AgentGrid } from '../agents/AgentGrid';
 import { LoadingOverlay } from '../ui/LoadingOverlay';
 import { ToastContainer } from '../ui/Toast';
 import { QuickLookPanel } from '../ui/QuickLookPanel';
+import { CommentsPanel } from '../ui/CommentsPanel';
 import { useAppState } from '@/contexts/AppStateContext';
 import { useAgents } from '@/contexts/AgentContext';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
@@ -26,6 +27,7 @@ export function AppLayout() {
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [defaultPhase, setDefaultPhase] = useState<string | undefined>();
+  const [commentsAgent, setCommentsAgent] = useState<Agent | null>(null);
 
   const handleOpenAgentModal = (agent?: Agent, phase?: string) => {
     setEditingAgent(agent || null);
@@ -75,6 +77,15 @@ export function AppLayout() {
     );
   };
 
+  // Comments panel handlers
+  const handleOpenComments = (agent: Agent) => {
+    setCommentsAgent(agent);
+  };
+
+  const handleCloseComments = () => {
+    setCommentsAgent(null);
+  };
+
   return (
     <>
       <Sidebar />
@@ -98,6 +109,7 @@ export function AppLayout() {
             onEditAgent={(agent) => handleOpenAgentModal(agent)}
             onAddAgent={(phase) => handleOpenAgentModal(undefined, phase)}
             onQuickLook={handleQuickLook}
+            onOpenComments={handleOpenComments}
           />
         </main>
       </div>
@@ -115,6 +127,12 @@ export function AppLayout() {
         onClose={handleCloseQuickLook}
         onEdit={handleEditFromQuickLook}
         onDelete={handleDeleteFromQuickLook}
+      />
+
+      <CommentsPanel
+        agent={commentsAgent}
+        isOpen={commentsAgent !== null}
+        onClose={handleCloseComments}
       />
 
       <LoadingOverlay />

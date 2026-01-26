@@ -11,6 +11,7 @@ import { formatCurrency } from '@/utils/formatting';
 import { Icon } from '@/components/ui/Icon';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { getAgentStatusConfig } from '@/types/validationConstants';
+import { useAgentFeedback } from '@/hooks/useAgentFeedback';
 
 interface AgentCardProps {
   agent: Agent;
@@ -18,13 +19,15 @@ interface AgentCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onQuickLook?: () => void;
+  onOpenComments?: () => void;
 }
 
-export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: AgentCardProps) {
+export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook, onOpenComments }: AgentCardProps) {
   const metrics = agent.metrics || {};
   const statusColor = getStatusColor(agent.status);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { voteCounts, userVote, handleVote, comments } = useAgentFeedback({ agentId: agent._id });
 
   // Close menu on outside click or Escape key
   useEffect(() => {
@@ -267,6 +270,36 @@ export function AgentCard({ agent, index = 0, onEdit, onDelete, onQuickLook }: A
             </div>
           </div>
         )}
+        {/* Feedback hover bar - vote buttons + comment button */}
+        <div className="agent-card__feedback-bar">
+          <button
+            type="button"
+            className={`agent-card__vote-btn agent-card__vote-btn--up ${userVote === 'up' ? 'agent-card__vote-btn--active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); handleVote('up'); }}
+            aria-label={userVote === 'up' ? 'Remove upvote' : 'Upvote'}
+          >
+            <Icon name="thumbs-up" />
+            {voteCounts && voteCounts.up > 0 && <span>{voteCounts.up}</span>}
+          </button>
+          <button
+            type="button"
+            className={`agent-card__vote-btn agent-card__vote-btn--down ${userVote === 'down' ? 'agent-card__vote-btn--active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); handleVote('down'); }}
+            aria-label={userVote === 'down' ? 'Remove downvote' : 'Downvote'}
+          >
+            <Icon name="thumbs-down" />
+            {voteCounts && voteCounts.down > 0 && <span>{voteCounts.down}</span>}
+          </button>
+          <button
+            type="button"
+            className="agent-card__comment-btn"
+            onClick={(e) => { e.stopPropagation(); onOpenComments?.(); }}
+            aria-label="View comments"
+          >
+            <Icon name="message-circle" />
+            {comments && comments.length > 0 && <span>{comments.length}</span>}
+          </button>
+        </div>
       </div>
     </div>
   );
