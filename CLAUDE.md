@@ -58,13 +58,15 @@ pnpm test:ui     # browser UI
 
 **Wait for explicit instruction before merging PRs.**
 
-## Convex Deployments
+## Deployments
 
-Two separate Convex deployments exist:
-- **Dev** (`expert-narwhal-281`): Used by `npx convex dev` locally
-- **Prod** (`quaint-bee-380`): Used by Vercel production
+**Frontend (Vercel)** - auto-deploys on push:
+- **Dev:** https://canvas-dev.amplify360.ai (from `dev` branch)
+- **Prod:** https://canvas.amplify360.ai (from `main` branch)
 
-After testing changes locally, promote to prod with `npx convex deploy`. Vercel deploys the frontend; Convex backend must be deployed separately.
+**Backend (Convex)** - requires manual `npx convex deploy`:
+- **Dev** (`expert-narwhal-281`): Used locally and by dev frontend
+- **Prod** (`quaint-bee-380`): Used by prod frontend
 
 ## Environment Variables
 

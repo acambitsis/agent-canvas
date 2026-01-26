@@ -5,7 +5,8 @@
 **Project Name:** `agentcanvas-app-v2`
 **Project ID:** `prj_F861OkfkgcZKI2Qj8Dvgj009KaUM`
 **Organization ID:** `team_OyuSxI1QnCzGd7SOW2T9YveW`
-**Production URL:** https://canvas.amplify360.ai
+**Production URL:** https://canvas.amplify360.ai (deploys from `main`)
+**Dev URL:** https://canvas-dev.amplify360.ai (deploys from `dev`)
 **Status:** Active - Automatic deployments via GitHub integration
 **Git Repository:** https://github.com/acambitsis/agent-canvas.git
 
