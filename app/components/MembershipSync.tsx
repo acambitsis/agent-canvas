@@ -22,17 +22,18 @@ import { api } from '../../convex/_generated/api';
 
 /**
  * Check if an error is likely an authentication/token error
+ * More specific matching to avoid unnecessary retries on unrelated errors
  */
 function isAuthError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
   return (
-    message.includes('server error') ||
     message.includes('authentication') ||
     message.includes('unauthorized') ||
     message.includes('unauthenticated') ||
     message.includes('jwt') ||
-    message.includes('token')
+    message.includes('token expired') ||
+    message.includes('invalid token')
   );
 }
 
