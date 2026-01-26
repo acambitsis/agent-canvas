@@ -10,8 +10,9 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useMutation } from 'convex/react';
+import { useMutation, useConvex } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { Modal } from '../ui/Modal';
 import { useAppState } from '@/contexts/AppStateContext';
 import { Icon } from '@/components/ui/Icon';
@@ -54,7 +55,8 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   // Success state
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
 
-  // Convex mutation for generating upload URL
+  // Convex client and mutation for file upload
+  const convex = useConvex();
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 
   const isDescriptionValid = description.trim().length >= FEEDBACK_DESCRIPTION_MIN_LENGTH;
@@ -172,11 +174,12 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
           const { storageId } = await uploadResponse.json();
 
-          // Get the public URL - construct it from the storage ID
-          // Convex storage URLs follow the pattern: https://<deployment>.convex.cloud/api/storage/<storageId>
-          const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
-          if (convexUrl) {
-            screenshotUrl = `${convexUrl}/api/storage/${storageId}`;
+          // Get the public URL from Convex storage
+          const url = await convex.query(api.files.getUrl, {
+            storageId: storageId as Id<"_storage">
+          });
+          if (url) {
+            screenshotUrl = url;
           }
         } catch (uploadError) {
           console.error('Screenshot upload failed:', uploadError);
