@@ -8,32 +8,37 @@ import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { useAppState } from '@/contexts/AppStateContext';
 import { Icon } from '@/components/ui/Icon';
+import {
+  VALIDATION_CONSTANTS,
+  FEEDBACK_TYPE,
+  FEEDBACK_TYPE_OPTIONS,
+  FeedbackType,
+} from '@/types/validationConstants';
+
+const {
+  FEEDBACK_DESCRIPTION_MIN_LENGTH,
+  FEEDBACK_DESCRIPTION_MAX_LENGTH,
+} = VALIDATION_CONSTANTS;
 
 interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type FeedbackType = 'bug' | 'feature' | 'general';
-
-const FEEDBACK_TYPES: { value: FeedbackType; label: string; icon: string }[] = [
-  { value: 'bug', label: 'Bug', icon: 'bug' },
-  { value: 'feature', label: 'Feature', icon: 'lightbulb' },
-  { value: 'general', label: 'General', icon: 'message-circle' },
-];
-
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { showToast } = useAppState();
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>('general');
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>(FEEDBACK_TYPE.GENERAL);
   const [description, setDescription] = useState('');
   const [includeUrl, setIncludeUrl] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isDescriptionValid = description.trim().length >= FEEDBACK_DESCRIPTION_MIN_LENGTH;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (description.trim().length < 10) {
-      showToast('Please provide more detail (at least 10 characters)', 'error');
+    if (!isDescriptionValid) {
+      showToast(`Please provide more detail (at least ${FEEDBACK_DESCRIPTION_MIN_LENGTH} characters)`, 'error');
       return;
     }
 
@@ -69,7 +74,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   };
 
   const handleClose = () => {
-    setFeedbackType('general');
+    // Don't allow closing while submitting
+    if (isSubmitting) return;
+
+    setFeedbackType(FEEDBACK_TYPE.GENERAL);
     setDescription('');
     setIncludeUrl(true);
     onClose();
@@ -81,7 +89,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         <div className="form-group">
           <label className="form-label">What type of feedback?</label>
           <div className="feedback-type-grid">
-            {FEEDBACK_TYPES.map((type) => (
+            {FEEDBACK_TYPE_OPTIONS.map((type) => (
               <button
                 key={type.value}
                 type="button"
@@ -106,15 +114,15 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={
-              feedbackType === 'bug'
+              feedbackType === FEEDBACK_TYPE.BUG
                 ? 'Describe what happened and what you expected...'
-                : feedbackType === 'feature'
+                : feedbackType === FEEDBACK_TYPE.FEATURE
                   ? 'Describe the feature you would like to see...'
                   : 'Share your thoughts...'
             }
             required
-            minLength={10}
-            maxLength={5000}
+            minLength={FEEDBACK_DESCRIPTION_MIN_LENGTH}
+            maxLength={FEEDBACK_DESCRIPTION_MAX_LENGTH}
             disabled={isSubmitting}
           />
         </div>
@@ -132,13 +140,18 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         </div>
 
         <div className="form-actions">
-          <button type="button" className="btn btn--secondary" onClick={handleClose}>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </button>
           <button
             type="submit"
             className="btn btn--primary"
-            disabled={isSubmitting || description.trim().length < 10}
+            disabled={isSubmitting || !isDescriptionValid}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
           </button>

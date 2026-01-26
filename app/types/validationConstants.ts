@@ -18,6 +18,10 @@ export const VALIDATION_CONSTANTS = {
 
   // Metrics constraints
   METRIC_MIN_VALUE: 0,
+
+  // Feedback constraints
+  FEEDBACK_DESCRIPTION_MIN_LENGTH: 10,
+  FEEDBACK_DESCRIPTION_MAX_LENGTH: 5000,
 } as const;
 
 /**
@@ -123,3 +127,55 @@ export const ORG_ROLES = {
 } as const;
 
 export type OrgRole = (typeof ORG_ROLES)[keyof typeof ORG_ROLES];
+
+/**
+ * Feedback type values
+ * Single source of truth for feedback form types
+ */
+export const FEEDBACK_TYPE = {
+  BUG: 'bug',
+  FEATURE: 'feature',
+  GENERAL: 'general',
+} as const;
+
+export type FeedbackType = (typeof FEEDBACK_TYPE)[keyof typeof FEEDBACK_TYPE];
+
+/**
+ * Feedback type configuration for UI and GitHub labels
+ */
+export const FEEDBACK_TYPE_CONFIG: Record<FeedbackType, {
+  label: string;
+  icon: string;
+  githubLabel: string;
+  issueTitle: string;
+}> = {
+  [FEEDBACK_TYPE.BUG]: {
+    label: 'Bug',
+    icon: 'bug',
+    githubLabel: 'bug',
+    issueTitle: 'Bug Report',
+  },
+  [FEEDBACK_TYPE.FEATURE]: {
+    label: 'Feature',
+    icon: 'lightbulb',
+    githubLabel: 'enhancement',
+    issueTitle: 'Feature Request',
+  },
+  [FEEDBACK_TYPE.GENERAL]: {
+    label: 'General',
+    icon: 'message-circle',
+    githubLabel: 'question',
+    issueTitle: 'General Feedback',
+  },
+};
+
+/**
+ * Feedback type options for form UI
+ */
+export const FEEDBACK_TYPE_OPTIONS = Object.entries(FEEDBACK_TYPE_CONFIG).map(
+  ([value, config]) => ({
+    value: value as FeedbackType,
+    label: config.label,
+    icon: config.icon,
+  })
+);
