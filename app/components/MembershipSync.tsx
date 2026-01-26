@@ -7,6 +7,7 @@
  * Features:
  * - Session caching: Only syncs once per browser session to avoid redundant API calls
  * - Graceful degradation: App still loads if sync fails (user can retry via sidebar)
+ * - Stale session handling: Detects auth errors and refreshes token before retrying
  *
  * This is a temporary solution until webhooks are configured for real-time sync.
  */
@@ -17,6 +18,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAction } from '@/hooks/useConvex';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '../../convex/_generated/api';
+
+/**
+ * Check if an error is likely an authentication/token error
+ */
+function isAuthError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('server error') ||
+    message.includes('authentication') ||
+    message.includes('unauthorized') ||
+    message.includes('unauthenticated') ||
+    message.includes('jwt') ||
+    message.includes('token')
+  );
+}
 
 interface MembershipSyncProps {
   children: React.ReactNode;
@@ -51,7 +68,7 @@ function markSyncComplete(): void {
 }
 
 export function MembershipSync({ children }: MembershipSyncProps) {
-  const { isAuthenticated, isInitialized, user } = useAuth();
+  const { isAuthenticated, isInitialized, user, refreshAuth } = useAuth();
   const [syncComplete, setSyncComplete] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const syncMemberships = useAction(api.orgMemberships.syncMyMemberships);
@@ -79,10 +96,10 @@ export function MembershipSync({ children }: MembershipSyncProps) {
       return;
     }
 
-    // Sync memberships
+    // Sync memberships with retry on auth errors (stale session handling)
     let isMounted = true;
 
-    async function doSync() {
+    async function doSync(isRetry = false) {
       try {
         await syncMemberships({});
         if (isMounted) {
@@ -91,6 +108,23 @@ export function MembershipSync({ children }: MembershipSyncProps) {
         }
       } catch (error) {
         console.error('Failed to sync memberships:', error);
+
+        // If this looks like an auth error and we haven't retried yet,
+        // refresh the auth token and try again (handles stale sessions)
+        if (!isRetry && isAuthError(error)) {
+          console.log('Auth error detected, refreshing token and retrying...');
+          try {
+            await refreshAuth();
+            // Small delay to allow token to propagate
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if (isMounted) {
+              return doSync(true);
+            }
+          } catch (refreshError) {
+            console.error('Failed to refresh auth:', refreshError);
+          }
+        }
+
         if (isMounted) {
           // Set error but still allow app to load - queries may fail but user can retry
           setSyncError(error instanceof Error ? error.message : 'Sync failed');
@@ -104,7 +138,7 @@ export function MembershipSync({ children }: MembershipSyncProps) {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, isInitialized, user, syncMemberships]);
+  }, [isAuthenticated, isInitialized, user, syncMemberships, refreshAuth]);
 
   // Show loading while syncing
   if (!syncComplete) {
