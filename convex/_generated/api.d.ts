@@ -14,6 +14,7 @@ import type * as agentVotes from "../agentVotes.js";
 import type * as agents from "../agents.js";
 import type * as canvases from "../canvases.js";
 import type * as crons from "../crons.js";
+import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_helpers from "../lib/helpers.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   agents: typeof agents;
   canvases: typeof canvases;
   crons: typeof crons;
+  files: typeof files;
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/helpers": typeof lib_helpers;
