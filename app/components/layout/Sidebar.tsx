@@ -15,6 +15,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ImportYamlModal } from '../forms/ImportYamlModal';
 import { CanvasRenameModal } from '../forms/CanvasRenameModal';
 import { CopyCanvasModal } from '../forms/CopyCanvasModal';
+import { FeedbackModal } from '../forms/FeedbackModal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { MembersWidget } from '../org/MembersWidget';
 import { Tooltip } from '../ui/Tooltip';
@@ -54,6 +55,7 @@ export function Sidebar() {
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState | null>(null);
   const [renameCanvas, setRenameCanvas] = useState<{ id: string; title: string } | null>(null);
   const [copyCanvas, setCopyCanvas] = useState<{ id: string; title: string } | null>(null);
@@ -246,6 +248,7 @@ export function Sidebar() {
                     aria-expanded={orgDropdownOpen}
                   >
                     <span className="sidebar__org-name">{currentOrg?.name || 'Loading...'}</span>
+                    <span className="badge--beta">Beta</span>
                     <Icon name="chevron-down" className="sidebar__org-chevron" />
                   </button>
                 </Tooltip>
@@ -265,7 +268,10 @@ export function Sidebar() {
                 </div>
               </>
             ) : (
-              <span className="sidebar__org-name">{currentOrg?.name || 'Loading...'}</span>
+              <div className="sidebar__org-static">
+                <span className="sidebar__org-name">{currentOrg?.name || 'Loading...'}</span>
+                <span className="badge--beta">Beta</span>
+              </div>
             )}
           </div>
           <Tooltip content="Collapse sidebar" placement="bottom">
@@ -419,6 +425,16 @@ export function Sidebar() {
             <button
               className="sidebar__dropdown-item"
               onClick={() => {
+                setIsFeedbackModalOpen(true);
+                setUserMenuOpen(false);
+              }}
+            >
+              <Icon name="message-square" />
+              <span>Send feedback</span>
+            </button>
+            <button
+              className="sidebar__dropdown-item"
+              onClick={() => {
                 signOut();
                 setUserMenuOpen(false);
               }}
@@ -441,6 +457,11 @@ export function Sidebar() {
             orgId={currentOrgId}
           />
         )}
+
+        <FeedbackModal
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setIsFeedbackModalOpen(false)}
+        />
 
         <div
           className={`sidebar__resize-handle ${isDragging ? 'is-dragging' : ''}`}
