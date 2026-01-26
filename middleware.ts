@@ -28,6 +28,6 @@ export default authkitMiddleware({
 export const config = {
   // Match all paths except static files and Next.js internals
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|ico|txt|xml|json)$).*)',
   ],
 };
