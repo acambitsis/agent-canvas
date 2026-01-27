@@ -4,6 +4,7 @@ import { Doc } from "./_generated/dataModel";
 import { requireAuth, requireOrgAccess, hasOrgAccess } from "./lib/auth";
 import { getAgentSnapshot, getCanvasWithAccess } from "./lib/helpers";
 import { validateSlug, validateTitle } from "./lib/validation";
+import { CHANGE_TYPE } from "./lib/validators";
 
 /**
  * Generate a unique slug in the target org by appending -copy, -copy-2, etc.
@@ -276,7 +277,7 @@ export const remove = mutation({
         agentId: agent._id,
         changedBy: auth.workosUserId,
         changedAt: now,
-        changeType: "delete",
+        changeType: CHANGE_TYPE.DELETE,
         previousData: getAgentSnapshot(agent),
       });
 
@@ -408,7 +409,7 @@ export const copyToOrgs = mutation({
           agentId: newAgentId,
           changedBy: auth.workosUserId,
           changedAt: now,
-          changeType: "create",
+          changeType: CHANGE_TYPE.CREATE,
         });
       }
 

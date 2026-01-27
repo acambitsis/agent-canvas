@@ -7,6 +7,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAuth } from "./lib/auth";
 import { getAgentWithAccess, getCanvasWithAccess } from "./lib/helpers";
+import { VOTE_TYPE, VoteType } from "./lib/validators";
 
 /**
  * Get vote counts for a single agent
@@ -22,8 +23,8 @@ export const getVoteCounts = query({
       .withIndex("by_agent", (q) => q.eq("agentId", agentId))
       .collect();
 
-    const up = votes.filter((v) => v.vote === "up").length;
-    const down = votes.filter((v) => v.vote === "down").length;
+    const up = votes.filter((v) => v.vote === VOTE_TYPE.UP).length;
+    const down = votes.filter((v) => v.vote === VOTE_TYPE.DOWN).length;
 
     return { up, down };
   },
@@ -88,8 +89,8 @@ export const getVoteCountsForCanvas = query({
     agents.forEach((agent, index) => {
       const votes = votesPerAgent[index];
       result[agent._id] = {
-        up: votes.filter((v) => v.vote === "up").length,
-        down: votes.filter((v) => v.vote === "down").length,
+        up: votes.filter((v) => v.vote === VOTE_TYPE.UP).length,
+        down: votes.filter((v) => v.vote === VOTE_TYPE.DOWN).length,
       };
     });
 
@@ -126,7 +127,7 @@ export const getUserVotesForCanvas = query({
     );
 
     // Build result map from parallel query results
-    const result: Record<string, "up" | "down"> = {};
+    const result: Record<string, VoteType> = {};
     agents.forEach((agent, index) => {
       const vote = userVotes[index];
       if (vote) {
@@ -144,7 +145,7 @@ export const getUserVotesForCanvas = query({
 export const vote = mutation({
   args: {
     agentId: v.id("agents"),
-    vote: v.union(v.literal("up"), v.literal("down")),
+    vote: v.union(v.literal(VOTE_TYPE.UP), v.literal(VOTE_TYPE.DOWN)),
   },
   handler: async (ctx, { agentId, vote: voteType }) => {
     const auth = await requireAuth(ctx);

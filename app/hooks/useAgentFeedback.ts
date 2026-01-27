@@ -11,6 +11,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useCallback } from 'react';
 import { useCurrentUser } from '@/contexts/AuthContext';
 import { useAppState } from '@/contexts/AppStateContext';
+import { VoteType } from '@/types/validationConstants';
 
 interface UseAgentFeedbackOptions {
   agentId: Id<"agents"> | undefined;
@@ -46,7 +47,7 @@ export function useAgentFeedback({ agentId }: UseAgentFeedbackOptions) {
 
   // Vote actions with error handling
   const handleVote = useCallback(
-    async (voteType: "up" | "down") => {
+    async (voteType: VoteType) => {
       if (!agentId) return;
       const id = agentId;
       try {

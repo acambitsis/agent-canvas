@@ -11,6 +11,7 @@ import { useAuth as useAuthKit } from '@workos-inc/authkit-nextjs/components';
 import { User, Organization } from '@/types/auth';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { STORAGE_KEYS } from '@/constants/storageKeys';
+import { ORG_ROLES } from '@/types/validationConstants';
 
 interface AuthContextValue {
   user: User | null;
@@ -187,5 +188,5 @@ export function useIsOrgAdmin() {
   const { userOrgs, currentOrgId } = useAuth();
   if (!currentOrgId) return false;
   const org = userOrgs.find(org => org.id === currentOrgId);
-  return org?.role === 'admin';
+  return org?.role === ORG_ROLES.ADMIN;
 }

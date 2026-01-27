@@ -16,6 +16,7 @@
  */
 import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { ORG_ROLES } from "./validators";
 
 /**
  * Check if an email is in the SUPER_ADMIN_EMAILS environment variable
@@ -147,7 +148,7 @@ export function isOrgAdmin(auth: AuthContext, workosOrgId: string): boolean {
     return true;
   }
   const role = getOrgRole(auth, workosOrgId);
-  return role === "admin";
+  return role === ORG_ROLES.ADMIN;
 }
 
 /**
