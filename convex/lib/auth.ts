@@ -134,7 +134,7 @@ export async function requireSuperAdmin(
  */
 export function getOrgRole(auth: AuthContext, workosOrgId: string): string | null {
   if (auth.isSuperAdmin) {
-    return "admin"; // Super admins have admin access to all orgs
+    return ORG_ROLES.ADMIN; // Super admins have admin access to all orgs
   }
   const membership = auth.orgs.find((org) => org.id === workosOrgId);
   return membership?.role || null;
