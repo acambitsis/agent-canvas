@@ -132,6 +132,17 @@ export const ORG_ROLES = {
 export type OrgRole = (typeof ORG_ROLES)[keyof typeof ORG_ROLES];
 
 /**
+ * Agent vote type values
+ * Single source of truth for vote-related logic
+ */
+export const VOTE_TYPE = {
+  UP: 'up',
+  DOWN: 'down',
+} as const;
+
+export type VoteType = (typeof VOTE_TYPE)[keyof typeof VOTE_TYPE];
+
+/**
  * Feedback type values
  * Single source of truth for feedback form types
  */

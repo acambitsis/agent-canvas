@@ -14,7 +14,7 @@ import {
   validateOptionalUrl,
   validatePhase,
 } from "./lib/validation";
-import { agentFieldValidators, agentInputValidator, agentUpdateValidator } from "./lib/validators";
+import { agentFieldValidators, agentInputValidator, agentUpdateValidator, CHANGE_TYPE, ChangeType } from "./lib/validators";
 
 // Shared validation for agent data
 function validateAgentData(data: Record<string, unknown>): void {
@@ -37,7 +37,7 @@ async function recordHistory(
   ctx: MutationCtx,
   agentId: Id<"agents">,
   workosUserId: string,
-  changeType: "create" | "update" | "delete",
+  changeType: ChangeType,
   previousData?: any
 ): Promise<void> {
   await ctx.db.insert("agentHistory", {
@@ -116,7 +116,7 @@ export const create = mutation({
       updatedAt: now,
     });
 
-    await recordHistory(ctx, agentId, auth.workosUserId, "create");
+    await recordHistory(ctx, agentId, auth.workosUserId, CHANGE_TYPE.CREATE);
 
     return agentId;
   },
@@ -155,7 +155,7 @@ export const update = mutation({
       updatedAt: now,
     });
 
-    await recordHistory(ctx, agentId, auth.workosUserId, "update", previousData);
+    await recordHistory(ctx, agentId, auth.workosUserId, CHANGE_TYPE.UPDATE, previousData);
   },
 });
 
@@ -170,7 +170,7 @@ export const remove = mutation({
 
     const now = Date.now();
 
-    await recordHistory(ctx, agentId, auth.workosUserId, "delete", getAgentSnapshot(agent));
+    await recordHistory(ctx, agentId, auth.workosUserId, CHANGE_TYPE.DELETE, getAgentSnapshot(agent));
 
     // Soft delete instead of hard delete
     await ctx.db.patch(agentId, {
@@ -319,7 +319,7 @@ export const bulkCreate = mutation({
         updatedAt: now,
       });
 
-      await recordHistory(ctx, agentId, auth.workosUserId, "create");
+      await recordHistory(ctx, agentId, auth.workosUserId, CHANGE_TYPE.CREATE);
 
       createdIds.push(agentId);
     }
@@ -380,7 +380,7 @@ export const bulkReplace = mutation({
 
     // Record history and soft-delete existing agents
     for (const agent of existingAgents) {
-      await recordHistory(ctx, agent._id, auth.workosUserId, "delete", getAgentSnapshot(agent));
+      await recordHistory(ctx, agent._id, auth.workosUserId, CHANGE_TYPE.DELETE, getAgentSnapshot(agent));
 
       // Soft delete instead of hard delete
       await ctx.db.patch(agent._id, {
@@ -402,7 +402,7 @@ export const bulkReplace = mutation({
         updatedAt: now,
       });
 
-      await recordHistory(ctx, agentId, auth.workosUserId, "create");
+      await recordHistory(ctx, agentId, auth.workosUserId, CHANGE_TYPE.CREATE);
 
       createdIds.push(agentId);
     }

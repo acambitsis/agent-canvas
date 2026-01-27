@@ -16,6 +16,7 @@
  */
 import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { ORG_ROLES } from "./validators";
 
 /**
  * Check if an email is in the SUPER_ADMIN_EMAILS environment variable
@@ -136,7 +137,7 @@ export async function requireSuperAdmin(
  */
 export function getOrgRole(auth: AuthContext, workosOrgId: string): string | null {
   if (auth.isSuperAdmin) {
-    return "admin"; // Super admins have admin access to all orgs
+    return ORG_ROLES.ADMIN; // Super admins have admin access to all orgs
   }
   const membership = auth.orgs.find((org) => org.id === workosOrgId);
   return membership?.role || null;
@@ -150,7 +151,7 @@ export function isOrgAdmin(auth: AuthContext, workosOrgId: string): boolean {
     return true;
   }
   const role = getOrgRole(auth, workosOrgId);
-  return role === "admin";
+  return role === ORG_ROLES.ADMIN;
 }
 
 /**

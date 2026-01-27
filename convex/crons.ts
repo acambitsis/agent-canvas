@@ -9,6 +9,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { logSync } from "./lib/membershipSync";
+import { ORG_ROLES, SYNC_TYPE } from "./lib/validators";
 
 const crons = cronJobs();
 
@@ -83,7 +84,7 @@ export const reconcileMemberships = internalAction({
         }
         membershipsByUser.get(userId)!.push({
           orgId: m.organization_id,
-          role: m.role?.slug || "member",
+          role: m.role?.slug || ORG_ROLES.MEMBER,
         });
       }
 
@@ -100,7 +101,7 @@ export const reconcileMemberships = internalAction({
             {
               workosUserId: userId,
               memberships,
-              syncType: "cron" as const,
+              syncType: SYNC_TYPE.CRON,
             }
           );
           totalAdded += result.added;
@@ -158,7 +159,7 @@ export const logCronSuccess = internalMutation({
   handler: async (ctx, args) => {
     await logSync(
       ctx,
-      "cron",
+      SYNC_TYPE.CRON,
       args.errorCount > 0 ? "partial" : "success",
       undefined,
       `users=${args.usersProcessed}, added=${args.added}, updated=${args.updated}, removed=${args.removed}, errors=${args.errorCount}`
@@ -174,7 +175,7 @@ export const logCronError = internalMutation({
     error: v.string(),
   },
   handler: async (ctx, args) => {
-    await logSync(ctx, "cron", "error", undefined, args.error);
+    await logSync(ctx, SYNC_TYPE.CRON, "error", undefined, args.error);
   },
 });
 
@@ -216,7 +217,7 @@ export const cleanupOrphanedMemberships = internalMutation({
     if (removedCount > 0) {
       await logSync(
         ctx,
-        "cron",
+        SYNC_TYPE.CRON,
         "cleanup",
         undefined,
         `Removed ${removedCount} orphaned memberships for ${orphanedUserIds.size} users`

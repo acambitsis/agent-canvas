@@ -13,6 +13,7 @@ import {
   logSync,
 } from "./lib/membershipSync";
 import { requireSuperAdmin, checkSuperAdmin } from "./lib/auth";
+import { ORG_ROLES, SYNC_TYPE } from "./lib/validators";
 
 /**
  * Internal query to get memberships for a user (used by auth.ts for ActionCtx)
@@ -117,7 +118,7 @@ export const getOrgRole = query({
     // Super admins have admin access (check via SUPER_ADMIN_EMAILS env var)
     const email = (identity.email as string) || "";
     if (checkSuperAdmin(email)) {
-      return "admin";
+      return ORG_ROLES.ADMIN;
     }
 
     const membership = await ctx.db
@@ -146,7 +147,7 @@ export const syncFromFetchedData = internalMutation({
       orgId: v.string(),
       role: v.string(),
     })),
-    syncType: v.union(v.literal("webhook"), v.literal("cron"), v.literal("manual")),
+    syncType: v.union(v.literal(SYNC_TYPE.WEBHOOK), v.literal(SYNC_TYPE.CRON), v.literal(SYNC_TYPE.MANUAL)),
   },
   handler: async (ctx, args) => {
     const timestamp = Date.now();
@@ -196,7 +197,7 @@ export const upsertMembershipInternal = internalMutation({
 
     await logSync(
       ctx,
-      "webhook",
+      SYNC_TYPE.WEBHOOK,
       "success",
       args.workosUserId,
       `upsert ${args.workosOrgId}: ${action}`
@@ -227,7 +228,7 @@ export const removeMembershipInternal = internalMutation({
 
     await logSync(
       ctx,
-      "webhook",
+      SYNC_TYPE.WEBHOOK,
       "success",
       args.workosUserId,
       `remove ${args.workosOrgId}: ${removed ? "removed" : "skipped"}`
@@ -285,7 +286,7 @@ export const syncMyMemberships = action({
     const memberships = (data.data || []).map(
       (m: { organization_id: string; role?: { slug: string } }) => ({
         orgId: m.organization_id,
-        role: m.role?.slug || "member",
+        role: m.role?.slug || ORG_ROLES.MEMBER,
       })
     );
 
@@ -293,7 +294,7 @@ export const syncMyMemberships = action({
     const result: SyncResultType = await ctx.runMutation(internal.orgMemberships.syncFromFetchedData, {
       workosUserId,
       memberships,
-      syncType: "manual",
+      syncType: SYNC_TYPE.MANUAL,
     });
 
     return result;
@@ -366,7 +367,7 @@ export const syncAllMemberships = action({
       }
       membershipsByUser.get(userId)!.push({
         orgId: m.organization_id,
-        role: m.role?.slug || "member",
+        role: m.role?.slug || ORG_ROLES.MEMBER,
       });
     }
 
@@ -383,7 +384,7 @@ export const syncAllMemberships = action({
           {
             workosUserId: userId,
             memberships,
-            syncType: "manual",
+            syncType: SYNC_TYPE.MANUAL,
           }
         );
         totalAdded += result.added;
