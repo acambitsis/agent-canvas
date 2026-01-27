@@ -59,9 +59,9 @@ function useAuthForConvex() {
           return freshToken ?? null;
         } catch (error) {
           console.error('[ConvexAuth] Token refresh failed:', error);
-          // Fall back to getAccessToken which may return cached token
-          const fallbackToken = await getAccessToken();
-          return fallbackToken ?? null;
+          // Return null to force re-authentication rather than retrying with
+          // a potentially stale token that the server already rejected
+          return null;
         }
       }
 

@@ -110,11 +110,8 @@ export async function requireAuth(
   const auth = await getAuth(ctx);
   if (!auth) {
     // Log to help debug token refresh issues
-    const identity = await ctx.auth.getUserIdentity();
-    console.error("[Auth] Authentication failed", {
-      hasIdentity: !!identity,
-      identitySubject: identity?.subject?.slice(0, 8) + "...",
-    });
+    // Note: identity is guaranteed null here since getAuth() only returns null when identity is null
+    console.error("[Auth] Authentication failed - no valid identity token");
     throw new Error("Auth: Authentication required");
   }
   return auth;
