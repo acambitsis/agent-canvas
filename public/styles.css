@@ -420,6 +420,14 @@ a:hover {
     overflow: hidden;
 }
 
+/* WorkOS Widgets provider wrapper - must fill flex container */
+.app-layout > .radix-themes {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 /* ============================================
    SIDEBAR
    ============================================ */
@@ -982,6 +990,7 @@ body.is-resizing-sidebar .main-wrapper {
     min-height: 100vh;
     max-height: 100vh;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     background: var(--bg-primary);
     transition: margin-left var(--duration-slow) var(--ease-out);
 }
