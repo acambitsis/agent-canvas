@@ -13,7 +13,7 @@ import { useAgents } from './AgentContext';
 import { useCanvas } from './CanvasContext';
 import { STORAGE_KEYS } from '@/constants/storageKeys';
 
-export type ViewMode = 'grid' | 'detail';
+export type ViewMode = 'grid' | 'detail' | 'dock';
 
 interface GroupingPreferences {
   activeTagType: string;

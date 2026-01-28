@@ -166,6 +166,15 @@ export function MainToolbar({ onAddAgent }: MainToolbarProps) {
             <Icon name="layout-list" />
             <span>Detailed</span>
           </button>
+          <button
+            type="button"
+            className={`view-mode-toggle__btn ${viewMode === 'dock' ? 'is-active' : ''}`}
+            onClick={() => setViewMode('dock')}
+            aria-pressed={viewMode === 'dock'}
+          >
+            <Icon name="panel-bottom" />
+            <span>Dock</span>
+          </button>
         </div>
 
         {/* Collapse Toggle */}
