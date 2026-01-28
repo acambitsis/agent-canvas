@@ -1,12 +1,14 @@
 /**
  * Icon component - wrapper for lucide-react icons
- * Replaces <i data-lucide="icon-name"> with React components
+ *
+ * Uses a curated icon registry for tree-shaking optimization.
+ * Only icons in the registry are included in the bundle.
  */
 
 'use client';
 
-import * as LucideIcons from 'lucide-react';
 import { createElement } from 'react';
+import { getIconComponent } from '@/utils/iconRegistry';
 
 interface IconProps {
   name: string;
@@ -16,17 +18,21 @@ interface IconProps {
 }
 
 export function Icon({ name, size = 16, className, style }: IconProps) {
-  // Convert kebab-case to PascalCase (e.g., "edit-3" -> "Edit3")
-  const componentName = name
-    .split('-')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-
-  const IconComponent = (LucideIcons as any)[componentName];
+  const IconComponent = getIconComponent(name);
 
   if (!IconComponent) {
+    // Log warning in development to help identify missing icons
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        `Icon "${name}" not in registry. Add it to app/utils/iconRegistry.ts`
+      );
+    }
     // Fallback: show icon name as text for debugging
-    return <span className={className} style={style} title={`Icon: ${name}`}>{name}</span>;
+    return (
+      <span className={className} style={style} title={`Icon: ${name}`}>
+        {name}
+      </span>
+    );
   }
 
   return createElement(IconComponent, { size, className, style });

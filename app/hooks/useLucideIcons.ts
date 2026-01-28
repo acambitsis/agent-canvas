@@ -1,29 +1,29 @@
 /**
- * Hook to initialize Lucide icons after render
- * Now uses lucide-react components instead of CDN
+ * Hook and utility for lucide-react icons
+ *
+ * Uses a curated icon registry for tree-shaking optimization.
+ * Only icons in the registry are included in the bundle.
  */
 
-import * as LucideIcons from 'lucide-react';
 import { createElement } from 'react';
+import { getIconComponent } from '@/utils/iconRegistry';
 
 export function useLucideIcons() {
   // No longer needed - using React components directly
 }
 
 /**
- * Get a lucide-react icon component by name
+ * Get a lucide-react icon element by name
  */
-export function getLucideIcon(name: string, props?: any) {
-  // Convert kebab-case to PascalCase (e.g., "edit-3" -> "Edit3")
-  const componentName = name
-    .split('-')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-
-  const IconComponent = (LucideIcons as any)[componentName];
+export function getLucideIcon(name: string, props?: Record<string, unknown>) {
+  const IconComponent = getIconComponent(name);
 
   if (!IconComponent) {
-    console.warn(`Icon "${name}" not found in lucide-react`);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        `Icon "${name}" not in registry. Add it to app/utils/iconRegistry.ts`
+      );
+    }
     return null;
   }
 
