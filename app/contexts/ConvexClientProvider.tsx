@@ -15,12 +15,19 @@ interface ConvexClientProviderProps {
   children: React.ReactNode;
 }
 
+// Cooldown to prevent rapid consecutive token refreshes that could cause infinite loops
+const REFRESH_COOLDOWN_MS = 2000;
+
 /**
  * Custom hook that adapts WorkOS AuthKit to Convex's useAuth interface.
  * This is passed to ConvexProviderWithAuth to handle token management.
  *
  * Key feature: Properly handles forceRefreshToken when Convex's WebSocket
  * reconnects after being idle, ensuring a fresh token is fetched.
+ *
+ * Important: Uses refs for token functions to keep fetchAccessToken stable
+ * and prevent re-renders from triggering infinite refresh loops. Also includes
+ * a cooldown to prevent rapid consecutive refresh calls.
  */
 function useAuthForConvex() {
   const { user, loading: authLoading } = useAuthKit();
@@ -31,45 +38,61 @@ function useAuthForConvex() {
     refresh,
   } = useAccessToken();
 
-  // Track whether we've logged initial state (for debugging)
-  const hasLoggedInit = useRef(false);
+  // Use refs for token functions to keep fetchAccessToken stable
+  const getAccessTokenRef = useRef(getAccessToken);
+  const refreshRef = useRef(refresh);
 
-  // Log auth state changes for debugging
+  // Track last refresh to prevent rapid consecutive refreshes
+  // This breaks the loop where refresh() -> state change -> force refresh request
+  const lastRefreshTime = useRef<number>(0);
+
+  // Keep refs up to date
   useEffect(() => {
-    if (!hasLoggedInit.current && !authLoading && !tokenLoading) {
-      console.log('[ConvexAuth] Auth initialized', {
-        isAuthenticated: !!user && !!accessToken,
-        hasUser: !!user,
-        hasToken: !!accessToken,
-      });
-      hasLoggedInit.current = true;
-    }
-  }, [user, accessToken, authLoading, tokenLoading]);
+    getAccessTokenRef.current = getAccessToken;
+    refreshRef.current = refresh;
+  }, [getAccessToken, refresh]);
 
+  // Stable callback that doesn't change on re-renders
   const fetchAccessToken = useCallback(
     async ({ forceRefreshToken }: { forceRefreshToken: boolean }): Promise<string | null> => {
       if (forceRefreshToken) {
-        // Convex is requesting a fresh token (e.g., after WebSocket reconnect
-        // or when server rejected the previous token)
-        console.log('[ConvexAuth] Force refreshing token...');
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastRefreshTime.current;
+
+        // If we recently refreshed, return current token to break refresh loops
+        // This handles the case where refresh() triggers state changes that
+        // cause Convex to immediately request another refresh
+        if (timeSinceLastRefresh < REFRESH_COOLDOWN_MS && lastRefreshTime.current > 0) {
+          try {
+            const token = await getAccessTokenRef.current();
+            return token ?? null;
+          } catch {
+            return null;
+          }
+        }
+
+        // Convex is requesting a fresh token (e.g., after WebSocket reconnect)
+        lastRefreshTime.current = now;
+
         try {
-          // Use refresh() for explicit force refresh
-          const freshToken = await refresh();
-          console.log('[ConvexAuth] Token refreshed successfully');
+          const freshToken = await refreshRef.current();
           return freshToken ?? null;
         } catch (error) {
           console.error('[ConvexAuth] Token refresh failed:', error);
-          // Return null to force re-authentication rather than retrying with
-          // a potentially stale token that the server already rejected
           return null;
         }
       }
 
-      // Normal token fetch - getAccessToken handles refresh internally if needed
-      const token = accessToken ?? (await getAccessToken());
-      return token ?? null;
+      // Normal token fetch
+      try {
+        const token = await getAccessTokenRef.current();
+        return token ?? null;
+      } catch (error) {
+        console.error('[ConvexAuth] getAccessToken failed:', error);
+        return null;
+      }
     },
-    [accessToken, getAccessToken, refresh]
+    [] // Empty deps - callback is stable, uses refs for latest values
   );
 
   return {

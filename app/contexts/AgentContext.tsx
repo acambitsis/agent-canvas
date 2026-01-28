@@ -6,7 +6,7 @@
 
 import React, { createContext, useContext, useCallback } from 'react';
 import { Agent, AgentFormData } from '@/types/agent';
-import { useQuery, useMutation } from '@/hooks/useConvex';
+import { useQuery, useMutation, useConvexAuth } from '@/hooks/useConvex';
 import { useAuth } from './AuthContext';
 import { useCanvas } from './CanvasContext';
 import { api } from '../../convex/_generated/api';
@@ -22,18 +22,20 @@ interface AgentContextValue {
 const AgentContext = createContext<AgentContextValue | undefined>(undefined);
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
-  const { isInitialized, isAuthenticated } = useAuth();
+  const { isInitialized } = useAuth();
+  // Use Convex's auth state to gate queries - this ensures token is actually set
+  const { isAuthenticated: isConvexAuthenticated } = useConvexAuth();
   const { currentCanvasId, currentCanvas, isLoading: isCanvasLoading } = useCanvas();
 
   // Subscribe to agents using official Convex hook
-  // Only query if authenticated AND has a valid canvas (not just canvasId, as it may be stale after deletion)
+  // Only query if Convex has the token AND has a valid canvas (not just canvasId, as it may be stale after deletion)
   const agentsQueryResult = useQuery(
     api.agents.list,
-    isAuthenticated && currentCanvas ? { canvasId: currentCanvasId as any } : 'skip'
+    isConvexAuthenticated && currentCanvas ? { canvasId: currentCanvasId as any } : 'skip'
   );
 
   // Track loading state: loading if auth not initialized, canvas loading, or agents query pending
-  const isQueryLoading = isAuthenticated && !!currentCanvasId && agentsQueryResult === undefined;
+  const isQueryLoading = isConvexAuthenticated && !!currentCanvasId && agentsQueryResult === undefined;
   const agents = agentsQueryResult || [];
 
   const createAgentMutation = useMutation(api.agents.create);
