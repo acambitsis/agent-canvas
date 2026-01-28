@@ -1503,6 +1503,70 @@ body.is-resizing-sidebar .main-wrapper {
     gap: var(--space-2);
 }
 
+/* ============================================
+   DOCK VIEW - Inline Layout
+   Header and dock on same row
+   ============================================ */
+
+.agent-group--dock {
+    background: transparent;
+    border-radius: var(--radius-2xl);
+    animation: fadeInUp var(--duration-slow) var(--ease-out) both;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.agent-group__dock-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    min-height: 120px;
+}
+
+.agent-group__dock-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-shrink: 0;
+    min-width: 200px;
+}
+
+.agent-group__dock-header .group-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.agent-group__dock-header .group-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.agent-group__dock-header .group-title h2 {
+    font-size: var(--text-base);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.agent-group__dock-header .group-subtitle {
+    font-size: var(--text-xs);
+}
+
+/* Dock view sits in the middle, takes available space */
+.agent-group__dock-row .dock-view {
+    flex: 1;
+    margin: 0;
+    padding: var(--space-2);
+    min-width: 0;
+}
+
+.agent-group__dock-row .dock-view__track {
+    justify-content: flex-start;
+}
+
+.agent-group__dock-row .agent-group__actions {
+    flex-shrink: 0;
+}
+
 .group-menu-trigger {
     width: 40px;
     height: 40px;
@@ -6177,4 +6241,433 @@ body.is-resizing-sidebar .main-wrapper {
     display: flex;
     gap: var(--space-3);
     margin-top: var(--space-6);
+}
+
+/* ============================================
+   DOCK VIEW - Flat display with carousel
+   ============================================ */
+
+.dock-view {
+    --dock-item-size: 115px;
+    --dock-item-gap: 8px;
+    --dock-bg: rgba(255, 255, 255, 0.9);
+    --dock-border: rgba(0, 0, 0, 0.08);
+    --dock-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-2);
+    margin: 0;
+}
+
+[data-theme="dark"] .dock-view {
+    --dock-bg: rgba(40, 40, 45, 0.95);
+    --dock-border: rgba(255, 255, 255, 0.1);
+}
+
+.dock-view__track {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--dock-item-gap);
+    padding: var(--space-2) var(--space-3);
+    background: var(--dock-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--dock-border);
+    border-radius: 16px;
+    box-shadow: var(--dock-shadow);
+    /* Handle overflow for many agents */
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: thin;
+}
+
+/* ============================================
+   DOCK ITEM - Compact icon display
+   ============================================ */
+
+.dock-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: var(--dock-item-size);
+    height: 80px;
+    padding: 12px var(--space-1) var(--space-2);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.dock-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-default);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dock-item--selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px var(--accent-primary-muted);
+}
+
+.dock-item__order {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 50%;
+    color: var(--text-muted);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+.dock-item:hover .dock-item__order,
+.dock-item--selected .dock-item__order {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.dock-item__status-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-secondary);
+    z-index: 2;
+}
+
+.dock-item__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.dock-item__icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.dock-item:hover .dock-item__icon,
+.dock-item--selected .dock-item__icon {
+    color: var(--accent-primary);
+}
+
+.dock-item__compact-name {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
+}
+
+.dock-item:hover .dock-item__compact-name {
+    color: var(--text-primary);
+}
+
+.dock-item__tools-compact {
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+}
+
+.dock-item__tools-compact .tool-dot {
+    width: 6px;
+    height: 6px;
+}
+
+/* ============================================
+   CAROUSEL - Expanded agent card view
+   ============================================ */
+
+.dock-carousel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    animation: carouselSlideIn 0.2s ease;
+}
+
+@keyframes carouselSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dock-carousel__nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.dock-carousel__nav:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+.dock-carousel__nav svg {
+    width: 18px;
+    height: 18px;
+}
+
+.dock-carousel__card {
+    position: relative;
+    width: 340px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    padding: var(--space-4);
+    animation: cardSlideIn 0.2s ease;
+}
+
+@keyframes cardSlideIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.dock-carousel__close {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dock-carousel__close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dock-carousel__close svg {
+    width: 16px;
+    height: 16px;
+}
+
+.dock-carousel__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.dock-carousel__order {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--accent-primary);
+    color: white;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dock-carousel__status {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.dock-carousel__counter {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.dock-carousel__name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin: 0 0 var(--space-2) 0;
+}
+
+.dock-carousel__objective {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 var(--space-3) 0;
+}
+
+.dock-carousel__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: var(--space-4);
+}
+
+.dock-carousel__tool {
+    font-size: 11px;
+    font-weight: 500;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.dock-carousel__action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-primary);
+    background: var(--accent-primary-muted);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dock-carousel__action:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.dock-carousel__action svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ============================================
+   Dock Carousel Focus Effect
+   Dims other groups when carousel is active
+   ============================================ */
+
+/* When any group has a carousel open, dim groups that don't */
+.main-content:has(.dock-carousel) .agent-group:not(:has(.dock-carousel)) {
+    opacity: 0.25;
+    filter: blur(1px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Ensure the focused group stays prominent */
+.agent-group:has(.dock-carousel) {
+    position: relative;
+    z-index: 10;
+}
+
+/* Smooth transition when carousel closes */
+.agent-group {
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Subtle backdrop effect for extra focus */
+.main-content:has(.dock-carousel)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+    z-index: 5;
+    animation: fadeIn 0.3s ease;
+}
+
+/* ============================================
+   Responsive adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Stack dock row vertically on mobile */
+    .agent-group__dock-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+        min-height: auto;
+        padding: var(--space-3);
+    }
+
+    .agent-group__dock-header {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .agent-group__dock-row .dock-view {
+        width: 100%;
+    }
+
+    .agent-group__dock-row .agent-group__actions {
+        align-self: flex-end;
+    }
+
+    .dock-view {
+        --dock-item-size: 90px;
+    }
+
+    .dock-item {
+        height: 72px;
+        padding: 10px var(--space-1) var(--space-1);
+    }
+
+    .dock-item__order {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+    }
+
+    .dock-item__compact-name {
+        font-size: 8px;
+    }
+
+    .dock-carousel__card {
+        width: 280px;
+        padding: var(--space-3);
+    }
+
+    .dock-carousel__name {
+        font-size: 16px;
+    }
+
+    .dock-carousel__objective {
+        font-size: 13px;
+    }
 }

@@ -9,6 +9,7 @@ import { Agent, AgentGroup } from '@/types/agent';
 import { AgentCard } from './AgentCard';
 import { ExpandedAgentCard } from './ExpandedAgentCard';
 import { CompactAgentRow } from './CompactAgentRow';
+import { DockView } from './DockView';
 import { useGrouping } from '@/contexts/GroupingContext';
 import { Icon } from '@/components/ui/Icon';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -55,6 +56,55 @@ export function AgentGroupSection({
 
     return () => observer.disconnect();
   }, [groupIndex]);
+
+  // Dock view uses a different inline layout
+  if (viewMode === 'dock') {
+    return (
+      <section
+        ref={sectionRef}
+        className={`agent-group agent-group--dock ${isVisible ? 'is-visible' : ''}`}
+        data-group-id={group.id}
+        style={{
+          '--group-color': group.color,
+          '--animation-delay': `${groupIndex * 100}ms`
+        } as React.CSSProperties}
+      >
+        {/* Inline layout: Header + Dock on same row */}
+        <div className="agent-group__dock-row">
+          {/* Compact header for dock view */}
+          <div className="agent-group__dock-header">
+            <div className="group-icon">
+              <Icon name={group.icon || 'layers'} />
+            </div>
+            <div className="group-title">
+              <h2>{group.label}</h2>
+              <span className="group-subtitle">
+                {group.agents.length} {group.agents.length === 1 ? 'agent' : 'agents'}
+              </span>
+            </div>
+          </div>
+
+          {/* Dock view inline */}
+          <DockView
+            agents={group.agents}
+            onAgentClick={(agent) => onQuickLook ? onQuickLook(agent) : onEditAgent(agent)}
+          />
+
+          {/* Actions */}
+          <div className="agent-group__actions">
+            <Tooltip content={`Add agent to ${group.label}`} placement="top">
+              <button
+                className="btn btn--sm btn--primary"
+                onClick={() => onAddAgent(group.id)}
+              >
+                <Icon name="plus" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
