@@ -7,12 +7,12 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import { ConvexReactClient, ConvexProviderWithAuth } from 'convex/react';
 import { useAuth as useAuthKit, useAccessToken } from '@workos-inc/authkit-nextjs/components';
 
 interface ConvexClientProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 // Cooldown to prevent rapid consecutive token refreshes that could cause infinite loops
@@ -28,6 +28,9 @@ const REFRESH_COOLDOWN_MS = 2000;
  * Important: Uses refs for token functions to keep fetchAccessToken stable
  * and prevent re-renders from triggering infinite refresh loops. Also includes
  * a cooldown to prevent rapid consecutive refresh calls.
+ *
+ * Critical: Tracks refresh-in-progress state to prevent queries from firing
+ * with stale tokens during WebSocket reconnection.
  */
 function useAuthForConvex() {
   const { user, loading: authLoading } = useAuthKit();
@@ -37,6 +40,10 @@ function useAuthForConvex() {
     getAccessToken,
     refresh,
   } = useAccessToken();
+
+  // Track whether a force refresh is in progress
+  // This prevents queries from firing with stale tokens during reconnection
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Use refs for token functions to keep fetchAccessToken stable
   const getAccessTokenRef = useRef(getAccessToken);
@@ -72,7 +79,10 @@ function useAuthForConvex() {
         }
 
         // Convex is requesting a fresh token (e.g., after WebSocket reconnect)
+        // Set isRefreshing to signal that auth is loading, preventing queries
+        // from firing with stale tokens
         lastRefreshTime.current = now;
+        setIsRefreshing(true);
 
         try {
           const freshToken = await refreshRef.current();
@@ -80,6 +90,8 @@ function useAuthForConvex() {
         } catch (error) {
           console.error('[ConvexAuth] Token refresh failed:', error);
           return null;
+        } finally {
+          setIsRefreshing(false);
         }
       }
 
@@ -96,7 +108,8 @@ function useAuthForConvex() {
   );
 
   return {
-    isLoading: authLoading || tokenLoading,
+    // Include isRefreshing to prevent queries during reconnection token refresh
+    isLoading: authLoading || tokenLoading || isRefreshing,
     isAuthenticated: !!user && !!accessToken,
     fetchAccessToken,
   };
