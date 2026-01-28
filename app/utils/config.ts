@@ -36,7 +36,7 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   context: { label: 'Context', color: '#EF4444', icon: 'database' },
   email: { label: 'Email', color: '#3B82F6', icon: 'mail' },
   calendar: { label: 'Calendar', color: '#6366F1', icon: 'calendar' },
-  slack: { label: 'Slack', color: '#E11D48', icon: 'message-square' },
+  'ms-teams': { label: 'MS Teams', color: '#6264A7', icon: 'message-square' },
   api: { label: 'API', color: '#14B8A6', icon: 'plug' },
 };
 

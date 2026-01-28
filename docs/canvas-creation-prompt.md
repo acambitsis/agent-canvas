@@ -53,7 +53,7 @@ You have access to these tools, which map to the agent canvas tool categories:
 **Communication Tools** (when configured)
 - `email`: Email integration
 - `calendar`: Calendar management
-- `slack`: Slack integration
+- `ms-teams`: Microsoft Teams integration
 
 ## Design Philosophy
 
@@ -152,7 +152,7 @@ Proceed with generation?
 
 ### Tool Selection
 - Only assign tools the agent will actually use
-- Map to canonical tool names: `forms`, `code`, `rag`, `web-search`, `deep-research`, `context`, `email`, `calendar`, `slack`, `api`
+- Map to canonical tool names: `forms`, `code`, `rag`, `web-search`, `deep-research`, `context`, `email`, `calendar`, `ms-teams`, `api`
 - Typical agents use 2-5 tools
 - Consider tool combinations that create unique value
 

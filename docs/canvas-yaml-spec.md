@@ -32,7 +32,7 @@ agentGroups:                    # optional, defaults to []
 - `agentGroups`: Optional. Array of phases/stages. Omit or use `[]` if empty
 - `groupName`: Optional. Defaults to "Phase 1", "Phase 2", etc. Max 50 chars
 - `name`: Required per agent. Max 100 chars
-- `tools`: Valid names: `forms`, `code`, `rag`, `web-search`, `deep-research`, `context`, `email`, `calendar`, `slack`, `api`. Case-insensitive. Unknown names accepted with generic styling
+- `tools`: Valid names: `forms`, `code`, `rag`, `web-search`, `deep-research`, `context`, `email`, `calendar`, `ms-teams`, `api`. Case-insensitive. Unknown names accepted with generic styling
 - `metrics`: All values must be numbers ≥ 0. Can also be numeric strings (e.g., `"42"`)
 - `tags.department`: Maps to `category` field in database
 - `tags.status`: Valid values: `in_concept`, `approved`, `in_development`, `in_testing`, `deployed`, `abandoned`. Invalid values are ignored
