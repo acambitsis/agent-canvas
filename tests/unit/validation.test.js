@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { validateAgentForm } from '../../app/utils/validation';
 
 /**
  * Test input validation functions
@@ -232,58 +233,8 @@ describe('Input Validation', () => {
 
 /**
  * Test validateAgentForm from app/utils/validation.ts
- * Uses error-returning pattern (not throwing)
+ * Uses the actual imported function (not a duplicate)
  */
-function validateAgentForm(data) {
-  const errors = [];
-  const AGENT_NAME_MAX_LENGTH = 100;
-  const PHASE_MAX_LENGTH = 50;
-  const AGENT_OBJECTIVE_MAX_LENGTH = 500;
-  const AGENT_DESCRIPTION_MAX_LENGTH = 1000;
-
-  // Name is required
-  if (!data.name || data.name.trim().length === 0) {
-    errors.push({ field: 'name', message: 'Agent name is required' });
-  } else if (data.name.length > AGENT_NAME_MAX_LENGTH) {
-    errors.push({ field: 'name', message: `Agent name must be ${AGENT_NAME_MAX_LENGTH} characters or less` });
-  }
-
-  // Phase is required
-  if (!data.phase || data.phase.trim().length === 0) {
-    errors.push({ field: 'phase', message: 'Phase is required' });
-  } else if (data.phase.length > PHASE_MAX_LENGTH) {
-    errors.push({ field: 'phase', message: `Phase must be ${PHASE_MAX_LENGTH} characters or less` });
-  }
-
-  // Validate optional field lengths
-  if (data.objective && data.objective.length > AGENT_OBJECTIVE_MAX_LENGTH) {
-    errors.push({ field: 'objective', message: `Objective must be ${AGENT_OBJECTIVE_MAX_LENGTH} characters or less` });
-  }
-
-  if (data.description && data.description.length > AGENT_DESCRIPTION_MAX_LENGTH) {
-    errors.push({ field: 'description', message: `Description must be ${AGENT_DESCRIPTION_MAX_LENGTH} characters or less` });
-  }
-
-  // Validate URLs if provided
-  if (data.demoLink) {
-    try {
-      new URL(data.demoLink);
-    } catch {
-      errors.push({ field: 'demoLink', message: 'Demo link must be a valid URL' });
-    }
-  }
-
-  if (data.videoLink) {
-    try {
-      new URL(data.videoLink);
-    } catch {
-      errors.push({ field: 'videoLink', message: 'Video link must be a valid URL' });
-    }
-  }
-
-  return errors;
-}
-
 describe('Agent Form Validation', () => {
   describe('validateAgentForm', () => {
     it('should accept valid agent data', () => {

@@ -10,7 +10,9 @@ import {
 } from "./lib/helpers";
 import {
   validateAgentName,
+  validateDescription,
   validateMetrics,
+  validateObjective,
   validateOptionalUrl,
   validatePhase,
 } from "./lib/validation";
@@ -20,6 +22,8 @@ import { agentFieldValidators, agentInputValidator, agentUpdateValidator, CHANGE
 function validateAgentData(data: Record<string, unknown>): void {
   if (typeof data.name === 'string') validateAgentName(data.name);
   if (typeof data.phase === 'string') validatePhase(data.phase);
+  if (typeof data.objective === 'string') validateObjective(data.objective);
+  if (typeof data.description === 'string') validateDescription(data.description);
   if (data.metrics && typeof data.metrics === 'object') {
     validateMetrics(data.metrics as {
       numberOfUsers?: number;
