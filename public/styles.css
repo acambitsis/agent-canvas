@@ -6280,6 +6280,10 @@ body.is-resizing-sidebar .main-wrapper {
     border: 1px solid var(--dock-border);
     border-radius: 16px;
     box-shadow: var(--dock-shadow);
+    /* Handle overflow for many agents */
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: thin;
 }
 
 /* ============================================
@@ -6613,6 +6617,28 @@ body.is-resizing-sidebar .main-wrapper {
    ============================================ */
 
 @media (max-width: 768px) {
+    /* Stack dock row vertically on mobile */
+    .agent-group__dock-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+        min-height: auto;
+        padding: var(--space-3);
+    }
+
+    .agent-group__dock-header {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .agent-group__dock-row .dock-view {
+        width: 100%;
+    }
+
+    .agent-group__dock-row .agent-group__actions {
+        align-self: flex-end;
+    }
+
     .dock-view {
         --dock-item-size: 90px;
     }
