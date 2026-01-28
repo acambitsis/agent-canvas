@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@workos-inc/authkit-nextjs';
 import { fetchUserOrgs, fetchOrgDetails } from '@/server/workos';
+import { ORG_ROLES } from '@/types/validationConstants';
 
 export async function GET() {
   // Get the current user from the SDK session
@@ -30,7 +31,7 @@ export async function GET() {
     const orgs = await Promise.all(
       memberships.map(async (membership) => {
         const orgId = membership.organization_id;
-        const role = membership.role?.slug || 'member';
+        const role = membership.role?.slug || ORG_ROLES.MEMBER;
         const details = await fetchOrgDetails(orgId, workosApiKey).catch(() => null);
         return {
           id: orgId,

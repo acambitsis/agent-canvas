@@ -7,6 +7,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { ORG_ROLES } from "./lib/validators";
 
 const http = httpRouter();
 
@@ -132,7 +133,7 @@ http.route({
           await ctx.runMutation(internal.orgMemberships.upsertMembershipInternal, {
             workosUserId: data.user_id,
             workosOrgId: data.organization_id,
-            role: data.role?.slug || "member",
+            role: data.role?.slug || ORG_ROLES.MEMBER,
             timestamp: timestamp_ms,
           });
           break;

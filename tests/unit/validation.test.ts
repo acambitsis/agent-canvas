@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { validateAgentForm } from '../../app/utils/validation';
 
 /**
  * Test input validation functions
@@ -6,13 +7,20 @@ import { describe, it, expect } from 'vitest';
  */
 
 // Replicate validation functions for testing
-function validateMetric(value, fieldName) {
+function validateMetric(value: number, fieldName: string): void {
   if (value < 0) {
     throw new Error(`Validation: ${fieldName} must be 0 or greater`);
   }
 }
 
-function validateMetrics(metrics) {
+interface Metrics {
+  numberOfUsers?: number;
+  timesUsed?: number;
+  timeSaved?: number;
+  roi?: number;
+}
+
+function validateMetrics(metrics: Metrics | null | undefined): void {
   if (!metrics) return;
   if (metrics.numberOfUsers !== undefined) validateMetric(metrics.numberOfUsers, 'numberOfUsers');
   if (metrics.timesUsed !== undefined) validateMetric(metrics.timesUsed, 'timesUsed');
@@ -20,13 +28,13 @@ function validateMetrics(metrics) {
   // roi can be negative (loss), so no validation needed
 }
 
-function validateNonEmptyString(value, fieldName) {
+function validateNonEmptyString(value: string, fieldName: string): void {
   if (!value || value.trim().length === 0) {
     throw new Error(`Validation: ${fieldName} cannot be empty`);
   }
 }
 
-function validateSlug(slug) {
+function validateSlug(slug: string): void {
   validateNonEmptyString(slug, 'slug');
 
   if (slug !== slug.toLowerCase()) {
@@ -45,21 +53,21 @@ function validateSlug(slug) {
   }
 }
 
-function validateTitle(title) {
+function validateTitle(title: string): void {
   validateNonEmptyString(title, 'title');
   if (title.length > 200) {
     throw new Error('Validation: title must be 200 characters or less');
   }
 }
 
-function validateAgentName(name) {
+function validateAgentName(name: string): void {
   validateNonEmptyString(name, 'name');
   if (name.length > 100) {
     throw new Error('Validation: agent name must be 100 characters or less');
   }
 }
 
-function validateOptionalUrl(url, fieldName) {
+function validateOptionalUrl(url: string | null | undefined, fieldName: string): void {
   if (!url) return;
   try {
     new URL(url);
@@ -226,6 +234,112 @@ describe('Input Validation', () => {
         'must be a valid URL'
       );
       expect(() => validateOptionalUrl('just text', 'link')).toThrow();
+    });
+  });
+});
+
+/**
+ * Test validateAgentForm from app/utils/validation.ts
+ * Uses the actual imported function (not a duplicate)
+ */
+describe('Agent Form Validation', () => {
+  describe('validateAgentForm', () => {
+    it('should accept valid agent data', () => {
+      const errors = validateAgentForm({
+        name: 'Sales Agent',
+        phase: 'Discovery',
+        objective: 'Help sales team',
+        description: 'A helpful agent for sales',
+      });
+      expect(errors).toHaveLength(0);
+    });
+
+    it('should require name', () => {
+      const errors = validateAgentForm({ name: '', phase: 'Discovery' });
+      expect(errors).toContainEqual({ field: 'name', message: 'Agent name is required' });
+    });
+
+    it('should require phase', () => {
+      const errors = validateAgentForm({ name: 'Agent', phase: '' });
+      expect(errors).toContainEqual({ field: 'phase', message: 'Phase is required' });
+    });
+
+    it('should reject name over 100 characters', () => {
+      const errors = validateAgentForm({
+        name: 'a'.repeat(101),
+        phase: 'Discovery',
+      });
+      expect(errors).toContainEqual({ field: 'name', message: 'Agent name must be 100 characters or less' });
+    });
+
+    it('should reject phase over 50 characters', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'a'.repeat(51),
+      });
+      expect(errors).toContainEqual({ field: 'phase', message: 'Phase must be 50 characters or less' });
+    });
+
+    it('should reject objective over 500 characters', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+        objective: 'a'.repeat(501),
+      });
+      expect(errors).toContainEqual({ field: 'objective', message: 'Objective must be 500 characters or less' });
+    });
+
+    it('should accept objective at exactly 500 characters', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+        objective: 'a'.repeat(500),
+      });
+      expect(errors.filter(e => e.field === 'objective')).toHaveLength(0);
+    });
+
+    it('should reject description over 1000 characters', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+        description: 'a'.repeat(1001),
+      });
+      expect(errors).toContainEqual({ field: 'description', message: 'Description must be 1000 characters or less' });
+    });
+
+    it('should accept description at exactly 1000 characters', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+        description: 'a'.repeat(1000),
+      });
+      expect(errors.filter(e => e.field === 'description')).toHaveLength(0);
+    });
+
+    it('should accept undefined optional fields', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+      });
+      expect(errors).toHaveLength(0);
+    });
+
+    it('should reject invalid demoLink URL', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+        demoLink: 'not-a-url',
+      });
+      expect(errors).toContainEqual({ field: 'demoLink', message: 'Demo link must be a valid URL' });
+    });
+
+    it('should accept valid demoLink URL', () => {
+      const errors = validateAgentForm({
+        name: 'Agent',
+        phase: 'Discovery',
+        demoLink: 'https://example.com/demo',
+      });
+      expect(errors.filter(e => e.field === 'demoLink')).toHaveLength(0);
     });
   });
 });

@@ -7,7 +7,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
 import { Canvas } from '@/types/canvas';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useQuery, useMutation } from '@/hooks/useConvex';
+import { useQuery, useMutation, useConvexAuth } from '@/hooks/useConvex';
 import { useAuth } from './AuthContext';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
@@ -37,7 +37,9 @@ interface CanvasProviderProps {
 }
 
 export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProps) {
-  const { currentOrgId, isInitialized, isAuthenticated, userOrgs, setCurrentOrgId } = useAuth();
+  const { currentOrgId, isInitialized, userOrgs, setCurrentOrgId } = useAuth();
+  // Use Convex's auth state to gate queries - this ensures token is actually set
+  const { isAuthenticated: isConvexAuthenticated } = useConvexAuth();
   const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(STORAGE_KEYS.CURRENT_CANVAS, null);
   const [initialCanvasError, setInitialCanvasError] = useState<'not_found' | 'no_access' | null>(null);
   // Use state instead of ref so that setting it to true triggers a re-render
@@ -45,17 +47,17 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
   const [initialCanvasHandled, setInitialCanvasHandled] = useState(false);
 
   // Subscribe to canvases using official Convex hook
-  // Only query if authenticated AND has orgId
+  // Only query if Convex has the token AND has orgId
   const canvases = useQuery(
     api.canvases.list,
-    isAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+    isConvexAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
 
   // Query the initial canvas by ID if provided (for shareable links)
   // Using state for initialCanvasHandled ensures query skips after handling
   const initialCanvas = useQuery(
     api.canvases.get,
-    isAuthenticated && initialCanvasId && !initialCanvasHandled
+    isConvexAuthenticated && initialCanvasId && !initialCanvasHandled
       ? { canvasId: initialCanvasId as Id<"canvases"> }
       : 'skip'
   );

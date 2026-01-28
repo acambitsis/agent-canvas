@@ -15,6 +15,8 @@ export interface ValidationError {
 export function validateAgentForm(data: {
   name: string;
   phase: string;
+  objective?: string;
+  description?: string;
   demoLink?: string;
   videoLink?: string;
 }): ValidationError[] {
@@ -32,6 +34,15 @@ export function validateAgentForm(data: {
     errors.push({ field: 'phase', message: 'Phase is required' });
   } else if (data.phase.length > VALIDATION_CONSTANTS.PHASE_MAX_LENGTH) {
     errors.push({ field: 'phase', message: `Phase must be ${VALIDATION_CONSTANTS.PHASE_MAX_LENGTH} characters or less` });
+  }
+
+  // Validate optional field lengths
+  if (data.objective && data.objective.length > VALIDATION_CONSTANTS.AGENT_OBJECTIVE_MAX_LENGTH) {
+    errors.push({ field: 'objective', message: `Objective must be ${VALIDATION_CONSTANTS.AGENT_OBJECTIVE_MAX_LENGTH} characters or less` });
+  }
+
+  if (data.description && data.description.length > VALIDATION_CONSTANTS.AGENT_DESCRIPTION_MAX_LENGTH) {
+    errors.push({ field: 'description', message: `Description must be ${VALIDATION_CONSTANTS.AGENT_DESCRIPTION_MAX_LENGTH} characters or less` });
   }
 
   // Validate URLs if provided

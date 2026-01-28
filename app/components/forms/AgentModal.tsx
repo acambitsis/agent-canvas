@@ -11,7 +11,7 @@ import { useAgents } from '@/contexts/AgentContext';
 import { useAppState } from '@/contexts/AppStateContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
-import { useQuery } from '@/hooks/useConvex';
+import { useQuery, useConvexAuth } from '@/hooks/useConvex';
 import { validateAgentForm } from '@/utils/validation';
 import { getAvailableTools, getToolDisplay, DEFAULT_PHASE } from '@/utils/config';
 import { AGENT_STATUS, AGENT_STATUS_OPTIONS, AgentStatus } from '@/types/validationConstants';
@@ -53,15 +53,17 @@ function FormSection({ title, children, defaultCollapsed = false }: FormSectionP
 export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalProps) {
   const { createAgent, updateAgent } = useAgents();
   const { showToast } = useAppState();
-  const { currentOrgId, isAuthenticated } = useAuth();
+  const { currentOrgId } = useAuth();
+  // Use Convex's auth state to gate queries - this ensures token is actually set
+  const { isAuthenticated: isConvexAuthenticated } = useConvexAuth();
   const executeOperation = useAsyncOperation();
 
   // Get existing categories from org for autocomplete
-  // Must check isAuthenticated to avoid race condition on page refresh
+  // Must check isConvexAuthenticated to avoid race condition on page refresh
   // (currentOrgId loads from localStorage before auth is initialized)
   const existingCategories = useQuery(
     api.agents.getDistinctCategories,
-    isAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+    isConvexAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
   const categoryDatalistId = useId();
 
@@ -304,12 +306,14 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
             </label>
             <textarea
               id="agent-objective"
-              className="form-textarea"
+              className={getInputClassName('objective', 'form-textarea')}
               value={formData.objective}
               onChange={(e) => setFormData((prev) => ({ ...prev, objective: e.target.value }))}
+              onBlur={(e) => validateField('objective', e.target.value)}
               rows={2}
               placeholder="What does this agent aim to achieve?"
             />
+            {errors.objective && <div className="form-error">{errors.objective}</div>}
           </div>
 
           <div className="form-group">
@@ -318,12 +322,14 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
             </label>
             <textarea
               id="agent-description"
-              className="form-textarea"
+              className={getInputClassName('description', 'form-textarea')}
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              onBlur={(e) => validateField('description', e.target.value)}
               rows={3}
               placeholder="Detailed description of the agent's functionality..."
             />
+            {errors.description && <div className="form-error">{errors.description}</div>}
           </div>
         </FormSection>
 

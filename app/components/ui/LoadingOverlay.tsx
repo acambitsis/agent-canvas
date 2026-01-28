@@ -17,8 +17,8 @@ export function LoadingOverlay() {
     <div className="loading-overlay show">
       <div className="loading-overlay__spinner">
         <Icon name="loader-2" className="loading-icon" />
-        {loadingMessage && <p>{loadingMessage}</p>}
       </div>
+      {loadingMessage && <p className="loading-overlay__text">{loadingMessage}</p>}
     </div>
   );
 }

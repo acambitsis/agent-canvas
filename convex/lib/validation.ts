@@ -102,6 +102,36 @@ export function validatePhase(phase: string): void {
 }
 
 /**
+ * Validate optional string field with max length
+ */
+function validateOptionalStringField(
+  value: string | undefined,
+  fieldName: string,
+  maxLength: number
+): void {
+  if (!value?.trim()) return;
+  if (value.length > maxLength) {
+    throw new Error(
+      `Validation: ${fieldName} must be ${maxLength} characters or less`
+    );
+  }
+}
+
+/**
+ * Validate optional objective (max chars from shared constants)
+ */
+export function validateObjective(objective: string | undefined): void {
+  validateOptionalStringField(objective, "objective", VALIDATION_CONSTANTS.AGENT_OBJECTIVE_MAX_LENGTH);
+}
+
+/**
+ * Validate optional description (max chars from shared constants)
+ */
+export function validateDescription(description: string | undefined): void {
+  validateOptionalStringField(description, "description", VALIDATION_CONSTANTS.AGENT_DESCRIPTION_MAX_LENGTH);
+}
+
+/**
  * Validate URL format (optional field)
  */
 export function validateOptionalUrl(

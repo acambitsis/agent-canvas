@@ -9,6 +9,7 @@
  */
 
 import { MutationCtx, ActionCtx } from "../_generated/server";
+import { SyncType } from "./validators";
 
 /**
  * Result of a sync operation
@@ -109,7 +110,7 @@ export async function removeMembership(
  */
 export async function logSync(
   ctx: MutationCtx,
-  type: "webhook" | "cron" | "manual",
+  type: SyncType,
   status: string,
   workosUserId?: string,
   details?: string

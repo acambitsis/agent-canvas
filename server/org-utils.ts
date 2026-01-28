@@ -5,6 +5,8 @@
  * Includes caching to reduce WorkOS API calls for membership checks.
  */
 
+import { ORG_ROLES } from '@/types/validationConstants';
+
 /**
  * Check if a user is a super admin based on their email
  */
@@ -75,5 +77,5 @@ export async function isUserOrgAdmin(
     (m) => m.organization_id === orgId
   );
 
-  return membership?.role?.slug === 'admin';
+  return membership?.role?.slug === ORG_ROLES.ADMIN;
 }
