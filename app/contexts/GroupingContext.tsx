@@ -13,7 +13,7 @@ import { useAgents } from './AgentContext';
 import { useCanvas } from './CanvasContext';
 import { STORAGE_KEYS } from '@/constants/storageKeys';
 
-export type ViewMode = 'grid' | 'detail' | 'dock';
+export type ViewMode = 'grid' | 'dock';
 
 interface GroupingPreferences {
   activeTagType: string;
@@ -51,12 +51,12 @@ export function GroupingProvider({ children }: { children: React.ReactNode }) {
     }
   );
 
-  // Migrate 'compact' viewMode to 'grid' for existing users (one-time migration)
+  // Migrate legacy viewMode values ('compact', 'detail') to 'grid' for existing users
   const hasMigrated = useRef(false);
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentViewMode = preferences.viewMode as any;
-    if (!hasMigrated.current && currentViewMode === 'compact') {
+    if (!hasMigrated.current && (currentViewMode === 'compact' || currentViewMode === 'detail')) {
       hasMigrated.current = true;
       setPreferences((prev) => ({ ...prev, viewMode: 'grid' }));
     }
