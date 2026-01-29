@@ -39,7 +39,8 @@ interface CanvasProviderProps {
 export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProps) {
   const { currentOrgId, isInitialized, userOrgs, setCurrentOrgId } = useAuth();
   // Use Convex's auth state to gate queries - this ensures token is actually set
-  const { isAuthenticated: isConvexAuthenticated } = useConvexAuth();
+  const { isAuthenticated: isConvexAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const canQuery = isConvexAuthenticated && !isConvexAuthLoading;
   const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(STORAGE_KEYS.CURRENT_CANVAS, null);
   const [initialCanvasError, setInitialCanvasError] = useState<'not_found' | 'no_access' | null>(null);
   // Use state instead of ref so that setting it to true triggers a re-render
@@ -50,14 +51,14 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
   // Only query if Convex has the token AND has orgId
   const canvases = useQuery(
     api.canvases.list,
-    isConvexAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+    canQuery && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
 
   // Query the initial canvas by ID if provided (for shareable links)
   // Using state for initialCanvasHandled ensures query skips after handling
   const initialCanvas = useQuery(
     api.canvases.get,
-    isConvexAuthenticated && initialCanvasId && !initialCanvasHandled
+    canQuery && initialCanvasId && !initialCanvasHandled
       ? { canvasId: initialCanvasId as Id<"canvases"> }
       : 'skip'
   );
@@ -76,7 +77,7 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
   // Handle initial canvas from URL (shareable links)
   useEffect(() => {
     // Skip if no initialCanvasId, already handled, or query not yet completed
-    if (!initialCanvasId || initialCanvasHandled || initialCanvas === undefined) {
+    if (isConvexAuthLoading || !initialCanvasId || initialCanvasHandled || initialCanvas === undefined) {
       return;
     }
 
@@ -113,7 +114,7 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
   // Auto-select first canvas if none selected or current canvas was deleted
   // Skip this if we have an initialCanvasId that hasn't been handled yet
   useEffect(() => {
-    if (initialCanvasId && !initialCanvasHandled) {
+    if (isConvexAuthLoading || (initialCanvasId && !initialCanvasHandled)) {
       return; // Wait for initial canvas handling
     }
 
@@ -171,7 +172,7 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
     currentCanvas,
     phases,
     categories,
-    isLoading: !isInitialized,
+    isLoading: !isInitialized || isConvexAuthLoading,
     initialCanvasError,
     setCurrentCanvasId,
     createCanvas,

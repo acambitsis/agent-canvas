@@ -55,7 +55,8 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
   const { showToast } = useAppState();
   const { currentOrgId } = useAuth();
   // Use Convex's auth state to gate queries - this ensures token is actually set
-  const { isAuthenticated: isConvexAuthenticated } = useConvexAuth();
+  const { isAuthenticated: isConvexAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
+  const canQuery = isConvexAuthenticated && !isConvexAuthLoading;
   const executeOperation = useAsyncOperation();
 
   // Get existing categories from org for autocomplete
@@ -63,7 +64,7 @@ export function AgentModal({ isOpen, onClose, agent, defaultPhase }: AgentModalP
   // (currentOrgId loads from localStorage before auth is initialized)
   const existingCategories = useQuery(
     api.agents.getDistinctCategories,
-    isConvexAuthenticated && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
+    canQuery && currentOrgId ? { workosOrgId: currentOrgId } : 'skip'
   ) || [];
   const categoryDatalistId = useId();
 
