@@ -7,7 +7,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Agent, AgentGroup } from '@/types/agent';
 import { AgentCard } from './AgentCard';
-import { ExpandedAgentCard } from './ExpandedAgentCard';
 import { CompactAgentRow } from './CompactAgentRow';
 import { DockView } from './DockView';
 import { useGrouping } from '@/contexts/GroupingContext';
@@ -175,36 +174,22 @@ export function AgentGroupSection({
         </div>
       )}
 
-      {/* Expanded Content - Grid or Detail View */}
+      {/* Expanded Content - Grid View */}
       {!isCollapsed && (
-        <div className={`agent-group__content agent-group__content--${viewMode}`}>
-          {viewMode === 'detail' ? (
-            <div className="agents-detail-view">
-              {group.agents.map((agent, idx) => (
-                <ExpandedAgentCard
-                  key={agent._id}
-                  agent={agent}
-                  index={idx}
-                  onEdit={() => onEditAgent(agent)}
-                  onDelete={() => onDeleteAgent(agent)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="agents-grid">
-              {group.agents.map((agent, idx) => (
-                <AgentCard
-                  key={agent._id}
-                  agent={agent}
-                  index={idx}
-                  onEdit={() => onEditAgent(agent)}
-                  onDelete={() => onDeleteAgent(agent)}
-                  onQuickLook={() => onQuickLook?.(agent)}
-                  onOpenComments={() => onOpenComments?.(agent)}
-                />
-              ))}
-            </div>
-          )}
+        <div className="agent-group__content">
+          <div className="agents-grid">
+            {group.agents.map((agent, idx) => (
+              <AgentCard
+                key={agent._id}
+                agent={agent}
+                index={idx}
+                onEdit={() => onEditAgent(agent)}
+                onDelete={() => onDeleteAgent(agent)}
+                onQuickLook={() => onQuickLook?.(agent)}
+                onOpenComments={() => onOpenComments?.(agent)}
+              />
+            ))}
+          </div>
         </div>
       )}
     </section>
