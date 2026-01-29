@@ -38,7 +38,11 @@ interface CanvasProviderProps {
 
 export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProps) {
   const { currentOrgId, isInitialized, userOrgs, setCurrentOrgId } = useAuth();
-  // Use Convex's auth state to gate queries - this ensures token is actually set
+  // Gate Convex queries on BOTH isAuthenticated AND !isLoading.
+  // This prevents queries from running during auth token refresh (e.g., after idle >5 min),
+  // which would otherwise return empty data and cause UI flicker.
+  // Pattern: `canQuery && otherConditions ? args : 'skip'`
+  // Also include isConvexAuthLoading in any loading states exposed by this context.
   const { isAuthenticated: isConvexAuthenticated, isLoading: isConvexAuthLoading } = useConvexAuth();
   const canQuery = isConvexAuthenticated && !isConvexAuthLoading;
   const [currentCanvasId, setCurrentCanvasIdState] = useLocalStorage<string | null>(STORAGE_KEYS.CURRENT_CANVAS, null);
@@ -109,7 +113,7 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', `/c/${initialCanvas._id}`);
     }
-  }, [initialCanvasId, initialCanvas, initialCanvasHandled, userOrgs, currentOrgId, setCurrentOrgId, setCurrentCanvasIdState]);
+  }, [isConvexAuthLoading, initialCanvasId, initialCanvas, initialCanvasHandled, userOrgs, currentOrgId, setCurrentOrgId, setCurrentCanvasIdState]);
 
   // Auto-select first canvas if none selected or current canvas was deleted
   // Skip this if we have an initialCanvasId that hasn't been handled yet
@@ -128,7 +132,7 @@ export function CanvasProvider({ children, initialCanvasId }: CanvasProviderProp
       // No canvases available, clear selection
       setCurrentCanvasIdState(null);
     }
-  }, [canvases, currentCanvasId, setCurrentCanvasIdState, initialCanvasId, initialCanvasHandled]);
+  }, [isConvexAuthLoading, canvases, currentCanvasId, setCurrentCanvasIdState, initialCanvasId, initialCanvasHandled]);
 
   const setCurrentCanvasId = useCallback((canvasId: string | null) => {
     setCurrentCanvasIdState(canvasId);

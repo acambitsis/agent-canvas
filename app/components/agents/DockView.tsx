@@ -102,7 +102,9 @@ export function DockView({ agents, onAgentClick }: DockViewProps) {
       </div>
 
       {/* Carousel - expanded view of selected agent */}
-      {selectedAgent && (
+      {selectedAgent && (() => {
+        const selectedStatusConfig = getAgentStatusConfig(selectedAgent.status);
+        return (
         <div className="dock-carousel">
           <button
             className="dock-carousel__nav dock-carousel__nav--prev"
@@ -128,11 +130,11 @@ export function DockView({ agents, onAgentClick }: DockViewProps) {
               <span
                 className="dock-carousel__status"
                 style={{
-                  backgroundColor: getAgentStatusConfig(selectedAgent.status).bgColor,
-                  color: getAgentStatusConfig(selectedAgent.status).color
+                  backgroundColor: selectedStatusConfig.bgColor,
+                  color: selectedStatusConfig.color
                 }}
               >
-                {getAgentStatusConfig(selectedAgent.status).label}
+                {selectedStatusConfig.label}
               </span>
               <span className="dock-carousel__counter">
                 {selectedIndex + 1} of {agents.length}
@@ -177,7 +179,8 @@ export function DockView({ agents, onAgentClick }: DockViewProps) {
             <Icon name="chevron-right" />
           </button>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
